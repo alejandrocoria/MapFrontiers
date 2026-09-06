@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
@@ -110,7 +112,8 @@ public class SettingsGroup {
         return true;
     }
 
-    public void readFromNBT(CompoundTag nbt, int version) {
+    public boolean readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
+        boolean changedDuringLoad = false;
         if (!special) {
             name = nbt.getStringOr("name", "");
             users.clear();
@@ -118,10 +121,12 @@ public class SettingsGroup {
             for (int i = 0; i < usersTagList.size(); ++i) {
                 try {
                     SettingsUser user = new SettingsUser();
-                    user.readFromNBT(NbtReadHelper.requireCompound(usersTagList, i, "users"));
+                    CompoundTag userTag = NbtReadHelper.requireCompound(usersTagList, i, "users");
+                    changedDuringLoad |= user.readFromNBT(userTag, context);
                     users.add(user);
                 } catch (InvalidNbtFormatException e) {
                     MapFrontiers.LOGGER.warn("Skipping invalid user in group {} at users[{}]: {}", name, i, e.getMessage());
+                    changedDuringLoad = true;
                 }
             }
         }
@@ -163,15 +168,21 @@ public class SettingsGroup {
                 MapFrontiers.LOGGER.warn("Unknown action in group {}. Found: \"{}\". Expected: {}", name, actionTag, availableActionsString);
             }
         }
+
+        return changedDuringLoad;
     }
 
-    public void writeToNBT(CompoundTag nbt) {
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
         if (!special) {
             nbt.putString("name", name);
             ListTag usersTagList = new ListTag();
             for (SettingsUser user : users) {
+                if (user.uuid == null) {
+                    MapFrontiers.LOGGER.warn("Skipping user without UUID while saving settings group {}", name);
+                    continue;
+                }
                 CompoundTag userTag = new CompoundTag();
-                user.writeToNBT(userTag);
+                user.writeToNBT(userTag, resolver);
                 usersTagList.add(userTag);
             }
 

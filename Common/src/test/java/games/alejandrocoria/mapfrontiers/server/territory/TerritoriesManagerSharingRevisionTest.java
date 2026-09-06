@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
@@ -22,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TerritoriesManagerSharingRevisionTest {
     @Test
     void everyCommittedSharingMutationAdvancesRevisionExactlyOnce() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         SettingsUser owner = user("Owner");
         SettingsUser target = user("Target");
         FrontierData frontier = manager.createNewPersonalFrontier(frontierSpec(owner));

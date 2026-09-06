@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
@@ -44,6 +46,16 @@ public class CopiedFromInfo {
         user.readFromNBT(nbt.getCompoundOrEmpty("user"));
     }
 
+    public boolean readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
+        id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
+
+        user = new SettingsUser();
+        if (!nbt.contains("user")) {
+            return false;
+        }
+        return user.readFromNBT(NbtReadHelper.requireCompound(nbt, "user"), context);
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(id, user);
@@ -55,6 +67,17 @@ public class CopiedFromInfo {
         CompoundTag nbtOwner = new CompoundTag();
         user.writeToNBT(nbtOwner);
         nbt.put("user", nbtOwner);
+    }
+
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
+        nbt.putString("id", id.toString());
+        nbt.remove("user");
+
+        if (user.uuid != null) {
+            CompoundTag nbtOwner = new CompoundTag();
+            user.writeToNBT(nbtOwner, resolver);
+            nbt.put("user", nbtOwner);
+        }
     }
 
     public void fromBytes(FriendlyByteBuf buf) {

@@ -1,6 +1,9 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerIdLookup;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
@@ -51,12 +54,17 @@ public class TerritoriesManager {
     private final HashMap<ResourceKey<Level>, LinkedHashSet<UUID>> globalFrontierIdsByDimension;
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, LinkedHashSet<UUID>>> knownPersonalFrontierIdsByUserAndDimension;
     private final DebouncedPersistenceController persistenceController;
+    private final PlayerNameRepository playerNames;
+    private final PlayerReferenceNbtReadContext playerReferenceReadContext;
     private FrontierSettings frontierSettings;
     private long settingsRevision;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
-    public TerritoriesManager() {
+    public TerritoriesManager(PlayerNameRepository playerNames, PlayerIdLookup nameOnlyLookup) {
+        this.playerNames = Objects.requireNonNull(playerNames, "playerNames");
+        playerReferenceReadContext = new PlayerReferenceNbtReadContext(playerNames,
+                Objects.requireNonNull(nameOnlyLookup, "nameOnlyLookup"));
         allFrontiers = new HashMap<>();
         allCollections = new HashMap<>();
         dimensionsGlobalFrontiers = new HashMap<>();
@@ -576,7 +584,7 @@ public class TerritoriesManager {
                 try {
                     CollectionData collection = new CollectionData();
                     CompoundTag collectionTag = NbtReadHelper.requireCompound(allCollectionsTagList, i, "collections");
-                    needBackup |= collection.readFromNBT(collectionTag, version);
+                    needBackup |= collection.readFromNBT(collectionTag, version, playerReferenceReadContext);
                     allCollections.put(collection.getId(), collection);
 
                     if (collection.getPersonal()) {
@@ -595,7 +603,7 @@ public class TerritoriesManager {
                 try {
                     FrontierData frontier = new FrontierData();
                     CompoundTag frontierTag = NbtReadHelper.requireCompound(allFrontiersTagList, i, "frontiers");
-                    needBackup |= frontier.readFromNBT(frontierTag, version);
+                    needBackup |= frontier.readFromNBT(frontierTag, version, playerReferenceReadContext);
                     frontier.removePendingUsersShared();
                     allFrontiers.put(frontier.getId(), frontier);
 
@@ -641,7 +649,7 @@ public class TerritoriesManager {
         for (CollectionData collection : allCollections.values()) {
             try {
                 CompoundTag collectionTag = new CompoundTag();
-                collection.writeToNBT(collectionTag);
+                collection.writeToNBT(collectionTag, playerNames);
                 allCollectionsTagList.add(collectionTag);
             } catch (RuntimeException e) {
                 skippedCollections++;
@@ -656,7 +664,7 @@ public class TerritoriesManager {
         for (FrontierData frontier : allFrontiers.values()) {
             try {
                 CompoundTag frontierTag = new CompoundTag();
-                frontier.writeToNBT(frontierTag);
+                frontier.writeToNBT(frontierTag, playerNames);
                 allFrontiersTagList.add(frontierTag);
             } catch (RuntimeException e) {
                 skippedFrontiers++;
@@ -701,10 +709,10 @@ public class TerritoriesManager {
             CompoundTag nbtSettings = loadFile("settings.dat");
             if (nbtSettings.isEmpty()) {
                 frontierSettings.resetToDefault();
-                frontierSettings.writeToNBT(nbtSettings);
+                frontierSettings.writeToNBT(nbtSettings, playerNames);
                 saveFile("settings.dat", nbtSettings);
             } else {
-                if (frontierSettings.readFromNBT(nbtSettings)) {
+                if (frontierSettings.readFromNBT(nbtSettings, playerReferenceReadContext)) {
                     NbtFileHelper.createBackup(ModDir, "settings.dat");
                     saveSettingsData();
                 }
@@ -991,7 +999,7 @@ public class TerritoriesManager {
 
     private void saveSettingsData() {
         CompoundTag nbtSettings = new CompoundTag();
-        frontierSettings.writeToNBT(nbtSettings);
+        frontierSettings.writeToNBT(nbtSettings, playerNames);
         saveFile("settings.dat", nbtSettings);
     }
 

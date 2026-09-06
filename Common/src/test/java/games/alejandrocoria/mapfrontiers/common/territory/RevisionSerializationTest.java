@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -35,11 +37,13 @@ class RevisionSerializationTest {
         assertEquals(17L, decoded.getCollectionRevision());
         encoded.release();
 
+        PlayerNameRepository names = new PlayerNameRepository();
         CompoundTag nbt = new CompoundTag();
-        collection.writeToNBT(nbt);
+        collection.writeToNBT(nbt, ignored -> "owner");
         assertFalse(nbt.contains("collectionRevision"));
         decoded.setCollectionRevision(99L);
-        decoded.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION);
+        decoded.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+                PlayerReferenceNbtReadContext.uuidOnly(names));
         assertEquals(0L, decoded.getCollectionRevision());
     }
 
@@ -68,11 +72,13 @@ class RevisionSerializationTest {
         assertEquals(23L, decodedChange.getSharingRevision());
         encodedChange.release();
 
+        PlayerNameRepository names = new PlayerNameRepository();
         CompoundTag nbt = new CompoundTag();
-        frontier.writeToNBT(nbt);
+        frontier.writeToNBT(nbt, ignored -> "owner");
         assertFalse(nbt.contains("sharingRevision"));
         decodedFrontier.setSharingRevision(99L);
-        decodedFrontier.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION);
+        decodedFrontier.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+                PlayerReferenceNbtReadContext.uuidOnly(names));
         assertEquals(0L, decodedFrontier.getSharingRevision());
     }
 

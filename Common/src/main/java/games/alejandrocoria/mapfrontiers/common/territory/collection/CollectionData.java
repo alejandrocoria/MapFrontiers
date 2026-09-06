@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CopiedFromInfo;
@@ -81,6 +83,15 @@ public class CollectionData {
     }
 
     public boolean readFromNBT(CompoundTag nbt, int version) {
+        return readFromNBTInternal(nbt, version, null);
+    }
+
+    public boolean readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
+        return readFromNBTInternal(nbt, version, context);
+    }
+
+    private boolean readFromNBTInternal(CompoundTag nbt, int version,
+                                        @Nullable PlayerReferenceNbtReadContext context) {
         boolean changedDuringLoad = false;
         collectionRevision = 0L;
         id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
@@ -92,7 +103,12 @@ public class CollectionData {
             throw new InvalidNbtFormatException("Invalid lifetime for collection " + id + ": " + e.getMessage(), e);
         }
         owner = new SettingsUser();
-        owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
+        CompoundTag ownerTag = nbt.getCompoundOrEmpty("owner");
+        if (context == null) {
+            owner.readFromNBT(ownerTag);
+        } else {
+            changedDuringLoad |= owner.readFromNBT(ownerTag, context);
+        }
         name = nbt.getStringOr("name", "");
         color = NbtReadHelper.requireInt(nbt, "color");
         visibilityData = new CollectionVisibilityData();
@@ -107,7 +123,20 @@ public class CollectionData {
 
         if (nbt.contains("copiedFrom")) {
             copiedFrom = new CopiedFromInfo();
-            copiedFrom.readFromNBT(NbtReadHelper.requireCompound(nbt, "copiedFrom"), version);
+            CompoundTag copiedFromTag = NbtReadHelper.requireCompound(nbt, "copiedFrom");
+            if (context == null) {
+                copiedFrom.readFromNBT(copiedFromTag, version);
+            } else {
+                try {
+                    changedDuringLoad |= copiedFrom.readFromNBT(copiedFromTag, version, context);
+                } catch (InvalidNbtFormatException e) {
+                    if (copiedFrom.getId() == null) {
+                        throw e;
+                    }
+                    MapFrontiers.LOGGER.warn("Ignoring invalid copied-from user for collection {}: {}", id, e.getMessage());
+                    changedDuringLoad = true;
+                }
+            }
         } else {
             copiedFrom = null;
         }
@@ -128,6 +157,14 @@ public class CollectionData {
     }
 
     public void writeToNBT(CompoundTag nbt) {
+        writeToNBTInternal(nbt, null);
+    }
+
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
+        writeToNBTInternal(nbt, resolver);
+    }
+
+    private void writeToNBTInternal(CompoundTag nbt, @Nullable PlayerNameResolver resolver) {
         assertSerializableLifetime();
 
         nbt.putString("id", id.toString());
@@ -135,7 +172,11 @@ public class CollectionData {
         nbt.putString("lifetime", lifetime.name());
 
         CompoundTag ownerTag = new CompoundTag();
-        owner.writeToNBT(ownerTag);
+        if (resolver == null) {
+            owner.writeToNBT(ownerTag);
+        } else {
+            owner.writeToNBT(ownerTag, resolver);
+        }
         nbt.put("owner", ownerTag);
 
         nbt.putString("name", name);
@@ -154,7 +195,11 @@ public class CollectionData {
 
         if (copiedFrom != null) {
             CompoundTag copiedFromTag = new CompoundTag();
-            copiedFrom.writeToNBT(copiedFromTag);
+            if (resolver == null) {
+                copiedFrom.writeToNBT(copiedFromTag);
+            } else {
+                copiedFrom.writeToNBT(copiedFromTag, resolver);
+            }
             nbt.put("copiedFrom", copiedFromTag);
         }
 

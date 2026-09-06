@@ -65,11 +65,11 @@ public class ClientTerritoryRuntime {
         }
 
         if (localPersonalFrontierStore == null) {
-            localPersonalFrontierStore = new ClientLocalPersonalFrontierStore();
+            localPersonalFrontierStore = new ClientLocalPersonalFrontierStore(playerNameRepository);
         }
 
         if (localPersonalCollectionStore == null) {
-            localPersonalCollectionStore = new ClientLocalPersonalCollectionStore();
+            localPersonalCollectionStore = new ClientLocalPersonalCollectionStore(playerNameRepository);
         }
 
         if (frontierEvents == null) {

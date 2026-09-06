@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TerritoriesManagerGeometryChangeTest {
     @Test
     void rejectedSequenceDoesNotModifyRegisteredFrontierOrTimestamp() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         FrontierData frontier = manager.createNewGlobalFrontier(pathSpec(point(0, 0), point(10, 0)));
         long initialHash = frontier.computeSyncHash();
         long initialModified = frontier.getModified().getTime();
@@ -46,7 +47,7 @@ class TerritoriesManagerGeometryChangeTest {
 
     @Test
     void neutralSequenceDoesNotModifyRegisteredFrontierOrTimestamp() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         FrontierData frontier = manager.createNewGlobalFrontier(pathSpec(point(0, 0)));
         long initialModified = frontier.getModified().getTime();
 
@@ -61,7 +62,7 @@ class TerritoriesManagerGeometryChangeTest {
 
     @Test
     void validSequenceCommitsAndAddsAuthoritativeModifiedTimeToEffectiveChange() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         FrontierData frontier = manager.createNewGlobalFrontier(pathSpec(point(0, 0)));
 
         FrontierChangeApplicationResult result = manager.applyGlobalFrontierChange(

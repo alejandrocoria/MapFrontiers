@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
@@ -82,6 +84,16 @@ public class SettingsUserShared {
 
     public void readFromNBT(CompoundTag nbt) {
         user.readFromNBT(nbt);
+        readSettingsFromNBT(nbt);
+    }
+
+    public boolean readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
+        boolean repaired = user.readFromNBT(nbt, context);
+        readSettingsFromNBT(nbt);
+        return repaired;
+    }
+
+    private void readSettingsFromNBT(CompoundTag nbt) {
         pending = nbt.getBooleanOr("pending", false);
 
         actions.clear();
@@ -113,6 +125,15 @@ public class SettingsUserShared {
 
     public void writeToNBT(CompoundTag nbt) {
         user.writeToNBT(nbt);
+        writeSettingsToNBT(nbt);
+    }
+
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
+        user.writeToNBT(nbt, resolver);
+        writeSettingsToNBT(nbt);
+    }
+
+    private void writeSettingsToNBT(CompoundTag nbt) {
 
         if (pending) {
             nbt.putBoolean("pending", true);

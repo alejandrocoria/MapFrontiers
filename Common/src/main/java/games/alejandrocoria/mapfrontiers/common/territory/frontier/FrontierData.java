@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
@@ -845,6 +847,15 @@ public class FrontierData {
     }
 
     public boolean readFromNBT(CompoundTag nbt, int version) {
+        return readFromNBTInternal(nbt, version, null);
+    }
+
+    public boolean readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
+        return readFromNBTInternal(nbt, version, context);
+    }
+
+    private boolean readFromNBTInternal(CompoundTag nbt, int version,
+                                        @Nullable PlayerReferenceNbtReadContext context) {
         boolean changedDuringLoad = false;
         vertices.clear();
         chunks.clear();
@@ -879,7 +890,12 @@ public class FrontierData {
         setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         owner = new SettingsUser();
-        owner.readFromNBT(nbt.getCompoundOrEmpty("owner"));
+        CompoundTag ownerTag = nbt.getCompoundOrEmpty("owner");
+        if (context == null) {
+            owner.readFromNBT(ownerTag);
+        } else {
+            changedDuringLoad |= owner.readFromNBT(ownerTag, context);
+        }
 
         if (nbt.contains("banner")) {
             banner = new BannerData();
@@ -895,11 +911,21 @@ public class FrontierData {
                 for (int i = 0; i < usersSharedTagList.size(); ++i) {
                     try {
                         SettingsUserShared userShared = new SettingsUserShared();
-                        userShared.readFromNBT(NbtReadHelper.requireCompound(usersSharedTagList, i, "usersShared"));
+                        CompoundTag sharedTag = NbtReadHelper.requireCompound(usersSharedTagList, i, "usersShared");
+                        if (context == null) {
+                            userShared.readFromNBT(sharedTag);
+                        } else {
+                            changedDuringLoad |= userShared.readFromNBT(sharedTag, context);
+                        }
                         usersShared.add(userShared);
                     } catch (InvalidNbtFormatException e) {
-                        throw new InvalidNbtFormatException("Invalid shared user at usersShared[" + i + "] for frontier " + id + ": "
-                                + e.getMessage(), e);
+                        if (context == null) {
+                            throw new InvalidNbtFormatException("Invalid shared user at usersShared[" + i + "] for frontier " + id + ": "
+                                    + e.getMessage(), e);
+                        }
+                        MapFrontiers.LOGGER.warn("Skipping invalid shared user at usersShared[{}] for frontier {}: {}",
+                                i, id, e.getMessage());
+                        changedDuringLoad = true;
                     }
                 }
             }
@@ -960,7 +986,20 @@ public class FrontierData {
 
         if (nbt.contains("copiedFrom")) {
             copiedFrom = new CopiedFromInfo();
-            copiedFrom.readFromNBT(NbtReadHelper.requireCompound(nbt, "copiedFrom"), version);
+            CompoundTag copiedFromTag = NbtReadHelper.requireCompound(nbt, "copiedFrom");
+            if (context == null) {
+                copiedFrom.readFromNBT(copiedFromTag, version);
+            } else {
+                try {
+                    changedDuringLoad |= copiedFrom.readFromNBT(copiedFromTag, version, context);
+                } catch (InvalidNbtFormatException e) {
+                    if (copiedFrom.getId() == null) {
+                        throw e;
+                    }
+                    MapFrontiers.LOGGER.warn("Ignoring invalid copied-from user for frontier {}: {}", id, e.getMessage());
+                    changedDuringLoad = true;
+                }
+            }
         }
 
         if (nbt.contains("collectionId")) {
@@ -984,6 +1023,14 @@ public class FrontierData {
     }
 
     public void writeToNBT(CompoundTag nbt) {
+        writeToNBTInternal(nbt, null);
+    }
+
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
+        writeToNBTInternal(nbt, resolver);
+    }
+
+    private void writeToNBTInternal(CompoundTag nbt, @Nullable PlayerNameResolver resolver) {
         assertSerializableLifetime();
 
         nbt.putString("id", id.toString());
@@ -1001,7 +1048,11 @@ public class FrontierData {
         }
 
         CompoundTag nbtOwner = new CompoundTag();
-        owner.writeToNBT(nbtOwner);
+        if (resolver == null) {
+            owner.writeToNBT(nbtOwner);
+        } else {
+            owner.writeToNBT(nbtOwner, resolver);
+        }
         nbt.put("owner", nbtOwner);
 
         if (banner != null) {
@@ -1014,8 +1065,16 @@ public class FrontierData {
         if (personal && usersShared != null) {
             ListTag usersSharedTagList = new ListTag();
             for (SettingsUserShared userShared : usersShared) {
+                if (resolver != null && userShared.getUser().uuid == null) {
+                    MapFrontiers.LOGGER.warn("Skipping shared user without UUID while saving frontier {}", id);
+                    continue;
+                }
                 CompoundTag nbtUserShared = new CompoundTag();
-                userShared.writeToNBT(nbtUserShared);
+                if (resolver == null) {
+                    userShared.writeToNBT(nbtUserShared);
+                } else {
+                    userShared.writeToNBT(nbtUserShared, resolver);
+                }
                 usersSharedTagList.add(nbtUserShared);
             }
 
@@ -1065,7 +1124,11 @@ public class FrontierData {
 
         if (wasCopied()) {
             CompoundTag nbtCopiedFrom = new CompoundTag();
-            copiedFrom.writeToNBT(nbtCopiedFrom);
+            if (resolver == null) {
+                copiedFrom.writeToNBT(nbtCopiedFrom);
+            } else {
+                copiedFrom.writeToNBT(nbtCopiedFrom, resolver);
+            }
             nbt.put("copiedFrom", nbtCopiedFrom);
         }
 

@@ -7,6 +7,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.server.api.MapFrontiersServerAPIImpl;
+import games.alejandrocoria.mapfrontiers.server.identity.ServerPlayerIdLookup;
 import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationService;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
@@ -35,7 +36,7 @@ public class ServerTerritoryRuntime {
     public ServerTerritoryRuntime(MinecraftServer server) {
         this.server = server;
         this.playerNameRepository = new PlayerNameRepository();
-        this.territoriesManager = new TerritoriesManager();
+        this.territoriesManager = new TerritoriesManager(playerNameRepository, new ServerPlayerIdLookup(server));
         this.territoriesManager.loadOrCreateData(server);
         this.permissionEvaluator = new TerritoryPermissionEvaluator(territoriesManager);
         this.frontierEvents = new ServerFrontierEvents();

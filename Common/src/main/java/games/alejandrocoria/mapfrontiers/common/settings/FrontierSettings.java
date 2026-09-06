@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -155,7 +157,7 @@ public class FrontierSettings {
         return profile;
     }
 
-    public boolean readFromNBT(CompoundTag nbt) {
+    public boolean readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
         boolean needBackup = false;
         try {
             int version = nbt.getIntOr("Version", 0);
@@ -171,20 +173,20 @@ public class FrontierSettings {
             }
 
             CompoundTag OPsTag = nbt.getCompoundOrEmpty("OPs");
-            OPs.readFromNBT(OPsTag, version);
+            needBackup |= OPs.readFromNBT(OPsTag, version, context);
 
             CompoundTag ownersTag = nbt.getCompoundOrEmpty("Owners");
-            owners.readFromNBT(ownersTag, version);
+            needBackup |= owners.readFromNBT(ownersTag, version, context);
 
             CompoundTag everyoneTag = nbt.getCompoundOrEmpty("Everyone");
-            everyone.readFromNBT(everyoneTag, version);
+            needBackup |= everyone.readFromNBT(everyoneTag, version, context);
 
             customGroups.clear();
             ListTag customGroupsTagList = nbt.getListOrEmpty("customGroups");
             for (int i = 0; i < customGroupsTagList.size(); ++i) {
                 SettingsGroup group = new SettingsGroup();
                 CompoundTag groupTag = customGroupsTagList.getCompoundOrEmpty(i);
-                group.readFromNBT(groupTag, version);
+                needBackup |= group.readFromNBT(groupTag, version, context);
                 customGroups.add(group);
             }
 
@@ -196,23 +198,23 @@ public class FrontierSettings {
         return needBackup;
     }
 
-    public void writeToNBT(CompoundTag nbt) {
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
         CompoundTag OPsTag = new CompoundTag();
-        OPs.writeToNBT(OPsTag);
+        OPs.writeToNBT(OPsTag, resolver);
         nbt.put("OPs", OPsTag);
 
         CompoundTag ownersTag = new CompoundTag();
-        owners.writeToNBT(ownersTag);
+        owners.writeToNBT(ownersTag, resolver);
         nbt.put("Owners", ownersTag);
 
         CompoundTag everyoneTag = new CompoundTag();
-        everyone.writeToNBT(everyoneTag);
+        everyone.writeToNBT(everyoneTag, resolver);
         nbt.put("Everyone", everyoneTag);
 
         ListTag customGroupsTagList = new ListTag();
         for (SettingsGroup group : customGroups) {
             CompoundTag groupTag = new CompoundTag();
-            group.writeToNBT(groupTag);
+            group.writeToNBT(groupTag, resolver);
             customGroupsTagList.add(groupTag);
         }
         nbt.put("customGroups", customGroupsTagList);

@@ -1,6 +1,10 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtCodec;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -62,11 +66,26 @@ public class SettingsUser implements Comparable<SettingsUser> {
         }
     }
 
+    public boolean readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
+        PlayerReferenceNbtCodec.ReadResult result = PlayerReferenceNbtCodec.read(nbt, context);
+        uuid = result.playerId().uuid();
+        String resolvedName = context.playerNames().resolveName(result.playerId());
+        username = resolvedName == null ? "" : resolvedName;
+        return result.repaired();
+    }
+
     public void writeToNBT(CompoundTag nbt) {
         nbt.putString("username", username);
         if (uuid != null) {
             nbt.putString("UUID", uuid.toString());
         }
+    }
+
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
+        if (uuid == null) {
+            throw new IllegalStateException("Cannot serialize player reference without UUID.");
+        }
+        PlayerReferenceNbtCodec.write(nbt, new PlayerId(uuid), resolver);
     }
 
     public void fromBytes(FriendlyByteBuf buf) {

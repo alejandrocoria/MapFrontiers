@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ServerCollectionRevisionTest {
     @Test
     void updateIncrementsRevisionOnceWhileNoOpAndTouchPreserveIt() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         CollectionData collection = collection();
         manager.addGlobalCollection(collection);
         ServerCollectionEvents collectionEvents = new ServerCollectionEvents();

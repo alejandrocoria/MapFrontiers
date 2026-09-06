@@ -2,6 +2,7 @@ package games.alejandrocoria.mapfrontiers.server.api;
 
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
@@ -29,7 +30,7 @@ class ServerFrontierServiceImplTest {
 
     @Test
     void listGlobalFrontiersInCollectionUsesMembershipIndexAcrossDimensionsAndFiltersScope() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         UUID collectionId = UUID.randomUUID();
         FrontierData firstGlobal = manager.createNewGlobalFrontier(frontierSpec(false, OVERWORLD, collectionId));
         FrontierData secondGlobal = manager.createNewGlobalFrontier(frontierSpec(false, NETHER, collectionId));
@@ -47,7 +48,7 @@ class ServerFrontierServiceImplTest {
 
     @Test
     void listGlobalFrontiersInCollectionReturnsEmptyForUnknownOrPersonalOnlyCollection() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         UUID personalCollectionId = UUID.randomUUID();
         manager.createNewPersonalFrontier(frontierSpec(true, OVERWORLD, personalCollectionId));
         ServerFrontierServiceImpl service = createService(manager);

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -27,7 +28,7 @@ class StableUuidIdentityCharacterizationTest {
 
     @Test
     void personalFrontierLookupUsesStableUuidAfterUsernameChange() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         FrontierData frontier = manager.createNewPersonalFrontier(frontierSpec(user("OldOwner", OWNER_ID)));
 
         List<FrontierData> visibleToRenamedOwner = manager.getAllPersonalFrontiers(

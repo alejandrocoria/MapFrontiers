@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.settings;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoryPermissionEvaluator;
@@ -11,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class ServerSettingsRevisionTest {
     @Test
     void pollOnlyReturnsSnapshotWhenRevisionDiffers() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         ServerSettingsOperationService service = service(manager);
 
         ServerSettingsOperationResult equal = service.requestSettings(null, 0L);
@@ -29,7 +30,7 @@ class ServerSettingsRevisionTest {
 
     @Test
     void commitAdvancesRevisionWhileNoOpAndRejectionPreserveIt() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         ServerSettingsOperationService service = service(manager);
         FrontierSettings changed = new FrontierSettings(manager.getSettings());
         changed.getEveryoneGroup().addAction(FrontierSettings.Action.SharePersonalFrontier);

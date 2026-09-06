@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
@@ -22,7 +24,14 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class ClientLocalPersonalCollectionStore {
+    private final PlayerNameRepository playerNames;
+    private final PlayerReferenceNbtReadContext playerReferenceReadContext;
     private File modDir;
+
+    public ClientLocalPersonalCollectionStore(PlayerNameRepository playerNames) {
+        this.playerNames = playerNames;
+        playerReferenceReadContext = PlayerReferenceNbtReadContext.uuidOnly(playerNames);
+    }
 
     public List<CollectionData> loadCollections() {
         ensureDirectory();
@@ -85,7 +94,7 @@ public class ClientLocalPersonalCollectionStore {
                 try {
                     CollectionData collection = new CollectionData();
                     CompoundTag collectionTag = NbtReadHelper.requireCompound(collectionsTagList, i, "collections");
-                    needBackup |= collection.readFromNBT(collectionTag, version);
+                    needBackup |= collection.readFromNBT(collectionTag, version, playerReferenceReadContext);
                     if (!shouldPersist(collection)) {
                         needBackup = true;
                         continue;
@@ -110,7 +119,7 @@ public class ClientLocalPersonalCollectionStore {
         for (CollectionData collection : collections) {
             try {
                 CompoundTag collectionTag = new CompoundTag();
-                collection.writeToNBT(collectionTag);
+                collection.writeToNBT(collectionTag, playerNames);
                 collectionsTagList.add(collectionTag);
             } catch (RuntimeException e) {
                 skippedCollections++;
