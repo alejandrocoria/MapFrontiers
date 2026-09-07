@@ -92,9 +92,10 @@ public class ClientLocalPersonalFrontierStore {
             ListTag frontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < frontiersTagList.size(); ++i) {
                 try {
-                    FrontierData frontier = new FrontierData();
                     CompoundTag frontierTag = NbtReadHelper.requireCompound(frontiersTagList, i, "frontiers");
-                    needBackup |= frontier.readFromNBT(frontierTag, version, playerReferenceReadContext);
+                    FrontierData.NbtReadResult result = FrontierData.readFromNBT(frontierTag, version, playerReferenceReadContext);
+                    FrontierData frontier = result.frontier();
+                    needBackup |= result.changedDuringLoad();
                     if (!shouldPersist(frontier)) {
                         needBackup = true;
                         continue;

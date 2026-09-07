@@ -2,8 +2,6 @@ package games.alejandrocoria.mapfrontiers.common.identity.nbt;
 
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
-import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.Test;
@@ -94,33 +92,6 @@ class PlayerReferenceNbtCodecTest {
         PlayerReferenceNbtCodec.write(unnamed, PLAYER_ID, ignored -> null);
         assertEquals(UUID_VALUE.toString(), unnamed.getStringOr("UUID", ""));
         assertFalse(unnamed.contains("username"));
-    }
-
-    @Test
-    void legacyReaderCanReadNewWriterOutput() {
-        CompoundTag nbt = new CompoundTag();
-        PlayerReferenceNbtCodec.write(nbt, PLAYER_ID, ignored -> "Alice");
-
-        SettingsUser legacy = new SettingsUser();
-        legacy.readFromNBT(nbt);
-        assertEquals(UUID_VALUE, legacy.uuid);
-        assertEquals("Alice", legacy.username);
-    }
-
-    @Test
-    void legacyAdapterMaterializesAndWritesRepositoryName() {
-        PlayerNameRepository names = new PlayerNameRepository();
-        names.observe(PLAYER_ID, "CurrentName", PlayerNameSource.MINECRAFT_CACHE);
-        CompoundTag nbt = reference(UUID_VALUE.toString(), "OldHint");
-
-        SettingsUser adapter = new SettingsUser();
-        assertFalse(adapter.readFromNBT(nbt, PlayerReferenceNbtReadContext.uuidOnly(names)));
-        assertEquals("CurrentName", adapter.username);
-
-        CompoundTag rewritten = new CompoundTag();
-        adapter.writeToNBT(rewritten, names);
-        assertEquals("CurrentName", rewritten.getStringOr("username", ""));
-        assertEquals(UUID_VALUE.toString(), rewritten.getStringOr("UUID", ""));
     }
 
     private static CompoundTag reference(String uuid, String username) {

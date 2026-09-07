@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
@@ -26,14 +26,13 @@ class RevisionSerializationTest {
         CollectionData collection = collection();
         collection.setCollectionRevision(17L);
         assertEquals(17L, new CollectionData(collection).getCollectionRevision());
-        CollectionData updatedCollection = new CollectionData();
+        CollectionData updatedCollection = new CollectionData(collection.getOwner());
         updatedCollection.updateFromData(collection);
         assertEquals(17L, updatedCollection.getCollectionRevision());
 
         FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
         collection.toBytes(encoded);
-        CollectionData decoded = new CollectionData();
-        decoded.fromBytes(encoded);
+        CollectionData decoded = CollectionData.fromBytes(encoded);
         assertEquals(17L, decoded.getCollectionRevision());
         encoded.release();
 
@@ -41,9 +40,8 @@ class RevisionSerializationTest {
         CompoundTag nbt = new CompoundTag();
         collection.writeToNBT(nbt, ignored -> "owner");
         assertFalse(nbt.contains("collectionRevision"));
-        decoded.setCollectionRevision(99L);
-        decoded.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
-                PlayerReferenceNbtReadContext.uuidOnly(names));
+        decoded = CollectionData.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+                PlayerReferenceNbtReadContext.uuidOnly(names)).collection();
         assertEquals(0L, decoded.getCollectionRevision());
     }
 
@@ -54,14 +52,13 @@ class RevisionSerializationTest {
         frontier.setSharingRevision(23L);
         assertEquals(syncHash, frontier.computeSyncHash());
         assertEquals(23L, new FrontierData(frontier).getSharingRevision());
-        FrontierData updatedFrontier = new FrontierData();
+        FrontierData updatedFrontier = new FrontierData(frontier.getOwner());
         updatedFrontier.updateFromData(frontier);
         assertEquals(23L, updatedFrontier.getSharingRevision());
 
         FriendlyByteBuf encodedFrontier = new FriendlyByteBuf(Unpooled.buffer());
         frontier.toBytes(encodedFrontier);
-        FrontierData decodedFrontier = new FrontierData();
-        decodedFrontier.fromBytes(encodedFrontier);
+        FrontierData decodedFrontier = FrontierData.fromBytes(encodedFrontier);
         assertEquals(23L, decodedFrontier.getSharingRevision());
         encodedFrontier.release();
 
@@ -76,32 +73,26 @@ class RevisionSerializationTest {
         CompoundTag nbt = new CompoundTag();
         frontier.writeToNBT(nbt, ignored -> "owner");
         assertFalse(nbt.contains("sharingRevision"));
-        decodedFrontier.setSharingRevision(99L);
-        decodedFrontier.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
-                PlayerReferenceNbtReadContext.uuidOnly(names));
+        decodedFrontier = FrontierData.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+                PlayerReferenceNbtReadContext.uuidOnly(names)).frontier();
         assertEquals(0L, decodedFrontier.getSharingRevision());
     }
 
     private static CollectionData collection() {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(playerId(1L));
         collection.setId(UUID.randomUUID());
-        collection.setOwner(user("owner", 1L));
         return collection;
     }
 
     private static FrontierData frontier() {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(playerId(2L));
         frontier.setId(UUID.randomUUID());
         frontier.setDimension(ResourceKey.create(Registries.DIMENSION,
                 Identifier.fromNamespaceAndPath("minecraft", "overworld")));
-        frontier.setOwner(user("owner", 2L));
         return frontier;
     }
 
-    private static SettingsUser user(String username, long uuidValue) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = new UUID(0L, uuidValue);
-        return user;
+    private static PlayerId playerId(long uuidValue) {
+        return new PlayerId(new UUID(0L, uuidValue));
     }
 }

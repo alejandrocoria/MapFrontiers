@@ -41,7 +41,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             throw new IllegalStateException("Global collection creation succeeded without returning the created collection");
         }
         MapFrontiers.LOGGER.info("Created global collection via server API. pluginModId={}, collectionId={}, owner={}",
-                pluginModId, storedCollection.getId(), storedCollection.getOwner().username);
+                pluginModId, storedCollection.getId(), storedCollection.getOwner().uuid());
         return ApiConverters.fromCollection(storedCollection);
     }
 
@@ -104,11 +104,11 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
         }
 
-        CollectionData defaults = new CollectionData();
-        CollectionData collection = new CollectionData();
+        var collectionOwner = ApiConverters.toPlayerId(owner);
+        CollectionData defaults = new CollectionData(collectionOwner);
+        CollectionData collection = new CollectionData(collectionOwner);
         collection.setId(UUID.randomUUID());
         collection.setPersonal(false);
-        collection.setOwner(ApiConverters.toUser(owner));
         collection.setSourcePluginId(pluginModId);
         collection.setName(request.name().orElse(defaults.getName()));
         collection.setColor(request.color().orElseGet(ColorHelper::getRandomColor));

@@ -2,13 +2,13 @@ package games.alejandrocoria.mapfrontiers.client.territory;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
@@ -26,8 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ClientTerritoryOperationServiceTest {
     @Test
     void sessionOnlyOperationsNeverUseAuthoritativeFlow() {
-        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.SESSION_ONLY);
-        CollectionData collection = personalEntity(new CollectionData(), TerritoryLifetime.SESSION_ONLY);
+        FrontierData frontier = personalEntity(new FrontierData(user(10L)), TerritoryLifetime.SESSION_ONLY);
+        CollectionData collection = personalEntity(new CollectionData(user(10L)), TerritoryLifetime.SESSION_ONLY);
 
         assertFalse(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.SESSION_ONLY, false));
         assertFalse(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.SESSION_ONLY, true));
@@ -39,8 +39,8 @@ class ClientTerritoryOperationServiceTest {
 
     @Test
     void persistentOperationsUseAuthoritativeFlowOnlyWithServerSupport() {
-        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
-        CollectionData collection = personalEntity(new CollectionData(), TerritoryLifetime.PERSISTENT);
+        FrontierData frontier = personalEntity(new FrontierData(user(10L)), TerritoryLifetime.PERSISTENT);
+        CollectionData collection = personalEntity(new CollectionData(user(10L)), TerritoryLifetime.PERSISTENT);
 
         assertFalse(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.PERSISTENT, false));
         assertTrue(ClientTerritoryOperationService.usesAuthoritativeCreateFlow(TerritoryLifetime.PERSISTENT, true));
@@ -90,7 +90,7 @@ class ClientTerritoryOperationServiceTest {
 
     @Test
     void affectsCollectionVariants_incrementalGeometryChange_changesMembership() {
-        FrontierChange change = FrontierChange.fromMutation(new FrontierData(), FrontierMutation.builder()
+        FrontierChange change = FrontierChange.fromMutation(new FrontierData(user(10L)), FrontierMutation.builder()
                 .insertPathPointAfterLast(new Point2i(16, 16))
                 .build());
 
@@ -100,40 +100,40 @@ class ClientTerritoryOperationServiceTest {
 
     @Test
     void optimisticShareMutatesOnceAndPostsOneEvent() {
-        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
-        SettingsUser currentUser = user("owner", 1L);
-        SettingsUser targetUser = user("target", 2L);
+        FrontierData frontier = personalEntity(new FrontierData(user(10L)), TerritoryLifetime.PERSISTENT);
+        PlayerId currentUser = user(1L);
+        PlayerId targetUser = user(2L);
         frontier.setOwner(currentUser);
         AtomicInteger events = new AtomicInteger();
 
         assertTrue(ClientTerritoryOperationService.applyOptimisticShareLocally(
                 frontier, targetUser, currentUser, events::incrementAndGet));
 
-        assertEquals(1, frontier.getUsersShared().size());
-        assertTrue(frontier.getUserShared(targetUser).isPending());
+        assertEquals(1, frontier.getUserAccesses().size());
+        assertTrue(frontier.getUserAccess(targetUser).isPending());
         assertEquals(1, events.get());
         assertFalse(ClientTerritoryOperationService.applyOptimisticShareLocally(
                 frontier, targetUser, currentUser, events::incrementAndGet));
-        assertEquals(1, frontier.getUsersShared().size());
+        assertEquals(1, frontier.getUserAccesses().size());
         assertEquals(1, events.get());
     }
 
     @Test
     void optimisticSharedUserUpdateMutatesOnceAndPostsOneEvent() {
-        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
-        SettingsUser currentUser = user("owner", 3L);
-        SettingsUser targetUser = user("target", 4L);
+        FrontierData frontier = personalEntity(new FrontierData(user(10L)), TerritoryLifetime.PERSISTENT);
+        PlayerId currentUser = user(3L);
+        PlayerId targetUser = user(4L);
         frontier.setOwner(currentUser);
-        frontier.addUserShared(new SettingsUserShared(targetUser, false));
-        SettingsUserShared desiredUser = new SettingsUserShared(frontier.getUserShared(targetUser));
-        desiredUser.setActions(EnumSet.of(SettingsUserShared.Action.UpdateSettings));
+        frontier.addUserAccess(new FrontierUserAccess(targetUser, false));
+        FrontierUserAccess desiredUser = new FrontierUserAccess(frontier.getUserAccess(targetUser));
+        desiredUser.setActions(EnumSet.of(FrontierUserAccess.Action.UpdateSettings));
         AtomicInteger events = new AtomicInteger();
 
         assertTrue(ClientTerritoryOperationService.applyOptimisticSharedUserUpdateLocally(
                 frontier, desiredUser, currentUser, events::incrementAndGet));
 
-        assertTrue(frontier.getUserShared(targetUser).hasAction(SettingsUserShared.Action.UpdateSettings));
-        assertEquals(1, frontier.getUsersShared().size());
+        assertTrue(frontier.getUserAccess(targetUser).hasAction(FrontierUserAccess.Action.UpdateSettings));
+        assertEquals(1, frontier.getUserAccesses().size());
         assertEquals(1, events.get());
         assertFalse(ClientTerritoryOperationService.applyOptimisticSharedUserUpdateLocally(
                 frontier, desiredUser, currentUser, events::incrementAndGet));
@@ -142,17 +142,17 @@ class ClientTerritoryOperationServiceTest {
 
     @Test
     void optimisticSharedUserRemovalMutatesOnceAndPostsOneEvent() {
-        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
-        SettingsUser currentUser = user("owner", 5L);
-        SettingsUser targetUser = user("target", 6L);
+        FrontierData frontier = personalEntity(new FrontierData(user(10L)), TerritoryLifetime.PERSISTENT);
+        PlayerId currentUser = user(5L);
+        PlayerId targetUser = user(6L);
         frontier.setOwner(currentUser);
-        frontier.addUserShared(new SettingsUserShared(targetUser, false));
+        frontier.addUserAccess(new FrontierUserAccess(targetUser, false));
         AtomicInteger events = new AtomicInteger();
 
         assertTrue(ClientTerritoryOperationService.applyOptimisticRemoveSharedUserLocally(
                 frontier, targetUser, currentUser, events::incrementAndGet));
 
-        assertFalse(frontier.hasUserShared(targetUser));
+        assertFalse(frontier.hasUserAccess(targetUser));
         assertEquals(1, events.get());
         assertFalse(ClientTerritoryOperationService.applyOptimisticRemoveSharedUserLocally(
                 frontier, targetUser, currentUser, events::incrementAndGet));
@@ -171,10 +171,7 @@ class ClientTerritoryOperationServiceTest {
         return collection;
     }
 
-    private static SettingsUser user(String username, long uuidValue) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = new UUID(0L, uuidValue);
-        return user;
+    private static PlayerId user(long uuidValue) {
+        return new PlayerId(new UUID(0L, uuidValue));
     }
 }

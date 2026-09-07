@@ -131,7 +131,7 @@ public class ClientTerritorySyncService {
         }
 
         for (FrontierOverlay frontier : localOnlyOwnedFrontiers) {
-            frontier.removeAllUserShared();
+            frontier.removeAllUserAccesses();
             PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
         }
         replaceCollectionRuntimeFrontierIndexes();

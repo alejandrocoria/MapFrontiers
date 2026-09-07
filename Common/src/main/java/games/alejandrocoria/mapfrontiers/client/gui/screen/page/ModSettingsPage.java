@@ -34,6 +34,7 @@ import games.alejandrocoria.mapfrontiers.client.settings.PendingOptimisticSettin
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
@@ -615,7 +616,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void deleteUser(SettingsGroup group, ScrollElement element) {
         users.removeElement(element);
-        group.removeUser(((UserElement) element).getUser());
+        group.removeUser(((UserElement) element).getUser().toPlayerId());
         submitOptimisticSettingsUpdate();
     }
 
@@ -1063,12 +1064,17 @@ public class ModSettingsPage extends PageScreen {
             }
         }
 
-        if (group.hasUser(user)) {
+        if (user.uuid == null) {
+            textNewUser.setError(Component.translatable("mapfrontiers.new_user_shared_error_user_not_found"));
+            return;
+        }
+
+        if (group.hasUser(user.toPlayerId())) {
             textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_user_repeated"));
             return;
         }
 
-        group.addUser(user);
+        group.addUser(user.toPlayerId());
         UserElement element = new UserElement(font, user);
         users.addElement(element);
         users.scrollBottom();
@@ -1202,8 +1208,8 @@ public class ModSettingsPage extends PageScreen {
         users.removeAll();
         GroupElement element = (GroupElement) groups.getSelectedElement();
         if (element != null && !element.getGroup().isSpecial()) {
-            for (SettingsUser user : element.getGroup().getUsers()) {
-                users.addElement(new UserElement(font, user));
+            for (PlayerId user : element.getGroup().getUsers()) {
+                users.addElement(new UserElement(font, new SettingsUser(user)));
             }
         }
 

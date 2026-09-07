@@ -2,9 +2,11 @@ package games.alejandrocoria.mapfrontiers.common.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtCodec;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CopiedFromInfo;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
@@ -27,7 +29,7 @@ public class CollectionData {
     protected UUID id;
     protected boolean personal;
     protected TerritoryLifetime lifetime = TerritoryLifetime.PERSISTENT;
-    protected SettingsUser owner = new SettingsUser();
+    protected PlayerId owner;
     protected String name = "";
     protected int color = ColorConstants.WHITE;
     protected CollectionVisibilityData visibilityData = new CollectionVisibilityData();
@@ -38,8 +40,15 @@ public class CollectionData {
     protected @Nullable Date modified;
     private long collectionRevision;
 
-    public CollectionData() {
+    public record NbtReadResult(CollectionData collection, boolean changedDuringLoad) {
+        public NbtReadResult {
+            Objects.requireNonNull(collection, "collection");
+        }
+    }
+
+    public CollectionData(PlayerId owner) {
         id = new UUID(0, 0);
+        this.owner = Objects.requireNonNull(owner, "owner");
     }
 
     public CollectionData(CollectionData other) {
@@ -82,89 +91,58 @@ public class CollectionData {
         validateTypeAndLifetime(personal, lifetime);
     }
 
-    public boolean readFromNBT(CompoundTag nbt, int version) {
-        return readFromNBTInternal(nbt, version, null);
-    }
-
-    public boolean readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
-        return readFromNBTInternal(nbt, version, context);
-    }
-
-    private boolean readFromNBTInternal(CompoundTag nbt, int version,
-                                        @Nullable PlayerReferenceNbtReadContext context) {
-        boolean changedDuringLoad = false;
-        collectionRevision = 0L;
-        id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
-        personal = nbt.getBooleanOr("personal", true);
-        lifetime = readLifetimeFromNbt(nbt);
+    public static NbtReadResult readFromNBT(CompoundTag nbt, int version,
+                                            PlayerReferenceNbtReadContext context) {
+        PlayerReferenceNbtCodec.ReadResult ownerResult = PlayerReferenceNbtCodec.read(
+                nbt.getCompoundOrEmpty("owner"), context);
+        CollectionData collection = new CollectionData(ownerResult.playerId());
+        boolean changedDuringLoad = ownerResult.repaired();
+        collection.collectionRevision = 0L;
+        collection.id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
+        collection.personal = nbt.getBooleanOr("personal", true);
+        collection.lifetime = readLifetimeFromNbt(nbt);
         try {
-            validateTypeAndLifetime(personal, lifetime);
+            validateTypeAndLifetime(collection.personal, collection.lifetime);
         } catch (IllegalArgumentException e) {
-            throw new InvalidNbtFormatException("Invalid lifetime for collection " + id + ": " + e.getMessage(), e);
+            throw new InvalidNbtFormatException("Invalid lifetime for collection " + collection.id + ": " + e.getMessage(), e);
         }
-        owner = new SettingsUser();
-        CompoundTag ownerTag = nbt.getCompoundOrEmpty("owner");
-        if (context == null) {
-            owner.readFromNBT(ownerTag);
-        } else {
-            changedDuringLoad |= owner.readFromNBT(ownerTag, context);
-        }
-        name = nbt.getStringOr("name", "");
-        color = NbtReadHelper.requireInt(nbt, "color");
-        visibilityData = new CollectionVisibilityData();
-        visibilityData.readFromNBT(nbt.getCompoundOrEmpty("visibility"));
+        collection.name = nbt.getStringOr("name", "");
+        collection.color = NbtReadHelper.requireInt(nbt, "color");
+        collection.visibilityData = new CollectionVisibilityData();
+        collection.visibilityData.readFromNBT(nbt.getCompoundOrEmpty("visibility"));
         if (nbt.contains("banner")) {
-            banner = new BannerData();
-            changedDuringLoad |= banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
+            collection.banner = new BannerData();
+            changedDuringLoad |= collection.banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
         } else {
-            banner = null;
+            collection.banner = null;
         }
-        setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
+        collection.setSourcePluginId(nbt.getStringOr("sourcePluginId", null));
 
         if (nbt.contains("copiedFrom")) {
-            copiedFrom = new CopiedFromInfo();
             CompoundTag copiedFromTag = NbtReadHelper.requireCompound(nbt, "copiedFrom");
-            if (context == null) {
-                copiedFrom.readFromNBT(copiedFromTag, version);
-            } else {
-                try {
-                    changedDuringLoad |= copiedFrom.readFromNBT(copiedFromTag, version, context);
-                } catch (InvalidNbtFormatException e) {
-                    if (copiedFrom.getId() == null) {
-                        throw e;
-                    }
-                    MapFrontiers.LOGGER.warn("Ignoring invalid copied-from user for collection {}: {}", id, e.getMessage());
-                    changedDuringLoad = true;
-                }
-            }
+            CopiedFromInfo.NbtReadResult copiedResult = CopiedFromInfo.readFromNBT(copiedFromTag, context);
+            collection.copiedFrom = copiedResult.copiedFrom();
+            changedDuringLoad |= copiedResult.changedDuringLoad();
         } else {
-            copiedFrom = null;
+            collection.copiedFrom = null;
         }
 
         if (nbt.contains("created")) {
-            created = new Date(NbtReadHelper.requireLong(nbt, "created"));
+            collection.created = new Date(NbtReadHelper.requireLong(nbt, "created"));
         } else {
-            created = null;
+            collection.created = null;
         }
 
         if (nbt.contains("modified")) {
-            modified = new Date(NbtReadHelper.requireLong(nbt, "modified"));
+            collection.modified = new Date(NbtReadHelper.requireLong(nbt, "modified"));
         } else {
-            modified = null;
+            collection.modified = null;
         }
 
-        return changedDuringLoad;
-    }
-
-    public void writeToNBT(CompoundTag nbt) {
-        writeToNBTInternal(nbt, null);
+        return new NbtReadResult(collection, changedDuringLoad);
     }
 
     public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
-        writeToNBTInternal(nbt, resolver);
-    }
-
-    private void writeToNBTInternal(CompoundTag nbt, @Nullable PlayerNameResolver resolver) {
         assertSerializableLifetime();
 
         nbt.putString("id", id.toString());
@@ -172,11 +150,7 @@ public class CollectionData {
         nbt.putString("lifetime", lifetime.name());
 
         CompoundTag ownerTag = new CompoundTag();
-        if (resolver == null) {
-            owner.writeToNBT(ownerTag);
-        } else {
-            owner.writeToNBT(ownerTag, resolver);
-        }
+        PlayerReferenceNbtCodec.write(ownerTag, owner, resolver);
         nbt.put("owner", ownerTag);
 
         nbt.putString("name", name);
@@ -195,11 +169,7 @@ public class CollectionData {
 
         if (copiedFrom != null) {
             CompoundTag copiedFromTag = new CompoundTag();
-            if (resolver == null) {
-                copiedFrom.writeToNBT(copiedFromTag);
-            } else {
-                copiedFrom.writeToNBT(copiedFromTag, resolver);
-            }
+            copiedFrom.writeToNBT(copiedFromTag, resolver);
             nbt.put("copiedFrom", copiedFromTag);
         }
 
@@ -212,44 +182,46 @@ public class CollectionData {
         }
     }
 
-    public void fromBytes(FriendlyByteBuf buf) {
-        id = UUIDHelper.fromBytes(buf);
-        personal = buf.readBoolean();
-        lifetime = readLifetimeFromBytes(buf);
+    public static CollectionData fromBytes(FriendlyByteBuf buf) {
+        UUID id = UUIDHelper.fromBytes(buf);
+        boolean personal = buf.readBoolean();
+        TerritoryLifetime lifetime = readLifetimeFromBytes(buf);
         validateTypeAndLifetime(personal, lifetime);
-        owner = new SettingsUser();
-        owner.fromBytes(buf);
-        name = buf.readUtf(MAX_NAME_CHARACTERS);
-        color = buf.readInt();
-        visibilityData = new CollectionVisibilityData();
-        visibilityData.fromBytes(buf);
+        CollectionData collection = new CollectionData(PlayerIdNetworkCodec.read(buf));
+        collection.id = id;
+        collection.personal = personal;
+        collection.lifetime = lifetime;
+        collection.name = buf.readUtf(MAX_NAME_CHARACTERS);
+        collection.color = buf.readInt();
+        collection.visibilityData = new CollectionVisibilityData();
+        collection.visibilityData.fromBytes(buf);
         if (buf.readBoolean()) {
-            banner = new BannerData();
-            banner.fromBytes(buf);
+            collection.banner = new BannerData();
+            collection.banner.fromBytes(buf);
         } else {
-            banner = null;
+            collection.banner = null;
         }
-        setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
+        collection.setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
 
         if (buf.readBoolean()) {
-            copiedFrom = new CopiedFromInfo();
-            copiedFrom.fromBytes(buf);
+            collection.copiedFrom = CopiedFromInfo.fromBytes(buf);
         } else {
-            copiedFrom = null;
-        }
-
-        if (buf.readBoolean()) {
-            created = new Date(buf.readLong());
-        } else {
-            created = null;
+            collection.copiedFrom = null;
         }
 
         if (buf.readBoolean()) {
-            modified = new Date(buf.readLong());
+            collection.created = new Date(buf.readLong());
         } else {
-            modified = null;
+            collection.created = null;
         }
-        collectionRevision = buf.readLong();
+
+        if (buf.readBoolean()) {
+            collection.modified = new Date(buf.readLong());
+        } else {
+            collection.modified = null;
+        }
+        collection.collectionRevision = buf.readLong();
+        return collection;
     }
 
     public void toBytes(FriendlyByteBuf buf) {
@@ -258,7 +230,7 @@ public class CollectionData {
         UUIDHelper.toBytes(buf, id);
         buf.writeBoolean(personal);
         buf.writeInt(lifetime.ordinal());
-        owner.toBytes(buf);
+        PlayerIdNetworkCodec.write(buf, owner);
         buf.writeUtf(name, MAX_NAME_CHARACTERS);
         buf.writeInt(color);
         visibilityData.toBytes(buf);
@@ -333,12 +305,12 @@ public class CollectionData {
         return lifetime == TerritoryLifetime.SESSION_ONLY;
     }
 
-    public SettingsUser getOwner() {
+    public PlayerId getOwner() {
         return owner;
     }
 
-    public void setOwner(SettingsUser owner) {
-        this.owner = owner;
+    public void setOwner(PlayerId owner) {
+        this.owner = Objects.requireNonNull(owner, "owner");
     }
 
     public String getName() {
@@ -435,7 +407,7 @@ public class CollectionData {
         return id.equals(other.id)
                 && personal == other.personal
                 && lifetime == other.lifetime
-                && usersHaveSameState(owner, other.owner)
+                && owner.equals(other.owner)
                 && hasSameEditableState(other)
                 && Objects.equals(sourcePluginId, other.sourcePluginId)
                 && copiedFromHasSameState(other)
@@ -452,13 +424,6 @@ public class CollectionData {
         copiedFrom = null;
     }
 
-    public void setCopiedFromId(UUID id) {
-        if (copiedFrom == null) {
-            copiedFrom = new CopiedFromInfo();
-        }
-        copiedFrom.setId(id);
-    }
-
     public UUID getCopiedFromId() {
         if (copiedFrom == null) {
             return id;
@@ -466,14 +431,11 @@ public class CollectionData {
         return copiedFrom.getId();
     }
 
-    public void setCopiedFromUser(SettingsUser user) {
-        if (copiedFrom == null) {
-            copiedFrom = new CopiedFromInfo();
-        }
-        copiedFrom.setUser(user);
+    public void setCopiedFrom(UUID id, @Nullable PlayerId user) {
+        copiedFrom = new CopiedFromInfo(id, user);
     }
 
-    public SettingsUser getCopiedFromUser() {
+    public @Nullable PlayerId getCopiedFromUser() {
         if (copiedFrom == null) {
             return owner;
         }
@@ -485,11 +447,7 @@ public class CollectionData {
             return false;
         }
         return !wasCopied() || getCopiedFromId().equals(other.getCopiedFromId())
-                && usersHaveSameState(getCopiedFromUser(), other.getCopiedFromUser());
-    }
-
-    private static boolean usersHaveSameState(SettingsUser first, SettingsUser second) {
-        return Objects.equals(first.username, second.username) && Objects.equals(first.uuid, second.uuid);
+                && Objects.equals(getCopiedFromUser(), other.getCopiedFromUser());
     }
 
     private static void validateTypeAndLifetime(boolean personal, TerritoryLifetime lifetime) {

@@ -25,6 +25,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontie
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
@@ -41,7 +42,6 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -52,6 +52,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreat
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -208,7 +209,7 @@ public class ClientTerritoryOperationService {
             return;
         }
 
-        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new SettingsUser(mc.player))) {
+        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new PlayerId(mc.player.getUUID()))) {
             return;
         }
 
@@ -242,7 +243,7 @@ public class ClientTerritoryOperationService {
             return stagedResult;
         }
 
-        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new SettingsUser(mc.player))) {
+        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new PlayerId(mc.player.getUUID()))) {
             return FrontierChangeApplicationResult.rejected("Local frontier is not owned by the current player");
         }
 
@@ -298,7 +299,7 @@ public class ClientTerritoryOperationService {
             return FrontierChangeApplicationResult.applied(frontier, effectiveChange);
         }
 
-        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new SettingsUser(mc.player))) {
+        if (!frontier.getPersonal() || mc.player == null || !frontier.getOwner().equals(new PlayerId(mc.player.getUUID()))) {
             return FrontierChangeApplicationResult.rejected("Local frontier is not owned by the current player");
         }
 
@@ -320,9 +321,10 @@ public class ClientTerritoryOperationService {
             return false;
         }
 
-        SettingsUser currentUser = new SettingsUser(mc.player);
-        SettingsUserShared desiredUserShared = new SettingsUserShared(new SettingsUser(targetUser), true);
-        if (!applyOptimisticShareLocally(frontier, targetUser, currentUser,
+        PlayerId currentUser = new PlayerId(mc.player.getUUID());
+        PlayerId targetId = targetUser.toPlayerId();
+        FrontierUserAccess desiredUserShared = new FrontierUserAccess(targetId, true);
+        if (!applyOptimisticShareLocally(frontier, targetId, currentUser,
                 () -> postOptimisticSharingUpdated(frontier))) {
             return false;
         }
@@ -600,7 +602,7 @@ public class ClientTerritoryOperationService {
             return context.failure;
         }
 
-        SettingsUserShared currentSharedUser = context.frontier.getUserShared(ApiConverters.toUser(user));
+        FrontierUserAccess currentSharedUser = context.frontier.getUserAccess(ApiConverters.toPlayerId(user));
         if (currentSharedUser == null) {
             MapFrontiers.LOGGER.debug("Rejected {} because target user is not currently shared. pluginModId={}, frontierId={}, targetUser={}",
                     operationName, pluginModId, frontierId.value(), user.name());
@@ -608,7 +610,7 @@ public class ClientTerritoryOperationService {
         }
 
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
-        for (SettingsUserShared.Action action : currentSharedUser.getActions()) {
+        for (FrontierUserAccess.Action action : currentSharedUser.getActions()) {
             permissions.add(ApiConverters.toFrontierSharePermission(action));
         }
         if (permissionsToAdd != null) {
@@ -640,13 +642,13 @@ public class ClientTerritoryOperationService {
             return false;
         }
 
-        if (!applyOptimisticRemoveSharedUserLocally(frontier, targetUser, new SettingsUser(mc.player),
+        if (!applyOptimisticRemoveSharedUserLocally(frontier, targetUser.toPlayerId(), new PlayerId(mc.player.getUUID()),
                 () -> postOptimisticSharingUpdated(frontier))) {
             return false;
         }
 
         PendingOptimisticSharingUpdates.Outbound outbound = pendingOptimisticSharingUpdates.submit(frontierId,
-                PendingOptimisticSharingUpdates.Intent.remove(targetUser), frontier.getSharingRevision(),
+                PendingOptimisticSharingUpdates.Intent.remove(targetUser.toPlayerId()), frontier.getSharingRevision(),
                 MapFrontiersClient::nextRequestId);
         if (outbound != null) {
             sendSharingUpdate(outbound);
@@ -654,13 +656,13 @@ public class ClientTerritoryOperationService {
         return true;
     }
 
-    public boolean submitOptimisticUpdateSharedUser(UUID frontierId, SettingsUserShared desiredUserShared) {
+    public boolean submitOptimisticUpdateSharedUser(UUID frontierId, FrontierUserAccess desiredUserShared) {
         FrontierOverlay frontier = resolveOptimisticSharingFrontier(frontierId);
         if (frontier == null || mc.player == null) {
             return false;
         }
 
-        if (!applyOptimisticSharedUserUpdateLocally(frontier, desiredUserShared, new SettingsUser(mc.player),
+        if (!applyOptimisticSharedUserUpdateLocally(frontier, desiredUserShared, new PlayerId(mc.player.getUUID()),
                 () -> postOptimisticSharingUpdated(frontier))) {
             return false;
         }
@@ -675,12 +677,12 @@ public class ClientTerritoryOperationService {
     }
 
     private void sendSharingUpdate(PendingOptimisticSharingUpdates.Outbound outbound) {
-        SettingsUserShared userShared = outbound.intent().userShared();
+        FrontierUserAccess userShared = outbound.intent().userShared();
         switch (outbound.intent().type()) {
             case Add -> PacketHandler.sendToServer(new PacketSharePersonalFrontier(outbound.frontierId(), userShared,
                     outbound.baseRevision(), outbound.requestId()));
             case Remove -> PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(outbound.frontierId(),
-                    userShared.getUser(), outbound.baseRevision(), outbound.requestId()));
+                    new SettingsUser(userShared.getPlayerId()), outbound.baseRevision(), outbound.requestId()));
             case Update -> PacketHandler.sendToServer(new PacketUpdateSharedUserPersonalFrontier(outbound.frontierId(),
                     userShared, outbound.baseRevision(), outbound.requestId()));
         }
@@ -917,7 +919,7 @@ public class ClientTerritoryOperationService {
         pendingOptimisticFrontierUpdates.clear(frontierId);
         pendingOptimisticSharingUpdates.clear(frontierId);
         applyFrontierScopeChange(personalManager, globalManager, frontierId, modified, false, frontierOverlay -> {
-            frontierOverlay.removeAllUserShared();
+            frontierOverlay.removeAllUserAccesses();
             frontierOverlay.recreateBannerRenderer();
         });
     }
@@ -934,7 +936,7 @@ public class ClientTerritoryOperationService {
     public void applyCollectionCreated(CollectionData collection) {
         pendingOptimisticCollectionUpdates.clear(collection.getId());
         collectionRuntime.onCollectionUpserted(collection);
-        if (mc.player == null || !collection.getOwner().equals(new SettingsUser(mc.player))) {
+        if (mc.player == null || !collection.getOwner().equals(new PlayerId(mc.player.getUUID()))) {
             collectionIdsWithPendingCreatedMembershipSync.add(collection.getId());
         }
         if (collection.getPersonal()) {
@@ -1038,7 +1040,7 @@ public class ClientTerritoryOperationService {
     private void createLocalCollection(CollectionData collection) {
         CollectionData createdCollection = new CollectionData(collection);
         Date now = new Date();
-        createdCollection.setOwner(new SettingsUser(mc.player));
+        createdCollection.setOwner(new PlayerId(mc.player.getUUID()));
         createdCollection.setCreated(now);
         createdCollection.setModified(now);
         collectionRuntime.onCollectionUpserted(createdCollection);
@@ -1050,7 +1052,7 @@ public class ClientTerritoryOperationService {
 
     private void updateLocalCollection(CollectionData collection) {
         CollectionData updatedCollection = new CollectionData(collection);
-        updatedCollection.setOwner(new SettingsUser(mc.player));
+        updatedCollection.setOwner(new PlayerId(mc.player.getUUID()));
         updatedCollection.setModified(new Date());
         collectionRuntime.onCollectionUpserted(updatedCollection);
         if (updatedCollection.isPersistent()) {
@@ -1184,14 +1186,14 @@ public class ClientTerritoryOperationService {
                                                 String pluginModId,
                                                 TerritoryLifetime lifetime,
                                                 CollectionCreateRequest request) {
+        PlayerId owner = new PlayerId(mc.player.getUUID());
         CollectionData defaults = request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED
-                ? ClientConfig.createConfiguredCollectionDefaults()
-                : ClientConfig.createBuiltinCollectionDefaults();
+                ? ClientConfig.createConfiguredCollectionDefaults(owner)
+                : ClientConfig.createBuiltinCollectionDefaults(owner);
         CollectionData collection = new CollectionData(defaults);
         collection.setId(UUID.randomUUID());
         collection.setPersonal(personal);
         collection.setLifetime(lifetime);
-        collection.setOwner(new SettingsUser(mc.player));
         collection.setSourcePluginId(pluginModId);
         collection.removeCopiedFromInfo();
         request.name().ifPresent(collection::setName);
@@ -1221,10 +1223,10 @@ public class ClientTerritoryOperationService {
             case CHUNK -> FrontierShape.Chunk;
             case PATH -> FrontierShape.Path;
         };
+        PlayerId owner = new PlayerId(mc.player.getUUID());
         FrontierData defaults = request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED
-                ? ClientConfig.createConfiguredFrontierDefaults(frontierShape)
-                : ClientConfig.createBuiltinFrontierDefaults(frontierShape);
-        SettingsUser owner = new SettingsUser(mc.player);
+                ? ClientConfig.createConfiguredFrontierDefaults(frontierShape, owner)
+                : ClientConfig.createBuiltinFrontierDefaults(frontierShape, owner);
         UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
         UUID validatedCollectionId = resolveValidLocalCollectionId(personal, lifetime, owner, collectionId);
         if (collectionId != null && validatedCollectionId == null) {
@@ -1267,7 +1269,7 @@ public class ClientTerritoryOperationService {
 
     private @Nullable UUID resolveValidLocalCollectionId(boolean personal,
                                                          TerritoryLifetime lifetime,
-                                                         SettingsUser owner,
+                                                         PlayerId owner,
                                                          @Nullable UUID collectionId) {
         if (collectionId == null) {
             return null;
@@ -1288,7 +1290,7 @@ public class ClientTerritoryOperationService {
 
     private boolean isValidLocalCollectionAssignment(boolean personal,
                                                      TerritoryLifetime lifetime,
-                                                     SettingsUser owner,
+                                                     PlayerId owner,
                                                      @Nullable UUID collectionId) {
         return collectionId == null || resolveValidLocalCollectionId(personal, lifetime, owner, collectionId) != null;
     }
@@ -1353,7 +1355,7 @@ public class ClientTerritoryOperationService {
             return false;
         }
 
-        return collection.getPersonal() && collection.getOwner().equals(new SettingsUser(mc.player));
+        return collection.getPersonal() && collection.getOwner().equals(new PlayerId(mc.player.getUUID()));
     }
 
     private static boolean usesAuthoritativeMutationFlow(FrontierData frontier) {
@@ -1364,40 +1366,40 @@ public class ClientTerritoryOperationService {
         return frontier.isPersistent() && modOnServer;
     }
 
-    static boolean applyOptimisticShareLocally(FrontierData frontier, SettingsUser targetUser,
-                                               SettingsUser currentUser, Runnable postUpdated) {
-        if (targetUser.isEmpty() || targetUser.equals(currentUser) || targetUser.equals(frontier.getOwner())
-                || frontier.hasUserShared(targetUser)) {
+    static boolean applyOptimisticShareLocally(FrontierData frontier, PlayerId targetUser,
+                                               PlayerId currentUser, Runnable postUpdated) {
+        if (targetUser.equals(currentUser) || targetUser.equals(frontier.getOwner())
+                || frontier.hasUserAccess(targetUser)) {
             return false;
         }
 
-        frontier.addUserShared(new SettingsUserShared(new SettingsUser(targetUser), true));
+        frontier.addUserAccess(new FrontierUserAccess(targetUser, true));
         postUpdated.run();
         return true;
     }
 
-    static boolean applyOptimisticRemoveSharedUserLocally(FrontierData frontier, SettingsUser targetUser,
-                                                          SettingsUser currentUser, Runnable postUpdated) {
-        if (targetUser.equals(currentUser) || !frontier.hasUserShared(targetUser)) {
+    static boolean applyOptimisticRemoveSharedUserLocally(FrontierData frontier, PlayerId targetUser,
+                                                          PlayerId currentUser, Runnable postUpdated) {
+        if (targetUser.equals(currentUser) || !frontier.hasUserAccess(targetUser)) {
             return false;
         }
 
-        frontier.removeUserShared(targetUser);
+        frontier.removeUserAccess(targetUser);
         postUpdated.run();
         return true;
     }
 
     static boolean applyOptimisticSharedUserUpdateLocally(FrontierData frontier,
-                                                          SettingsUserShared desiredUserShared,
-                                                          SettingsUser currentUser,
+                                                          FrontierUserAccess desiredUserShared,
+                                                          PlayerId currentUser,
                                                           Runnable postUpdated) {
-        SettingsUserShared currentSharedUser = frontier.getUserShared(desiredUserShared.getUser());
+        FrontierUserAccess currentSharedUser = frontier.getUserAccess(desiredUserShared.getPlayerId());
         if (currentSharedUser == null || currentSharedUser.getActions().equals(desiredUserShared.getActions())) {
             return false;
         }
 
         currentSharedUser.setActions(desiredUserShared.getActions());
-        if (currentSharedUser.getUser().equals(currentUser)) {
+        if (currentSharedUser.getPlayerId().equals(currentUser)) {
             frontier.setModified(new Date());
         }
         postUpdated.run();
@@ -1438,10 +1440,10 @@ public class ClientTerritoryOperationService {
             return null;
         }
 
-        SettingsUser currentUser = new SettingsUser(mc.player);
+        PlayerId currentUser = new PlayerId(mc.player.getUUID());
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(
                 MapFrontiersClient.getSettingsProfile(), frontier, currentUser);
-        if (!actions.canShare || !frontier.checkActionUserShared(currentUser, SettingsUserShared.Action.UpdateSettings)) {
+        if (!actions.canShare || !frontier.checkUserAccess(currentUser, FrontierUserAccess.Action.UpdateSettings)) {
             return null;
         }
 
@@ -1466,9 +1468,9 @@ public class ClientTerritoryOperationService {
         return FrontierActionResult.rejected();
     }
 
-    private static SettingsUserShared createSharedUser(UserRef user, @Nullable Set<FrontierSharePermission> permissions) {
-        SettingsUserShared sharedUser = new SettingsUserShared(ApiConverters.toUser(user), false);
-        EnumSet<SettingsUserShared.Action> actions = EnumSet.noneOf(SettingsUserShared.Action.class);
+    private static FrontierUserAccess createSharedUser(UserRef user, @Nullable Set<FrontierSharePermission> permissions) {
+        FrontierUserAccess sharedUser = new FrontierUserAccess(ApiConverters.toPlayerId(user), false);
+        EnumSet<FrontierUserAccess.Action> actions = EnumSet.noneOf(FrontierUserAccess.Action.class);
         if (permissions != null) {
             for (FrontierSharePermission permission : permissions) {
                 actions.add(ApiConverters.toSharedUserAction(permission));

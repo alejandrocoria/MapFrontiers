@@ -21,8 +21,8 @@ import games.alejandrocoria.mapfrontiers.api.model.PathStyle;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -30,6 +30,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierMutationApplier;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.ListTag;
@@ -110,13 +111,13 @@ public final class ApiConverters {
         return FrontierMutationApplier.toPathStyle(pathStyle);
     }
 
-    public static SharedUserAccess fromSharedUser(SettingsUserShared userShared) {
+    public static SharedUserAccess fromSharedUser(FrontierUserAccess userShared) {
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
-        for (SettingsUserShared.Action action : userShared.getActions()) {
+        for (FrontierUserAccess.Action action : userShared.getActions()) {
             permissions.add(toFrontierSharePermission(action));
         }
 
-        return new SharedUserAccess(fromUser(userShared.getUser()), permissions, userShared.isPending());
+        return new SharedUserAccess(fromUser(userShared.getPlayerId()), permissions, userShared.isPending());
     }
 
     public static CollectionVisibilitySettings fromCollectionVisibility(CollectionVisibilityData visibilityData) {
@@ -156,11 +157,11 @@ public final class ApiConverters {
     }
 
     public static CollectionVisibilityData defaultCollectionVisibility() {
-        return new CollectionData().getVisibilityData();
+        return new CollectionVisibilityData();
     }
 
     public static BannerData defaultCollectionBanner() {
-        return new CollectionData().getBannerData();
+        return null;
     }
 
     private static void addCollectionVisibilityFlags(CollectionVisibilityData visibilityData,
@@ -190,8 +191,8 @@ public final class ApiConverters {
     public static FrontierDataView fromFrontier(FrontierData frontier) {
         UserRef owner = fromUser(frontier.getOwner());
         List<SharedUserAccess> sharedUsers = new ArrayList<>();
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+        if (frontier.getUserAccesses() != null) {
+            for (FrontierUserAccess userShared : frontier.getUserAccesses()) {
                 sharedUsers.add(fromSharedUser(userShared));
             }
         }
@@ -234,6 +235,10 @@ public final class ApiConverters {
         return new UserRef(user.uuid, user.username);
     }
 
+    public static UserRef fromUser(PlayerId user) {
+        return new UserRef(user.uuid(), null);
+    }
+
     public static SettingsUser toUser(UserRef user) {
         SettingsUser result = new SettingsUser();
         result.uuid = user.id();
@@ -241,17 +246,24 @@ public final class ApiConverters {
         return result;
     }
 
-    public static FrontierSharePermission toFrontierSharePermission(SettingsUserShared.Action action) {
+    public static PlayerId toPlayerId(UserRef user) {
+        if (user.id() == null) {
+            throw new IllegalArgumentException("A UUID is required for player identity.");
+        }
+        return new PlayerId(user.id());
+    }
+
+    public static FrontierSharePermission toFrontierSharePermission(FrontierUserAccess.Action action) {
         return switch (action) {
             case UpdateFrontier -> FrontierSharePermission.UpdateFrontier;
             case UpdateSettings -> FrontierSharePermission.UpdateSettings;
         };
     }
 
-    public static SettingsUserShared.Action toSharedUserAction(FrontierSharePermission permission) {
+    public static FrontierUserAccess.Action toSharedUserAction(FrontierSharePermission permission) {
         return switch (permission) {
-            case UpdateFrontier -> SettingsUserShared.Action.UpdateFrontier;
-            case UpdateSettings -> SettingsUserShared.Action.UpdateSettings;
+            case UpdateFrontier -> FrontierUserAccess.Action.UpdateFrontier;
+            case UpdateSettings -> FrontierUserAccess.Action.UpdateSettings;
         };
     }
 

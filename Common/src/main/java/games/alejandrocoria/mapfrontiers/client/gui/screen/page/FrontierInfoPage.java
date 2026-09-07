@@ -1028,7 +1028,7 @@ public class FrontierInfoPage extends PageScreen {
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser.toPlayerId());
         canUpdateFrontierInfo = actions.canUpdate;
 
         textName1.setEditable(actions.canUpdate);
@@ -1153,7 +1153,7 @@ public class FrontierInfoPage extends PageScreen {
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser.toPlayerId());
 
         if (actions.canUpdate) {
             long currentSyncHash = frontier.computeSyncHash();
@@ -1172,7 +1172,7 @@ public class FrontierInfoPage extends PageScreen {
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser.toPlayerId());
         return actions.canUpdate;
     }
 

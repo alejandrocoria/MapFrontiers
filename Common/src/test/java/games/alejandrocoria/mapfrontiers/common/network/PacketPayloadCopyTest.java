@@ -1,9 +1,10 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import io.netty.buffer.Unpooled;
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,14 +22,13 @@ class PacketPayloadCopyTest {
         FrontierSettings settings = new FrontierSettings();
         settings.getOPsGroup().addAction(FrontierSettings.Action.UpdateSettings);
         SettingsGroup group = settings.createCustomGroup("group");
-        SettingsUser user = user("original", 1L);
+        PlayerId user = playerId(1L);
         group.addUser(user);
         PacketFrontierSettings packet = new PacketFrontierSettings(settings, 7L, 9L,
                 OperationResolution.Accepted);
 
         settings.getOPsGroup().addAction(FrontierSettings.Action.CreateGlobalFrontier);
         group.setName("changed");
-        user.username = "changed";
 
         FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
         packet.encode(encoded);
@@ -41,7 +41,7 @@ class PacketPayloadCopyTest {
         assertTrue(decoded.getOPsGroup().hasAction(FrontierSettings.Action.UpdateSettings));
         assertFalse(decoded.getOPsGroup().hasAction(FrontierSettings.Action.CreateGlobalFrontier));
         assertEquals("group", decoded.getCustomGroups().getFirst().getName());
-        assertEquals("original", decoded.getCustomGroups().getFirst().getUsers().getFirst().username);
+        assertEquals(user, decoded.getCustomGroups().getFirst().getUsers().getFirst());
         assertEquals(7L, revision);
         assertEquals(9L, requestId);
         assertEquals(OperationResolution.Accepted, resolution);
@@ -52,18 +52,17 @@ class PacketPayloadCopyTest {
     void updateFrontierSettingsPacketCapturesDeepCopy() {
         FrontierSettings settings = new FrontierSettings();
         SettingsGroup group = settings.createCustomGroup("group");
-        group.addUser(user("original", 8L));
+        group.addUser(playerId(8L));
         PacketUpdateFrontierSettings packet = new PacketUpdateFrontierSettings(settings, 15L, 16L);
 
         group.setName("changed");
-        group.getUsers().getFirst().username = "changed";
 
         FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
         packet.encode(encoded);
         FrontierSettings decoded = new FrontierSettings();
         decoded.fromBytes(encoded);
         assertEquals("group", decoded.getCustomGroups().getFirst().getName());
-        assertEquals("original", decoded.getCustomGroups().getFirst().getUsers().getFirst().username);
+        assertEquals(playerId(8L), decoded.getCustomGroups().getFirst().getUsers().getFirst());
         assertEquals(15L, encoded.readLong());
         assertEquals(16L, encoded.readLong());
         encoded.release();
@@ -72,14 +71,13 @@ class PacketPayloadCopyTest {
     @Test
     void sharingPacketsCaptureTheirUsers() {
         UUID frontierId = new UUID(4L, 5L);
-        SettingsUserShared sharedUser = new SettingsUserShared(user("original", 2L), true);
-        sharedUser.addAction(SettingsUserShared.Action.UpdateFrontier);
+        FrontierUserAccess sharedUser = new FrontierUserAccess(playerId(2L), true);
+        sharedUser.addAction(FrontierUserAccess.Action.UpdateFrontier);
         PacketSharePersonalFrontier sharePacket = new PacketSharePersonalFrontier(frontierId, sharedUser, 11L, 12L);
         PacketUpdateSharedUserPersonalFrontier updatePacket =
                 new PacketUpdateSharedUserPersonalFrontier(frontierId, sharedUser, 11L, 12L);
 
-        sharedUser.getUser().username = "changed";
-        sharedUser.addAction(SettingsUserShared.Action.UpdateSettings);
+        sharedUser.addAction(FrontierUserAccess.Action.UpdateSettings);
         sharedUser.setPending(false);
 
         assertCapturedSharedUser(sharePacket::encode, frontierId, 11L, 12L);
@@ -112,12 +110,11 @@ class PacketPayloadCopyTest {
         FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
         encoder.encode(encoded);
         assertEquals(frontierId, UUIDHelper.fromBytes(encoded));
-        SettingsUserShared decoded = new SettingsUserShared();
-        decoded.fromBytes(encoded);
-        assertEquals("original", decoded.getUser().username);
+        FrontierUserAccess decoded = FrontierUserAccess.fromBytes(encoded);
+        assertEquals(playerId(2L), decoded.getPlayerId());
         assertTrue(decoded.isPending());
-        assertTrue(decoded.hasAction(SettingsUserShared.Action.UpdateFrontier));
-        assertFalse(decoded.hasAction(SettingsUserShared.Action.UpdateSettings));
+        assertTrue(decoded.hasAction(FrontierUserAccess.Action.UpdateFrontier));
+        assertFalse(decoded.hasAction(FrontierUserAccess.Action.UpdateSettings));
         assertEquals(baseRevision, encoded.readLong());
         assertEquals(requestId, encoded.readLong());
         encoded.release();
@@ -128,6 +125,10 @@ class PacketPayloadCopyTest {
         user.username = username;
         user.uuid = new UUID(0L, uuidValue);
         return user;
+    }
+
+    private static PlayerId playerId(long uuidValue) {
+        return new PlayerId(new UUID(0L, uuidValue));
     }
 
     @FunctionalInterface

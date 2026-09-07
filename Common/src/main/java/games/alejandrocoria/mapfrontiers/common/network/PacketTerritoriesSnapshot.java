@@ -76,30 +76,22 @@ public class PacketTerritoriesSnapshot implements CustomPacketPayload {
         if (buf.readableBytes() > 1) {
             int size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                FrontierData frontier = new FrontierData();
-                frontier.fromBytes(buf);
-                this.addGlobalFrontier(frontier);
+                this.addGlobalFrontier(FrontierData.fromBytes(buf));
             }
 
             size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                FrontierData frontier = new FrontierData();
-                frontier.fromBytes(buf);
-                this.addPersonalFrontier(frontier);
+                this.addPersonalFrontier(FrontierData.fromBytes(buf));
             }
 
             size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                CollectionData collection = new CollectionData();
-                collection.fromBytes(buf);
-                this.addGlobalCollection(collection);
+                this.addGlobalCollection(CollectionData.fromBytes(buf));
             }
 
             size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                CollectionData collection = new CollectionData();
-                collection.fromBytes(buf);
-                this.addPersonalCollection(collection);
+                this.addPersonalCollection(CollectionData.fromBytes(buf));
             }
         }
     }

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.server.territory.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionDeleted;
@@ -9,10 +10,10 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpd
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontierShared;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoryPermissionEvaluator;
@@ -52,7 +53,7 @@ public class ServerFrontierShareService {
     }
 
     public ServerTerritoryOperationResult sharePersonalFrontier(ServerPlayer player, UUID frontierId,
-                                                                SettingsUserShared userShared, long baseRevision,
+                                                                FrontierUserAccess userShared, long baseRevision,
                                                                 long requestId) {
         FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
@@ -71,36 +72,35 @@ public class ServerFrontierShareService {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
-        userShared.getUser().fillMissingInfo(false, server);
-        if (userShared.getUser().uuid == null || frontier.getOwner().equals(userShared.getUser())) {
+        if (frontier.getOwner().equals(userShared.getPlayerId())) {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
-        if (frontier.hasUserShared(userShared.getUser())) {
+        if (frontier.hasUserAccess(userShared.getPlayerId())) {
             return acceptedSharingNoOp(player, frontier, requestId);
         }
 
-        ServerPlayer targetPlayer = server.getPlayerList().getPlayer(userShared.getUser().uuid);
+        ServerPlayer targetPlayer = server.getPlayerList().getPlayer(userShared.getPlayerId().uuid());
         if (targetPlayer == null) {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         if (!territoriesManager.addPendingPersonalFrontierShare(frontierId, userShared)) {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
-        int shareMessageId = createPendingShare(userShared.getUser(), frontier.getId());
+        int shareMessageId = createPendingShare(userShared.getPlayerId(), frontier.getId());
 
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Accepted);
-        PacketPersonalFrontierShared invitation = new PacketPersonalFrontierShared(shareMessageId, playerUser,
-                frontier.getOwner(), frontier.getName1(), frontier.getName2());
+        PacketPersonalFrontierShared invitation = new PacketPersonalFrontierShared(shareMessageId,
+                new SettingsUser(playerUser), new SettingsUser(frontier.getOwner()), frontier.getName1(), frontier.getName2());
         result.addNetworkAction(() -> PacketHandler.sendTo(invitation, targetPlayer));
         enqueueSharingBroadcast(result, player, frontier);
         return result;
     }
 
     public ServerTerritoryOperationResult updateSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId,
-                                                                           SettingsUserShared userShared,
+                                                                           FrontierUserAccess userShared,
                                                                            long baseRevision, long requestId) {
         FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
@@ -119,7 +119,7 @@ public class ServerFrontierShareService {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
-        SettingsUserShared currentUserShared = frontier.getUserShared(userShared.getUser());
+        FrontierUserAccess currentUserShared = frontier.getUserAccess(userShared.getPlayerId());
         if (currentUserShared == null) {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
@@ -138,7 +138,7 @@ public class ServerFrontierShareService {
     }
 
     public ServerTerritoryOperationResult removeSharedUserPersonalFrontier(ServerPlayer player, UUID frontierId,
-                                                                           SettingsUser targetUser,
+                                                                           PlayerId targetUser,
                                                                            long baseRevision, long requestId) {
         FrontierData frontier = territoriesManager.getFrontierFromID(frontierId);
         if (frontier == null || !frontier.getPersonal()) {
@@ -157,17 +157,12 @@ public class ServerFrontierShareService {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
-        targetUser.fillMissingInfo(false, server);
-        if (targetUser.uuid == null) {
-            return rejectedSharingRequest(player, frontier, requestId, false);
-        }
-
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
-        SettingsUserShared userShared = frontier.getUserShared(targetUser);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
+        FrontierUserAccess userShared = frontier.getUserAccess(targetUser);
         if (userShared == null) {
             return acceptedSharingNoOp(player, frontier, requestId);
         }
-        if (userShared.getUser().equals(playerUser)) {
+        if (userShared.getPlayerId().equals(playerUser)) {
             return rejectedSharingRequest(player, frontier, requestId, false);
         }
 
@@ -180,7 +175,7 @@ public class ServerFrontierShareService {
         if (userShared.isPending()) {
             removePendingSharesForTarget(targetUser);
         } else {
-            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(targetUser.uuid);
+            ServerPlayer targetPlayer = server.getPlayerList().getPlayer(targetUser.uuid());
             if (targetPlayer != null) {
                 result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierDeleted(frontier.getDimension(), frontierId, true, -1), targetPlayer));
                 if (frontier.hasCollection() && !territoriesManager.userKnowsPersonalCollection(targetUser, frontier.getCollectionId())) {
@@ -199,7 +194,7 @@ public class ServerFrontierShareService {
             return ServerTerritoryOperationResult.notFound(ServerTerritoryOperationResult.Reason.InvitationExpired);
         }
 
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         if (!pending.targetUser.equals(playerUser)) {
             return ServerTerritoryOperationResult.rejected(ServerTerritoryOperationResult.Reason.WrongTarget, null);
         }
@@ -210,7 +205,7 @@ public class ServerFrontierShareService {
             return ServerTerritoryOperationResult.notFound(ServerTerritoryOperationResult.Reason.FrontierMissing);
         }
 
-        SettingsUserShared userShared = frontier.getUserShared(pending.targetUser);
+        FrontierUserAccess userShared = frontier.getUserAccess(pending.targetUser);
         if (userShared == null) {
             return ServerTerritoryOperationResult.ignored(ServerTerritoryOperationResult.Reason.SharedUserMissing, frontier);
         }
@@ -271,7 +266,7 @@ public class ServerFrontierShareService {
         }
     }
 
-    private int createPendingShare(SettingsUser targetUser, UUID frontierId) {
+    private int createPendingShare(PlayerId targetUser, UUID frontierId) {
         nextPendingShareMessageId = advancePendingShareMessageId(nextPendingShareMessageId);
         pendingShareFrontiers.put(nextPendingShareMessageId, new PendingShareFrontier(frontierId, targetUser));
         return nextPendingShareMessageId;
@@ -285,7 +280,7 @@ public class ServerFrontierShareService {
         pendingShareFrontiers.remove(messageId);
     }
 
-    private void removePendingSharesForTarget(SettingsUser targetUser) {
+    private void removePendingSharesForTarget(PlayerId targetUser) {
         pendingShareFrontiers.entrySet().removeIf(entry -> entry.getValue().targetUser.equals(targetUser));
     }
 
@@ -305,12 +300,12 @@ public class ServerFrontierShareService {
     }
 
     private boolean canReceivePersonalFrontier(ServerPlayer player, FrontierData frontier) {
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         if (frontier.getOwner().equals(playerUser)) {
             return true;
         }
 
-        SettingsUserShared userShared = frontier.getUserShared(playerUser);
+        FrontierUserAccess userShared = frontier.getUserAccess(playerUser);
         return userShared != null && !userShared.isPending();
     }
 

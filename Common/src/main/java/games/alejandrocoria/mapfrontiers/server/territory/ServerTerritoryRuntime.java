@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.network.PacketTerritoriesSnapshot;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.server.api.MapFrontiersServerAPIImpl;
@@ -67,10 +67,6 @@ public class ServerTerritoryRuntime {
         return serverApi;
     }
 
-    public void onPlayerJoined() {
-        territoriesManager.ensureOwners(server);
-    }
-
     public void onServerTick() {
         shareService.tickPendingInvitations();
         territoriesManager.tickPersistence();
@@ -86,7 +82,7 @@ public class ServerTerritoryRuntime {
 
     public PacketTerritoriesSnapshot createTerritoriesSnapshot(ServerPlayer player) {
         PacketTerritoriesSnapshot packetTerritoriesSnapshot = new PacketTerritoriesSnapshot();
-        SettingsUser playerUser = new SettingsUser(player);
+        PlayerId playerUser = new PlayerId(player.getUUID());
         Set<UUID> includedPersonalCollectionIds = new HashSet<>();
 
         for (FrontierData frontier : territoriesManager.iterateGlobalFrontiers()) {

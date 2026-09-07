@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
@@ -47,12 +47,8 @@ class ServerCollectionRevisionTest {
     }
 
     private static CollectionData collection() {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(new PlayerId(UUID.randomUUID()));
         collection.setId(UUID.randomUUID());
-        SettingsUser owner = new SettingsUser();
-        owner.username = "Owner";
-        owner.uuid = UUID.randomUUID();
-        collection.setOwner(owner);
         collection.setName("Original");
         return collection;
     }

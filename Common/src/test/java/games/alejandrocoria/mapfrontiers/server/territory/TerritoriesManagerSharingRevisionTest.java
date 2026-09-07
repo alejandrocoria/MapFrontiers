@@ -1,11 +1,11 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -24,17 +24,17 @@ class TerritoriesManagerSharingRevisionTest {
     @Test
     void everyCommittedSharingMutationAdvancesRevisionExactlyOnce() {
         TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
-        SettingsUser owner = user("Owner");
-        SettingsUser target = user("Target");
+        PlayerId owner = user();
+        PlayerId target = user();
         FrontierData frontier = manager.createNewPersonalFrontier(frontierSpec(owner));
-        SettingsUserShared sharedUser = new SettingsUserShared(target, false);
+        FrontierUserAccess sharedUser = new FrontierUserAccess(target, false);
 
         assertTrue(manager.addPendingPersonalFrontierShare(frontier.getId(), sharedUser));
         assertEquals(1L, frontier.getSharingRevision());
         assertFalse(manager.addPendingPersonalFrontierShare(frontier.getId(), sharedUser));
         assertEquals(1L, frontier.getSharingRevision());
 
-        sharedUser.addAction(SettingsUserShared.Action.UpdateFrontier);
+        sharedUser.addAction(FrontierUserAccess.Action.UpdateFrontier);
         assertTrue(manager.updatePersonalFrontierShare(frontier.getId(), sharedUser));
         assertEquals(2L, frontier.getSharingRevision());
         assertFalse(manager.updatePersonalFrontierShare(frontier.getId(), sharedUser));
@@ -53,7 +53,7 @@ class TerritoriesManagerSharingRevisionTest {
         assertEquals(6L, frontier.getSharingRevision());
     }
 
-    private static FrontierCreateSpec frontierSpec(SettingsUser owner) {
+    private static FrontierCreateSpec frontierSpec(PlayerId owner) {
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
                 Identifier.fromNamespaceAndPath("minecraft", "overworld"));
         return FrontierCreateSpec.vertex(
@@ -62,10 +62,7 @@ class TerritoriesManagerSharingRevisionTest {
                 new FrontierData.PathStyle());
     }
 
-    private static SettingsUser user(String username) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = UUID.randomUUID();
-        return user;
+    private static PlayerId user() {
+        return new PlayerId(UUID.randomUUID());
     }
 }

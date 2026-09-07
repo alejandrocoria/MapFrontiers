@@ -4,8 +4,6 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
@@ -33,15 +31,17 @@ class PlayerReferenceNbtPolicyTest {
 
         CompoundTag frontierTag = frontierTag();
         makeNameOnly(frontierTag.getCompoundOrEmpty("owner"), "Owner");
-        FrontierData frontier = new FrontierData();
-        assertTrue(frontier.readFromNBT(frontierTag, MapFrontiers.FRONTIER_DATA_VERSION, context));
-        assertEquals(OWNER_UUID, frontier.getOwner().uuid);
+        FrontierData.NbtReadResult frontierResult = FrontierData.readFromNBT(
+                frontierTag, MapFrontiers.FRONTIER_DATA_VERSION, context);
+        assertTrue(frontierResult.changedDuringLoad());
+        assertEquals(OWNER_UUID, frontierResult.frontier().getOwner().uuid());
 
         CompoundTag collectionTag = collectionTag();
         makeNameOnly(collectionTag.getCompoundOrEmpty("owner"), "Owner");
-        CollectionData collection = new CollectionData();
-        assertTrue(collection.readFromNBT(collectionTag, MapFrontiers.FRONTIER_DATA_VERSION, context));
-        assertEquals(OWNER_UUID, collection.getOwner().uuid);
+        CollectionData.NbtReadResult collectionResult = CollectionData.readFromNBT(
+                collectionTag, MapFrontiers.FRONTIER_DATA_VERSION, context);
+        assertTrue(collectionResult.changedDuringLoad());
+        assertEquals(OWNER_UUID, collectionResult.collection().getOwner().uuid());
     }
 
     @Test
@@ -52,25 +52,30 @@ class PlayerReferenceNbtPolicyTest {
         CompoundTag collectionTag = collectionTag();
         makeNameOnly(collectionTag.getCompoundOrEmpty("owner"), "Unknown");
 
-        assertThrows(InvalidNbtFormatException.class, () -> new FrontierData().readFromNBT(frontierTag,
+        assertThrows(InvalidNbtFormatException.class, () -> FrontierData.readFromNBT(frontierTag,
                 MapFrontiers.FRONTIER_DATA_VERSION, context));
-        assertThrows(InvalidNbtFormatException.class, () -> new CollectionData().readFromNBT(collectionTag,
+        assertThrows(InvalidNbtFormatException.class, () -> CollectionData.readFromNBT(collectionTag,
                 MapFrontiers.FRONTIER_DATA_VERSION, context));
     }
 
     @Test
     void unresolvedSharedUserIsSkippedWithoutLosingFrontier() {
         FrontierData source = frontier();
-        source.addUserShared(new SettingsUserShared(user("Unknown", null), false));
         CompoundTag nbt = new CompoundTag();
-        source.writeToNBT(nbt);
+        source.writeToNBT(nbt, ignored -> "Owner");
+        CompoundTag unresolvedUser = new CompoundTag();
+        unresolvedUser.putString("username", "Unknown");
+        unresolvedUser.put("actions", new ListTag());
+        ListTag sharedUsers = new ListTag();
+        sharedUsers.add(unresolvedUser);
+        nbt.put("usersShared", sharedUsers);
 
-        FrontierData decoded = new FrontierData();
-        boolean changed = decoded.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+        FrontierData.NbtReadResult result = FrontierData.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
                 PlayerReferenceNbtReadContext.uuidOnly(new PlayerNameRepository()));
+        FrontierData decoded = result.frontier();
 
-        assertTrue(changed);
-        assertTrue(decoded.getUsersShared() == null || decoded.getUsersShared().isEmpty());
+        assertTrue(result.changedDuringLoad());
+        assertTrue(decoded.getUserAccesses() == null || decoded.getUserAccesses().isEmpty());
         assertEquals(source.getId(), decoded.getId());
     }
 
@@ -81,7 +86,7 @@ class PlayerReferenceNbtPolicyTest {
         CompoundTag nbt = new CompoundTag();
         source.writeToNBT(nbt, ignored -> null);
         CompoundTag userTag = new CompoundTag();
-        user("Unknown", null).writeToNBT(userTag);
+        userTag.putString("username", "Unknown");
         ListTag usersTag = new ListTag();
         usersTag.add(userTag);
         nbt.put("users", usersTag);
@@ -105,13 +110,13 @@ class PlayerReferenceNbtPolicyTest {
         copiedFrom.put("user", copiedUser);
         nbt.put("copiedFrom", copiedFrom);
 
-        FrontierData decoded = new FrontierData();
-        boolean changed = decoded.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+        FrontierData.NbtReadResult result = FrontierData.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
                 PlayerReferenceNbtReadContext.uuidOnly(new PlayerNameRepository()));
+        FrontierData decoded = result.frontier();
 
-        assertTrue(changed);
+        assertTrue(result.changedDuringLoad());
         assertEquals(COPIED_FROM_ID, decoded.getCopiedFromId());
-        assertTrue(decoded.getCopiedFromUser().isEmpty());
+        assertTrue(decoded.getCopiedFromUser() == null);
     }
 
     @Test
@@ -121,12 +126,12 @@ class PlayerReferenceNbtPolicyTest {
         copiedFrom.putString("id", COPIED_FROM_ID.toString());
         nbt.put("copiedFrom", copiedFrom);
 
-        CollectionData decoded = new CollectionData();
-        boolean changed = decoded.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
+        CollectionData.NbtReadResult result = CollectionData.readFromNBT(nbt, MapFrontiers.FRONTIER_DATA_VERSION,
                 PlayerReferenceNbtReadContext.uuidOnly(new PlayerNameRepository()));
-        assertFalse(changed);
+        CollectionData decoded = result.collection();
+        assertFalse(result.changedDuringLoad());
         assertEquals(COPIED_FROM_ID, decoded.getCopiedFromId());
-        assertTrue(decoded.getCopiedFromUser().isEmpty());
+        assertTrue(decoded.getCopiedFromUser() == null);
 
         CompoundTag rewritten = new CompoundTag();
         decoded.writeToNBT(rewritten, ignored -> null);
@@ -141,34 +146,25 @@ class PlayerReferenceNbtPolicyTest {
 
     private static CompoundTag frontierTag() {
         CompoundTag nbt = new CompoundTag();
-        frontier().writeToNBT(nbt);
+        frontier().writeToNBT(nbt, ignored -> "Owner");
         return nbt;
     }
 
     private static FrontierData frontier() {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(new PlayerId(OWNER_UUID));
         frontier.setId(UUID.randomUUID());
         frontier.setDimension(ResourceKey.create(Registries.DIMENSION,
                 Identifier.fromNamespaceAndPath("minecraft", "overworld")));
         frontier.setPersonal(true);
-        frontier.setOwner(user("Owner", OWNER_UUID));
         return frontier;
     }
 
     private static CompoundTag collectionTag() {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(new PlayerId(OWNER_UUID));
         collection.setId(UUID.randomUUID());
-        collection.setOwner(user("Owner", OWNER_UUID));
         CompoundTag nbt = new CompoundTag();
-        collection.writeToNBT(nbt);
+        collection.writeToNBT(nbt, ignored -> "Owner");
         return nbt;
-    }
-
-    private static SettingsUser user(String username, UUID uuid) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = uuid;
-        return user;
     }
 
     private static void makeNameOnly(CompoundTag nbt, String username) {

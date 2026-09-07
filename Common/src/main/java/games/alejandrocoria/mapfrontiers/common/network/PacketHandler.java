@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.CommonNetworkMod;
 import commonnetwork.api.Dispatcher;
 import commonnetwork.api.Network;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -59,15 +59,15 @@ public class PacketHandler {
 
     public static void sendToUsersWithAccessExcept(CustomPacketPayload message, FrontierData frontier,
                                                    MinecraftServer server, @Nullable UUID excludedUserId) {
-        ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
+        ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid());
         if (player != null && !player.getUUID().equals(excludedUserId)) {
             sendTo(message, player);
         }
 
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+        if (frontier.getUserAccesses() != null) {
+            for (FrontierUserAccess userShared : frontier.getUserAccesses()) {
                 if (!userShared.isPending()) {
-                    player = server.getPlayerList().getPlayer(userShared.getUser().uuid);
+                    player = server.getPlayerList().getPlayer(userShared.getPlayerId().uuid());
                     if (player != null && !player.getUUID().equals(excludedUserId)) {
                         sendTo(message, player);
                     }

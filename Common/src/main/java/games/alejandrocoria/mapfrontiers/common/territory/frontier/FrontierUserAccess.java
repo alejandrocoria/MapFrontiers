@@ -1,8 +1,11 @@
-package games.alejandrocoria.mapfrontiers.common.settings;
+package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtCodec;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
@@ -14,40 +17,41 @@ import net.minecraft.network.FriendlyByteBuf;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Objects;
 import java.util.Set;
 
 @ParametersAreNonnullByDefault
-public class SettingsUserShared {
+public final class FrontierUserAccess {
     public enum Action {
         UpdateFrontier, UpdateSettings;
 
         public static final Action[] VALUES = values();
     }
 
-    private final SettingsUser user;
+    public record NbtReadResult(FrontierUserAccess access, boolean repaired) {
+        public NbtReadResult {
+            Objects.requireNonNull(access, "access");
+        }
+    }
+
+    private final PlayerId playerId;
     private Set<Action> actions;
     private boolean pending;
 
-    public SettingsUserShared() {
-        user = new SettingsUser();
-        actions = EnumSet.noneOf(Action.class);
-        pending = false;
-    }
-
-    public SettingsUserShared(SettingsUser user, boolean pending) {
-        this.user = user;
+    public FrontierUserAccess(PlayerId playerId, boolean pending) {
+        this.playerId = Objects.requireNonNull(playerId, "playerId");
         actions = EnumSet.noneOf(Action.class);
         this.pending = pending;
     }
 
-    public SettingsUserShared(SettingsUserShared other) {
-        user = new SettingsUser(other.user);
+    public FrontierUserAccess(FrontierUserAccess other) {
+        playerId = other.playerId;
         actions = copyActions(other.actions);
         pending = other.pending;
     }
 
-    public SettingsUser getUser() {
-        return user;
+    public PlayerId getPlayerId() {
+        return playerId;
     }
 
     public void setActions(Set<Action> actions) {
@@ -70,10 +74,6 @@ public class SettingsUserShared {
         return actions;
     }
 
-    private static Set<Action> copyActions(Set<Action> actions) {
-        return actions.isEmpty() ? EnumSet.noneOf(Action.class) : EnumSet.copyOf(actions);
-    }
-
     public void setPending(boolean pending) {
         this.pending = pending;
     }
@@ -82,21 +82,14 @@ public class SettingsUserShared {
         return pending;
     }
 
-    public void readFromNBT(CompoundTag nbt) {
-        user.readFromNBT(nbt);
-        readSettingsFromNBT(nbt);
+    public boolean hasSameState(FrontierUserAccess other) {
+        return playerId.equals(other.playerId) && pending == other.pending && actions.equals(other.actions);
     }
 
-    public boolean readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
-        boolean repaired = user.readFromNBT(nbt, context);
-        readSettingsFromNBT(nbt);
-        return repaired;
-    }
+    public static NbtReadResult readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
+        PlayerReferenceNbtCodec.ReadResult playerResult = PlayerReferenceNbtCodec.read(nbt, context);
+        FrontierUserAccess access = new FrontierUserAccess(playerResult.playerId(), nbt.getBooleanOr("pending", false));
 
-    private void readSettingsFromNBT(CompoundTag nbt) {
-        pending = nbt.getBooleanOr("pending", false);
-
-        actions.clear();
         ListTag actionsTagList = nbt.getListOrEmpty("actions");
         for (int i = 0; i < actionsTagList.size(); ++i) {
             String actionTag;
@@ -108,90 +101,49 @@ public class SettingsUserShared {
             }
 
             try {
-                Action action = Action.valueOf(actionTag);
-                actions.add(action);
+                access.actions.add(Action.valueOf(actionTag));
             } catch (IllegalArgumentException e) {
-                String userName = user.username;
-                if (userName.isEmpty()) {
-                    userName = user.uuid.toString();
-                }
-
                 String availableActions = StringHelper.enumValuesToString(Arrays.asList(Action.VALUES));
-
-                MapFrontiers.LOGGER.warn("Unknown action in user shared {}. Found: \"{}\". Expected: {}", userName, actionTag, availableActions);
+                MapFrontiers.LOGGER.warn("Unknown action for shared user {}. Found: \"{}\". Expected: {}",
+                        access.playerId.uuid(), actionTag, availableActions);
             }
         }
-    }
 
-    public void writeToNBT(CompoundTag nbt) {
-        user.writeToNBT(nbt);
-        writeSettingsToNBT(nbt);
+        return new NbtReadResult(access, playerResult.repaired());
     }
 
     public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
-        user.writeToNBT(nbt, resolver);
-        writeSettingsToNBT(nbt);
-    }
-
-    private void writeSettingsToNBT(CompoundTag nbt) {
-
+        PlayerReferenceNbtCodec.write(nbt, playerId, resolver);
         if (pending) {
             nbt.putBoolean("pending", true);
         }
 
         ListTag actionsTagList = new ListTag();
         for (Action action : actions) {
-            StringTag actionTag = StringTag.valueOf(action.name());
-            actionsTagList.add(actionTag);
+            actionsTagList.add(StringTag.valueOf(action.name()));
         }
-
         nbt.put("actions", actionsTagList);
     }
 
-    public void fromBytes(FriendlyByteBuf buf) {
-        user.fromBytes(buf);
-
-        pending = buf.readBoolean();
-
-        actions.clear();
+    public static FrontierUserAccess fromBytes(FriendlyByteBuf buf) {
+        FrontierUserAccess access = new FrontierUserAccess(PlayerIdNetworkCodec.read(buf), buf.readBoolean());
         for (Action action : Action.VALUES) {
             if (buf.readBoolean()) {
-                actions.add(action);
+                access.actions.add(action);
             }
         }
+        return access;
     }
 
     public void toBytes(FriendlyByteBuf buf) {
-        user.toBytes(buf);
-
+        PlayerIdNetworkCodec.write(buf, playerId);
         buf.writeBoolean(pending);
-
         for (Action action : Action.VALUES) {
             buf.writeBoolean(actions.contains(action));
         }
     }
 
-    @Override
-    public int hashCode() {
-        int prime = 31;
-        int hash = 1;
-        hash = prime * hash + user.hashCode();
-        hash = prime * hash + actions.hashCode();
-        hash = prime * hash + (pending ? 1231 : 1237);
-
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (other instanceof SettingsUserShared otherUser) {
-            return user.equals(otherUser.user) && pending == otherUser.pending;
-        }
-
-        return false;
+    private static Set<Action> copyActions(Set<Action> actions) {
+        return actions.isEmpty() ? EnumSet.noneOf(Action.class) : EnumSet.copyOf(actions);
     }
 }

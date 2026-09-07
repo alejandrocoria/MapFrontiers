@@ -92,9 +92,10 @@ public class ClientLocalPersonalCollectionStore {
             ListTag collectionsTagList = nbt.getListOrEmpty("collections");
             for (int i = 0; i < collectionsTagList.size(); ++i) {
                 try {
-                    CollectionData collection = new CollectionData();
                     CompoundTag collectionTag = NbtReadHelper.requireCompound(collectionsTagList, i, "collections");
-                    needBackup |= collection.readFromNBT(collectionTag, version, playerReferenceReadContext);
+                    CollectionData.NbtReadResult result = CollectionData.readFromNBT(collectionTag, version, playerReferenceReadContext);
+                    CollectionData collection = result.collection();
+                    needBackup |= result.changedDuringLoad();
                     if (!shouldPersist(collection)) {
                         needBackup = true;
                         continue;

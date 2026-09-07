@@ -2,8 +2,8 @@ package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
@@ -80,7 +80,7 @@ class TerritoriesManagerGeometryChangeTest {
     private static FrontierCreateSpec pathSpec(BlockPos... points) {
         return FrontierCreateSpec.path(
                 UUID.randomUUID(),
-                new SettingsUser(),
+                new PlayerId(UUID.randomUUID()),
                 false,
                 ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("minecraft", "overworld")),
                 TerritoryLifetime.PERSISTENT,

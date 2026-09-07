@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import net.minecraft.nbt.CompoundTag;
@@ -98,7 +99,7 @@ public class FrontierSettings {
         customGroups.remove(group);
     }
 
-    public boolean checkAction(Action action, @Nullable SettingsUser player, boolean isOP, @Nullable SettingsUser owner) {
+    public boolean checkAction(Action action, @Nullable PlayerId player, boolean isOP, @Nullable PlayerId owner) {
         if (player == null) {
             return false;
         }
@@ -126,7 +127,7 @@ public class FrontierSettings {
 
     public SettingsProfile getProfile(ServerPlayer player) {
         SettingsProfile profile = new SettingsProfile();
-        SettingsUser user = new SettingsUser(player);
+        PlayerId user = new PlayerId(player.getUUID());
 
         for (Action action : owners.getActions()) {
             profile.setAction(action, SettingsProfile.State.Owner);

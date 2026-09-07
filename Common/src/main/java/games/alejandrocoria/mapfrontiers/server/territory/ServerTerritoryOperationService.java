@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
@@ -13,8 +14,6 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierResync;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
@@ -22,6 +21,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChang
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
 import net.minecraft.resources.ResourceKey;
@@ -91,7 +91,7 @@ public class ServerTerritoryOperationService {
             return ServerTerritoryOperationResult.rejected(null);
         }
 
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         CollectionData collection = new CollectionData(collectionData);
         collection.setOwner(playerUser);
         collection.removeCopiedFromInfo();
@@ -151,7 +151,7 @@ public class ServerTerritoryOperationService {
 
         if (collection.getPersonal()) {
             if (!permissionEvaluator.canUpdatePersonalCollection(player, collection)) {
-                SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+                PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
                 if (!territoriesManager.userKnowsPersonalCollection(playerUser, collectionId)) {
                     ServerTerritoryOperationResult result = ServerTerritoryOperationResult.notFound();
                     result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(collectionId), player));
@@ -332,7 +332,7 @@ public class ServerTerritoryOperationService {
     }
 
     public ServerTerritoryOperationResult importPersonalFrontier(ServerPlayer player, FrontierData frontier) {
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         FrontierData currentFrontier = territoriesManager.getFrontierFromID(frontier.getId());
 
         if (!isAuthoritativePersonalFrontier(frontier)) {
@@ -349,13 +349,13 @@ public class ServerTerritoryOperationService {
             return ServerTerritoryOperationResult.ignored(frontier);
         }
 
-        frontier.removeAllUserShared();
+        frontier.removeAllUserAccesses();
         territoriesManager.importPersonalFrontier(frontier);
         return createdImportedPersonalFrontier(frontier);
     }
 
     public ServerTerritoryOperationResult importPersonalCollection(ServerPlayer player, CollectionData collection) {
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         CollectionData currentCollection = territoriesManager.getCollectionFromID(collection.getId());
 
         if (!collection.getPersonal() || !collection.isPersistent()) {
@@ -607,7 +607,7 @@ public class ServerTerritoryOperationService {
             return ServerTerritoryOperationResult.notFound();
         }
 
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         if (frontier.getPersonal()) {
             if (frontier.getOwner().equals(playerUser)) {
                 CollectionData collection = frontier.hasCollection() ? territoriesManager.getCollectionFromID(frontier.getCollectionId()) : null;
@@ -705,7 +705,7 @@ public class ServerTerritoryOperationService {
                 : null;
         Set<UUID> sourceCollectionRecipientsBefore = sourceCollection == null ? null : getCollectionRecipientIds(sourceCollection);
 
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         if (!frontier.getPersonal() || !frontier.getOwner().equals(playerUser)) {
             return rejectedWithProfileRefresh(player, frontier);
         }
@@ -717,10 +717,10 @@ public class ServerTerritoryOperationService {
 
         List<ServerPlayer> relevantPlayers = new ArrayList<>();
         relevantPlayers.add(player);
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+        if (frontier.getUserAccesses() != null) {
+            for (FrontierUserAccess userShared : frontier.getUserAccesses()) {
                 if (!userShared.isPending()) {
-                    ServerPlayer otherPlayer = server.getPlayerList().getPlayer(userShared.getUser().uuid);
+                    ServerPlayer otherPlayer = server.getPlayerList().getPlayer(userShared.getPlayerId().uuid());
                     if (otherPlayer != null) {
                         relevantPlayers.add(otherPlayer);
                     }
@@ -1002,18 +1002,16 @@ public class ServerTerritoryOperationService {
             return recipients;
         }
 
-        if (collection.getOwner().uuid != null) {
-            recipients.add(collection.getOwner().uuid);
-        }
+        recipients.add(collection.getOwner().uuid());
 
         for (FrontierData frontier : territoriesManager.getFrontiersInCollection(collection.getId())) {
-            if (frontier.getUsersShared() == null) {
+            if (frontier.getUserAccesses() == null) {
                 continue;
             }
 
-            for (SettingsUserShared userShared : frontier.getUsersShared()) {
-                if (!userShared.isPending() && userShared.getUser().uuid != null) {
-                    recipients.add(userShared.getUser().uuid);
+            for (FrontierUserAccess userShared : frontier.getUserAccesses()) {
+                if (!userShared.isPending()) {
+                    recipients.add(userShared.getPlayerId().uuid());
                 }
             }
         }
@@ -1029,7 +1027,7 @@ public class ServerTerritoryOperationService {
     private @Nullable CollectionData validateTargetCollectionAssignment(UUID frontierId,
                                                                         boolean personal,
                                                                         TerritoryLifetime lifetime,
-                                                                        SettingsUser owner,
+                                                                        PlayerId owner,
                                                                         @Nullable UUID collectionId) {
         if (collectionId == null) {
             return null;
@@ -1077,9 +1075,8 @@ public class ServerTerritoryOperationService {
     }
 
     private CollectionData buildPersonalCollectionContext(FrontierData frontier) {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(frontier.getOwner());
         collection.setPersonal(true);
-        collection.setOwner(frontier.getOwner());
         return collection;
     }
 
@@ -1110,12 +1107,12 @@ public class ServerTerritoryOperationService {
     }
 
     private boolean canReceivePersonalFrontier(ServerPlayer player, FrontierData frontier) {
-        SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+        PlayerId playerUser = permissionEvaluator.getPlayerUser(player);
         if (frontier.getOwner().equals(playerUser)) {
             return true;
         }
 
-        SettingsUserShared userShared = frontier.getUserShared(playerUser);
+        FrontierUserAccess userShared = frontier.getUserAccess(playerUser);
         return userShared != null && !userShared.isPending();
     }
 

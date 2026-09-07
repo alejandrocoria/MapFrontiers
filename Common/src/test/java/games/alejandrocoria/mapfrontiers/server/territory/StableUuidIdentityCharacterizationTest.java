@@ -1,13 +1,14 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,43 +30,57 @@ class StableUuidIdentityCharacterizationTest {
 
     @Test
     void personalFrontierLookupUsesStableUuidAfterUsernameChange() {
-        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
-        FrontierData frontier = manager.createNewPersonalFrontier(frontierSpec(user("OldOwner", OWNER_ID)));
+        PlayerNameRepository names = new PlayerNameRepository();
+        PlayerId owner = user(OWNER_ID);
+        names.observe(owner, "OldOwner", PlayerNameSource.CONNECTED_PROFILE);
+        TerritoriesManager manager = new TerritoriesManager(names, username -> null);
+        FrontierData frontier = manager.createNewPersonalFrontier(frontierSpec(user(OWNER_ID)));
+        long syncHash = frontier.computeSyncHash();
+
+        names.observe(owner, "RenamedOwner", PlayerNameSource.CONNECTED_PROFILE);
 
         List<FrontierData> visibleToRenamedOwner = manager.getAllPersonalFrontiers(
-                user("NewOwner", OWNER_ID), frontier.getDimension());
+                user(OWNER_ID), frontier.getDimension());
 
+        assertEquals("RenamedOwner", names.resolveName(owner));
+        assertEquals(syncHash, frontier.computeSyncHash());
         assertTrue(visibleToRenamedOwner.contains(frontier));
         assertSame(frontier, manager.getFrontierFromID(frontier.getId()));
-        assertFalse(manager.getAllPersonalFrontiers(user("NewOwner", UUID.randomUUID()), frontier.getDimension())
+        assertFalse(manager.getAllPersonalFrontiers(user(UUID.randomUUID()), frontier.getDimension())
                 .contains(frontier));
     }
 
     @Test
     void ownershipSharingAndSettingsMembershipUseStableUuidAfterUsernameChange() {
-        SettingsUser oldOwner = user("OldOwner", OWNER_ID);
-        SettingsUser renamedOwner = user("NewOwner", OWNER_ID);
-        SettingsUser oldSharedUser = user("OldShared", SHARED_ID);
-        SettingsUser renamedSharedUser = user("NewShared", SHARED_ID);
-        FrontierData frontier = new FrontierData();
+        PlayerId oldOwner = user(OWNER_ID);
+        PlayerId renamedOwner = user(OWNER_ID);
+        PlayerId oldSharedUser = user(SHARED_ID);
+        PlayerId renamedSharedUser = user(SHARED_ID);
+        PlayerId differentUserWithSameName = user(UUID.randomUUID());
+        PlayerNameRepository names = new PlayerNameRepository();
+        names.observe(oldSharedUser, "SharedName", PlayerNameSource.HINT);
+        names.observe(differentUserWithSameName, "SharedName", PlayerNameSource.HINT);
+        FrontierData frontier = new FrontierData(oldOwner);
         frontier.setPersonal(true);
         frontier.setOwner(oldOwner);
 
-        SettingsUserShared sharedAccess = new SettingsUserShared(oldSharedUser, false);
-        sharedAccess.addAction(SettingsUserShared.Action.UpdateFrontier);
-        frontier.addUserShared(sharedAccess);
+        FrontierUserAccess sharedAccess = new FrontierUserAccess(oldSharedUser, false);
+        sharedAccess.addAction(FrontierUserAccess.Action.UpdateFrontier);
+        frontier.addUserAccess(sharedAccess);
 
         SettingsGroup group = new SettingsGroup("Builders", false);
         group.addAction(FrontierSettings.Action.UpdateGlobalFrontier);
         group.addUser(oldSharedUser);
 
-        assertTrue(frontier.checkActionUserShared(renamedOwner, SettingsUserShared.Action.UpdateSettings));
-        assertTrue(frontier.checkActionUserShared(renamedSharedUser, SettingsUserShared.Action.UpdateFrontier));
+        assertTrue(frontier.checkUserAccess(renamedOwner, FrontierUserAccess.Action.UpdateSettings));
+        assertTrue(frontier.checkUserAccess(renamedSharedUser, FrontierUserAccess.Action.UpdateFrontier));
         assertTrue(group.hasUser(renamedSharedUser));
-        assertFalse(group.hasUser(user("NewShared", UUID.randomUUID())));
+        assertFalse(group.hasUser(differentUserWithSameName));
+        assertFalse(frontier.checkUserAccess(differentUserWithSameName,
+                FrontierUserAccess.Action.UpdateFrontier));
     }
 
-    private static FrontierCreateSpec frontierSpec(SettingsUser owner) {
+    private static FrontierCreateSpec frontierSpec(PlayerId owner) {
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
                 Identifier.fromNamespaceAndPath("minecraft", "overworld"));
         return FrontierCreateSpec.vertex(
@@ -73,10 +89,7 @@ class StableUuidIdentityCharacterizationTest {
                 new FrontierData.PathStyle());
     }
 
-    private static SettingsUser user(String username, UUID uuid) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = uuid;
-        return user;
+    private static PlayerId user(UUID uuid) {
+        return new PlayerId(uuid);
     }
 }

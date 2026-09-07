@@ -22,6 +22,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -692,7 +693,7 @@ public class CollectionInfoPage extends PageScreen {
     }
 
     private CollectionData createClipboardSnapshot() {
-        CollectionData snapshot = new CollectionData();
+        CollectionData snapshot = new CollectionData(collection.getOwner());
         snapshot.setName(collection.getName());
         snapshot.setColor(collection.getColor());
         snapshot.setBannerData(collection.getBannerData());
@@ -748,7 +749,8 @@ public class CollectionInfoPage extends PageScreen {
             return false;
         }
 
-        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection, new SettingsUser(minecraft.player));
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection,
+                new PlayerId(minecraft.player.getUUID()));
     }
 
     private boolean canDeleteCollection() {

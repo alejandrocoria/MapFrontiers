@@ -226,7 +226,7 @@ public class FullscreenMap {
                     subMenu.addMenuItem(I18n.get("mapfrontiers.button_delete_collection"), p -> buttonDelete());
                 }
             } else if (frontierHighlighted != null) {
-                SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser);
+                SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId());
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
                 if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierVisibility.Frontier)
                         && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen)) {
@@ -302,13 +302,13 @@ public class FullscreenMap {
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing && (selectedCollection == null || canCreateInSelectedCollection));
         buttonInfo.setEnabled(hasSelection && !editing);
-        buttonEdit.setEnabled(frontierHighlighted != null && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser).canUpdate
+        buttonEdit.setEnabled(frontierHighlighted != null && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId()).canUpdate
                 && selectedFrontierVisible);
         buttonVisible.setEnabled(!editing && ((frontierHighlighted != null
-                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser).canUpdate)
+                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId()).canUpdate)
                 || canUpdateSelectedCollection));
         buttonDelete.setEnabled(!editing && ((frontierHighlighted != null
-                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser).canDelete)
+                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId()).canDelete)
                 || canDeleteSelectedCollection));
 
         if (selectedCollection != null) {
@@ -915,7 +915,7 @@ public class FullscreenMap {
             return false;
         }
 
-        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), selectedCollection, playerUser);
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), selectedCollection, playerUser.toPlayerId());
     }
 
     private boolean canDeleteSelectedCollection(SettingsUser playerUser) {

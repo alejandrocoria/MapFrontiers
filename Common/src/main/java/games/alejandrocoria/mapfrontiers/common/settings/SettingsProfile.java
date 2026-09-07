@@ -1,8 +1,10 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import io.netty.buffer.ByteBuf;
 
 import javax.annotation.Nullable;
@@ -68,7 +70,7 @@ public class SettingsProfile {
         return false;
     }
 
-    public static AvailableActions getAvailableActions(@Nullable SettingsProfile profile, @Nullable FrontierData frontier, SettingsUser playerUser) {
+    public static AvailableActions getAvailableActions(@Nullable SettingsProfile profile, @Nullable FrontierData frontier, PlayerId playerUser) {
         AvailableActions actions = new AvailableActions();
 
         if (profile == null) {
@@ -89,7 +91,7 @@ public class SettingsProfile {
         if (frontier != null) {
             if (frontier.getPersonal()) {
                 actions.canDelete = true;
-                actions.canUpdate = frontier.checkActionUserShared(playerUser, SettingsUserShared.Action.UpdateFrontier);
+                actions.canUpdate = frontier.checkUserAccess(playerUser, FrontierUserAccess.Action.UpdateFrontier);
                 actions.canShare = MapFrontiersClient.isModOnServer() && profile.personalFrontier == State.Enabled;
             } else {
                 boolean isOwner = frontier.getOwner().equals(playerUser);
@@ -101,7 +103,7 @@ public class SettingsProfile {
         return actions;
     }
 
-    public static boolean canUpdateCollection(@Nullable SettingsProfile profile, CollectionData collection, SettingsUser playerUser) {
+    public static boolean canUpdateCollection(@Nullable SettingsProfile profile, CollectionData collection, PlayerId playerUser) {
         if (collection.getPersonal()) {
             return collection.getOwner().equals(playerUser);
         }

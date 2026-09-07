@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
@@ -20,10 +20,10 @@ class PendingOptimisticSharingUpdatesTest {
         PendingOptimisticSharingUpdates updates = new PendingOptimisticSharingUpdates();
         AtomicLong requestIds = new AtomicLong();
         UUID frontierId = UUID.randomUUID();
-        SettingsUser target = user("Target");
-        SettingsUserShared addedUser = new SettingsUserShared(target, true);
-        SettingsUserShared updatedUser = new SettingsUserShared(target, true);
-        updatedUser.addAction(SettingsUserShared.Action.UpdateFrontier);
+        PlayerId target = user();
+        FrontierUserAccess addedUser = new FrontierUserAccess(target, true);
+        FrontierUserAccess updatedUser = new FrontierUserAccess(target, true);
+        updatedUser.addAction(FrontierUserAccess.Action.UpdateFrontier);
 
         PendingOptimisticSharingUpdates.Outbound add = updates.submit(frontierId,
                 PendingOptimisticSharingUpdates.Intent.add(addedUser), 0L, requestIds::incrementAndGet);
@@ -34,7 +34,7 @@ class PendingOptimisticSharingUpdatesTest {
         FrontierSharingChange confirmedAdd = change(1L, addedUser);
         PendingOptimisticSharingUpdates.Reconciliation afterAdd = updates.reconcile(frontierId, confirmedAdd,
                 0L, 7, 7, add.requestId(), OperationResolution.Accepted, requestIds::incrementAndGet);
-        assertNull(afterAdd.visibleChange().getUsersShared());
+        assertNull(afterAdd.visibleChange().getUserAccesses());
         assertEquals(PendingOptimisticSharingUpdates.Type.Update, afterAdd.nextOutbound().intent().type());
         assertEquals(1L, afterAdd.nextOutbound().baseRevision());
 
@@ -42,7 +42,7 @@ class PendingOptimisticSharingUpdatesTest {
         PendingOptimisticSharingUpdates.Reconciliation afterUpdate = updates.reconcile(frontierId, confirmedUpdate,
                 1L, 7, 7, afterAdd.nextOutbound().requestId(), OperationResolution.Accepted,
                 requestIds::incrementAndGet);
-        assertNull(afterUpdate.visibleChange().getUsersShared());
+        assertNull(afterUpdate.visibleChange().getUserAccesses());
         assertEquals(PendingOptimisticSharingUpdates.Type.Remove, afterUpdate.nextOutbound().intent().type());
         assertEquals(2L, afterUpdate.nextOutbound().baseRevision());
 
@@ -59,7 +59,7 @@ class PendingOptimisticSharingUpdatesTest {
         PendingOptimisticSharingUpdates updates = new PendingOptimisticSharingUpdates();
         AtomicLong requestIds = new AtomicLong();
         UUID frontierId = UUID.randomUUID();
-        SettingsUserShared sharedUser = new SettingsUserShared(user("Target"), true);
+        FrontierUserAccess sharedUser = new FrontierUserAccess(user(), true);
         PendingOptimisticSharingUpdates.Outbound outbound = updates.submit(frontierId,
                 PendingOptimisticSharingUpdates.Intent.add(sharedUser), 4L, requestIds::incrementAndGet);
 
@@ -84,17 +84,14 @@ class PendingOptimisticSharingUpdatesTest {
         assertFalse(updates.hasPending(frontierId));
     }
 
-    private static FrontierSharingChange change(long revision, SettingsUserShared... users) {
+    private static FrontierSharingChange change(long revision, FrontierUserAccess... users) {
         FrontierSharingChange change = new FrontierSharingChange();
         change.setSharingRevision(revision);
-        change.setUsersShared(users.length == 0 ? null : java.util.List.of(users));
+        change.setUserAccesses(users.length == 0 ? null : java.util.List.of(users));
         return change;
     }
 
-    private static SettingsUser user(String username) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = UUID.randomUUID();
-        return user;
+    private static PlayerId user() {
+        return new PlayerId(UUID.randomUUID());
     }
 }

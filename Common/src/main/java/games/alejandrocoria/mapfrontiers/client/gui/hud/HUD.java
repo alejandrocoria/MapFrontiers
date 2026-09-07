@@ -9,7 +9,8 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontierHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.platform.Services;
@@ -50,9 +51,8 @@ public class HUD {
         HUD hud = new HUD();
         hud.previewMode = true;
 
-        FrontierData frontierData = new FrontierData();
-        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
-        frontierData.setOwner(owner);
+        PlayerId owner = PreviewFrontierHelper.createPreviewOwner();
+        FrontierData frontierData = new FrontierData(owner);
         frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
         frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         PreviewFrontierHelper.setPreviewBanner(frontierData);
@@ -259,15 +259,14 @@ public class HUD {
     }
 
     private String getOwnerString() {
-        String ownerString = "";
-        if (!StringUtils.isBlank(frontier.getOwner().username)) {
-            ownerString = frontier.getOwner().username;
-        } else if (frontier.getOwner().uuid != null) {
-            ownerString = frontier.getOwner().uuid.toString();
-            ownerString = ownerString.substring(0, 8) + "...";
+        if (previewMode) {
+            return PreviewFrontierHelper.translate("mapfrontiers.preview_owner");
         }
 
-        return ownerString;
+        String ownerString = SettingsUserFormatter.getDisplayName(frontier.getOwner(), "");
+        return ownerString.equals(frontier.getOwner().uuid().toString())
+                ? ownerString.substring(0, 8) + "..."
+                : ownerString;
     }
 
     private StringWidget createCenteredWidget(String text, int topY) {
@@ -367,7 +366,7 @@ public class HUD {
     private class OwnerSlotRenderer implements SlotRenderer {
         @Override
         public boolean isVisible() {
-            return !frontier.getOwner().isEmpty();
+            return true;
         }
 
         @Override

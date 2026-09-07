@@ -2,8 +2,8 @@ package games.alejandrocoria.mapfrontiers.server.api;
 
 import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierDataView;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -66,12 +66,9 @@ class ServerFrontierServiceImplTest {
     }
 
     private static FrontierCreateSpec frontierSpec(boolean personal, ResourceKey<Level> dimension, UUID collectionId) {
-        SettingsUser owner = new SettingsUser();
-        owner.uuid = UUID.randomUUID();
-        owner.username = "Owner";
         return FrontierCreateSpec.vertex(
                 UUID.randomUUID(),
-                owner,
+                new PlayerId(UUID.randomUUID()),
                 personal,
                 dimension,
                 TerritoryLifetime.PERSISTENT,

@@ -9,9 +9,8 @@ import java.util.Date;
 @ParametersAreNonnullByDefault
 public final class FrontierCreationFactory {
     public static FrontierData createFrontier(FrontierCreateSpec spec) {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(spec.getOwner());
         frontier.setId(spec.getFrontierId());
-        frontier.setOwner(spec.getOwner());
         frontier.setDimension(spec.getDimension());
         frontier.setPersonal(spec.isPersonal());
         frontier.setLifetime(spec.getLifetime());

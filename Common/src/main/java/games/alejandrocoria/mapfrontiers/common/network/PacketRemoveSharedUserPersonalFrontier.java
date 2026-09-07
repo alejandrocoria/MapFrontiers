@@ -61,7 +61,7 @@ public class PacketRemoveSharedUserPersonalFrontier implements CustomPacketPaylo
         if (Side.SERVER.equals(ctx.side())) {
             PacketRemoveSharedUserPersonalFrontier message = ctx.message();
             ServerPlayer player = ctx.sender();
-            if (player == null) {
+            if (player == null || message.targetUser.uuid == null) {
                 return;
             }
             if (MapFrontiers.getServerRuntime() == null) {
@@ -69,7 +69,7 @@ public class PacketRemoveSharedUserPersonalFrontier implements CustomPacketPaylo
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getShareService()
-                    .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser,
+                    .removeSharedUserPersonalFrontier(player, message.frontierID, message.targetUser.toPlayerId(),
                             message.baseRevision, message.requestId);
             result.dispatchNetworkActions();
         }

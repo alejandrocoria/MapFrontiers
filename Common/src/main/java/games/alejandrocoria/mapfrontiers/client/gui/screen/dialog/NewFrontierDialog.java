@@ -15,8 +15,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxInt
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
@@ -474,8 +474,8 @@ public class NewFrontierDialog extends PanelDialog {
             return null;
         }
 
-        FrontierData defaults = ClientConfig.createConfiguredFrontierDefaults(ClientConfig.NEW_FRONTIER_SHAPE.get());
-        SettingsUser owner = new SettingsUser(minecraft.player);
+        PlayerId owner = new PlayerId(minecraft.player.getUUID());
+        FrontierData defaults = ClientConfig.createConfiguredFrontierDefaults(ClientConfig.NEW_FRONTIER_SHAPE.get(), owner);
         UUID frontierId = UUID.randomUUID();
         FrontierVisibilityData visibility = new FrontierVisibilityData(defaults.getVisibilityData());
         BannerData banner = defaults.getBannerData() == null ? null : new BannerData(defaults.getBannerData());

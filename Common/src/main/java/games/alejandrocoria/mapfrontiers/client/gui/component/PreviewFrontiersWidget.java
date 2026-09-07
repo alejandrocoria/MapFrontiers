@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
@@ -34,16 +34,22 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         super(0, 0, SIZE, SIZE, Component.empty());
         previewPanel = new FrontierPreviewPanel();
 
-        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
-        previewFrontiers.add(new FrontierOverlay(createBannerFrontier(owner), null));
-        previewFrontiers.add(new FrontierOverlay(createLongNameFrontier(owner), null));
-        previewFrontiers.add(new FrontierOverlay(createPathFrontier(owner), null));
+        PlayerId owner = PreviewFrontierHelper.createPreviewOwner();
+        previewFrontiers.add(createPreviewOverlay(createBannerFrontier(owner)));
+        previewFrontiers.add(createPreviewOverlay(createLongNameFrontier(owner)));
+        previewFrontiers.add(createPreviewOverlay(createPathFrontier(owner)));
 
         configUpdated();
     }
 
     public void configUpdated() {
         previewPanel.recalculateAndSetFrontiers(previewFrontiers);
+    }
+
+    private static FrontierOverlay createPreviewOverlay(FrontierData frontier) {
+        FrontierOverlay overlay = new FrontierOverlay(frontier, null);
+        overlay.setPreviewOwnerDisplayName(PreviewFrontierHelper.translate("mapfrontiers.preview_owner"));
+        return overlay;
     }
 
     public void setScaleFactor(float scaleFactor) {
@@ -68,9 +74,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         return null;
     }
 
-    private static FrontierData createBannerFrontier(SettingsUser owner) {
-        FrontierData frontierData = new FrontierData();
-        frontierData.setOwner(owner);
+    private static FrontierData createBannerFrontier(PlayerId owner) {
+        FrontierData frontierData = new FrontierData(owner);
         frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
         frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         frontierData.setColor(0xFFAACC60);
@@ -87,9 +92,8 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         return frontierData;
     }
 
-    private static FrontierData createLongNameFrontier(SettingsUser owner) {
-        FrontierData frontierData = new FrontierData();
-        frontierData.setOwner(owner);
+    private static FrontierData createLongNameFrontier(PlayerId owner) {
+        FrontierData frontierData = new FrontierData(owner);
         frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_long_name_1"));
         frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_long_name_2"));
         frontierData.setColor(0xFFA0A0FF);
@@ -107,10 +111,9 @@ public class PreviewFrontiersWidget extends AbstractWidgetNoNarration {
         return frontierData;
     }
 
-    private static FrontierData createPathFrontier(SettingsUser owner) {
-        FrontierData frontierData = new FrontierData();
+    private static FrontierData createPathFrontier(PlayerId owner) {
+        FrontierData frontierData = new FrontierData(owner);
         frontierData.setShape(FrontierShape.Path);
-        frontierData.setOwner(owner);
         frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_path_name_1"));
         frontierData.setName2("");
         frontierData.setColor(0xFFFFC04D);

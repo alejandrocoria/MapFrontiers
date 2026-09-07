@@ -14,8 +14,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Tooltip;
@@ -143,14 +144,10 @@ public class SharedAccessPage extends PageScreen {
 
             for (ScrollElement element : users.getElements()) {
                 UserSharedElement userElement = (UserSharedElement) element;
-                SettingsUser user = userElement.getUser();
+                PlayerId user = userElement.getUser();
                 PlayerInfo networkplayerinfo = null;
 
-                if (user.uuid != null) {
-                    networkplayerinfo = handler.getPlayerInfo(user.uuid);
-                } else if (!StringUtils.isBlank(user.username)) {
-                    networkplayerinfo = handler.getPlayerInfo(user.username);
-                }
+                networkplayerinfo = handler.getPlayerInfo(user.uuid());
 
                 if (networkplayerinfo == null) {
                     userElement.setPingBar(0);
@@ -204,8 +201,8 @@ public class SharedAccessPage extends PageScreen {
     }
 
     private void deleteUserPressed(ScrollElement element) {
-        SettingsUser user = ((UserSharedElement) element).getUser();
-        MapFrontiersClient.getOperationService().submitOptimisticRemoveSharedUser(frontier.getId(), user);
+        PlayerId user = ((UserSharedElement) element).getUser();
+        MapFrontiersClient.getOperationService().submitOptimisticRemoveSharedUser(frontier.getId(), new SettingsUser(user));
     }
 
     private void buttonNewUserPressed() {
@@ -260,12 +257,12 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
-        if (frontier.getOwner().equals(user)) {
+        if (frontier.getOwner().equals(user.toPlayerId())) {
             textNewUser.setError(ERROR_OWNER_LABEL);
             return;
         }
 
-        if (frontier.hasUserShared(user)) {
+        if (frontier.hasUserAccess(user.toPlayerId())) {
             textNewUser.setError(ERROR_REPEATED_LABEL);
             return;
         }
@@ -304,12 +301,12 @@ public class SharedAccessPage extends PageScreen {
         textNewUser.setEditable(canUpdate);
     }
 
-    private void actionChanged(SettingsUserShared user, SettingsUserShared.Action action, boolean checked) {
+    private void actionChanged(FrontierUserAccess user, FrontierUserAccess.Action action, boolean checked) {
         if (minecraft.player == null) {
             return;
         }
 
-        SettingsUserShared desiredUser = new SettingsUserShared(user);
+        FrontierUserAccess desiredUser = new FrontierUserAccess(user);
         if (checked) {
             desiredUser.addAction(action);
         } else {
@@ -328,10 +325,10 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
-        SettingsUser player = new SettingsUser(minecraft.player);
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new UserSharedElement(font, user, canUpdate, !user.getUser().equals(player), this::actionChanged));
+        PlayerId player = new PlayerId(minecraft.player.getUUID());
+        if (frontier.getUserAccesses() != null) {
+            for (FrontierUserAccess user : frontier.getUserAccesses()) {
+                users.addElement(new UserSharedElement(font, user, canUpdate, !user.getPlayerId().equals(player), this::actionChanged));
             }
         }
 
@@ -347,7 +344,7 @@ public class SharedAccessPage extends PageScreen {
         if (minecraft.player == null) {
             return;
         }
-        canUpdate = frontier.checkActionUserShared(new SettingsUser(minecraft.player), SettingsUserShared.Action.UpdateSettings);
+        canUpdate = frontier.checkUserAccess(new PlayerId(minecraft.player.getUUID()), FrontierUserAccess.Action.UpdateSettings);
     }
 
 }

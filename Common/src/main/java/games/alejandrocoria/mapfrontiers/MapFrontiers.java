@@ -45,15 +45,6 @@ public class MapFrontiers {
             LOGGER.info("MapFrontiers server runtime stopped");
         });
 
-        ServerGlobalEvents.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
-            if (serverRuntime == null) {
-                return;
-            }
-
-            serverRuntime.onPlayerJoined();
-
-        });
-
         ServerGlobalEvents.subscribePlayerPermissionLevelUpdatedEvent(MapFrontiers.class, (server, player) -> {
             if (serverRuntime == null) {
                 return;

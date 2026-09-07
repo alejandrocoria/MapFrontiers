@@ -32,10 +32,7 @@ public class PacketPersonalFrontier implements CustomPacketPayload {
     }
 
     public PacketPersonalFrontier(FriendlyByteBuf buf) {
-        this.frontier = new FrontierData();
-        if (buf.readableBytes() > 1) {
-            this.frontier.fromBytes(buf);
-        }
+        this.frontier = FrontierData.fromBytes(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {

@@ -11,7 +11,6 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
@@ -49,7 +48,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         result.dispatchNetworkActions();
         FrontierData frontier = result.getFrontier();
         MapFrontiers.LOGGER.info("Created global frontier via server API. pluginModId={}, frontierId={}, owner={}, dimension={}",
-                pluginModId, frontier.getId(), frontier.getOwner().username, frontier.getDimension().identifier());
+                pluginModId, frontier.getId(), frontier.getOwner().uuid(), frontier.getDimension().identifier());
 
         FrontierDataView view = ApiConverters.fromFrontier(frontier);
         return view;
@@ -124,9 +123,9 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
             throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
         }
 
-        FrontierData defaults = new FrontierData();
         UUID frontierId = UUID.randomUUID();
-        SettingsUser frontierOwner = ApiConverters.toUser(owner);
+        var frontierOwner = ApiConverters.toPlayerId(owner);
+        FrontierData defaults = new FrontierData(frontierOwner);
         ResourceKey<Level> dimension = ApiConverters.toDimension(request.dimension());
         UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);
         String name1 = request.name1().orElse(defaults.getName1());
