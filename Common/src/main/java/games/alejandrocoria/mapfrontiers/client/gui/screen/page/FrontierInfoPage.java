@@ -23,7 +23,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialo
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -201,6 +201,11 @@ public class FrontierInfoPage extends PageScreen {
         });
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> refreshViewState());
+        MapFrontiersClient.getPlayerNameEvents().subscribeChanged(this, playerId -> {
+            if (ownerLabel != null) {
+                refreshInfoLabelsFromFrontier();
+            }
+        });
     }
 
     @Override
@@ -774,6 +779,7 @@ public class FrontierInfoPage extends PageScreen {
     private void unsubscribeEvents() {
         MapFrontiersClient.getFrontierEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        MapFrontiersClient.getPlayerNameEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
     }
 
@@ -907,11 +913,11 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void refreshInfoLabelsFromFrontier() {
-        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getOwner()));
+        MutableComponent owner = Component.translatable(OWNER_KEY, PlayerNameFormatter.getDisplayName(frontier.getOwner()));
         if (frontier.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
             ownerLabel.setTooltip(Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser())))));
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, PlayerNameFormatter.getDisplayName(frontier.getCopiedFromUser())))));
         } else {
             ownerLabel.setTooltip(null);
         }

@@ -616,7 +616,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void deleteUser(SettingsGroup group, ScrollElement element) {
         users.removeElement(element);
-        group.removeUser(((UserElement) element).getUser().toPlayerId());
+        group.removeUser(((UserElement) element).getUser());
         submitOptimisticSettingsUpdate();
     }
 
@@ -736,14 +736,7 @@ public class ModSettingsPage extends PageScreen {
 
             for (ScrollElement element : users.getElements()) {
                 UserElement userElement = (UserElement) element;
-                SettingsUser user = userElement.getUser();
-                PlayerInfo networkplayerinfo = null;
-
-                if (user.uuid != null) {
-                    networkplayerinfo = handler.getPlayerInfo(user.uuid);
-                } else if (!StringUtils.isBlank(user.username)) {
-                    networkplayerinfo = handler.getPlayerInfo(user.username);
-                }
+                PlayerInfo networkplayerinfo = handler.getPlayerInfo(userElement.getUser().uuid());
 
                 if (networkplayerinfo == null) {
                     userElement.setPingBar(0);
@@ -1075,7 +1068,7 @@ public class ModSettingsPage extends PageScreen {
         }
 
         group.addUser(user.toPlayerId());
-        UserElement element = new UserElement(font, user);
+        UserElement element = new UserElement(font, user.toPlayerId());
         users.addElement(element);
         users.scrollBottom();
 
@@ -1209,7 +1202,7 @@ public class ModSettingsPage extends PageScreen {
         GroupElement element = (GroupElement) groups.getSelectedElement();
         if (element != null && !element.getGroup().isSpecial()) {
             for (PlayerId user : element.getGroup().getUsers()) {
-                users.addElement(new UserElement(font, new SettingsUser(user)));
+                users.addElement(new UserElement(font, user));
             }
         }
 

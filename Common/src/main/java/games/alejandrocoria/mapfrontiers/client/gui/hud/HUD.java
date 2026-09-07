@@ -9,7 +9,7 @@ import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.gui.component.PreviewFrontierHelper;
 import games.alejandrocoria.mapfrontiers.client.gui.component.StringWidget;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -73,6 +73,7 @@ public class HUD {
         MapFrontiersClient.getFrontierEvents().subscribeDeleted(this, frontierID -> frontierChanged());
         MapFrontiersClient.getFrontierEvents().subscribeCreated(this, (frontierOverlay, playerID) -> frontierChanged());
         MapFrontiersClient.getFrontierEvents().subscribeUpdated(this, (frontierOverlay, playerID) -> frontierChanged());
+        MapFrontiersClient.getPlayerNameEvents().subscribeChanged(this, this::playerNameChanged);
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::configUpdated);
     }
 
@@ -149,6 +150,12 @@ public class HUD {
         } else if (frontier != null) {
             frontier = null;
             frontierHash = 0;
+            needUpdate = true;
+        }
+    }
+
+    private void playerNameChanged(PlayerId playerId) {
+        if (!previewMode && frontier != null && playerId.equals(frontier.getOwner())) {
             needUpdate = true;
         }
     }
@@ -263,7 +270,7 @@ public class HUD {
             return PreviewFrontierHelper.translate("mapfrontiers.preview_owner");
         }
 
-        String ownerString = SettingsUserFormatter.getDisplayName(frontier.getOwner(), "");
+        String ownerString = PlayerNameFormatter.getDisplayName(frontier.getOwner(), "");
         return ownerString.equals(frontier.getOwner().uuid().toString())
                 ? ownerString.substring(0, 8) + "..."
                 : ownerString;

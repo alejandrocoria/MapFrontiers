@@ -19,7 +19,8 @@ import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRefresh
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRetryLimiter;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayLayer;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayState;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
@@ -103,6 +104,7 @@ public class CollectionOverlay {
     private List<CollectionLabelLayoutKey> labelLayoutFingerprint = List.of();
     private final BannerRenderer bannerRenderer = new BannerRenderer();
     private @Nullable BannerData renderedBannerData;
+    private @Nullable String previewOwnerDisplayName;
     private @Nullable Runnable dirtyOverlayListener;
 
     public CollectionOverlay(CollectionOverlayKey key, @Nullable IClientAPI jmAPI, CollectionData collection, List<FrontierOverlay> members) {
@@ -121,6 +123,26 @@ public class CollectionOverlay {
 
     public CollectionOverlayKey getKey() {
         return key;
+    }
+
+    public void setPreviewOwnerDisplayName(String ownerDisplayName) {
+        previewOwnerDisplayName = ownerDisplayName;
+        markOwnerNameDirty();
+    }
+
+    public void markOwnerNameDirty(PlayerId playerId) {
+        if (collection != null && playerId.equals(collection.getOwner())) {
+            markOwnerNameDirty();
+        }
+    }
+
+    private void markOwnerNameDirty() {
+        CollectionLabelContentKey updatedLabelContent = resolveLabelContentKey(collection);
+        if (!collectionLabelContentSnapshot.equals(updatedLabelContent)) {
+            collectionLabelContentSnapshot = updatedLabelContent;
+            labelsDirty = true;
+            invalidateOverlayRefresh();
+        }
     }
 
     public List<MarkerOverlay> getLabelOverlays() {
@@ -833,7 +855,7 @@ public class CollectionOverlay {
                 webmapEnabled && resolveBannerVisibility(Context.UI.Webmap));
     }
 
-    private static CollectionLabelContentKey resolveLabelContentKey(@Nullable CollectionData collection) {
+    private CollectionLabelContentKey resolveLabelContentKey(@Nullable CollectionData collection) {
         if (collection == null) {
             return new CollectionLabelContentKey(null, "", null);
         }
@@ -841,7 +863,9 @@ public class CollectionOverlay {
         BannerData banner = collection.getBannerData();
         // BannerData is mutable, so the semantic baseline must not retain the caller's instance.
         return new CollectionLabelContentKey(name.isEmpty() ? null : name,
-                SettingsUserFormatter.getDisplayName(collection.getOwner(), ""),
+                previewOwnerDisplayName == null
+                        ? PlayerNameFormatter.getDisplayName(collection.getOwner(), "")
+                        : previewOwnerDisplayName,
                 banner == null ? null : new BannerData(banner));
     }
 

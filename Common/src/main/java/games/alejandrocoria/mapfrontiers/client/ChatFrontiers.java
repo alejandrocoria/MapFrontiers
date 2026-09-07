@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
@@ -191,17 +191,15 @@ public class ChatFrontiers {
                 button.withStyle(style -> style.withBold(true));
                 button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersacceptcopy " + currentReceivedMessageId)));
 
-                SettingsUser userSender = new SettingsUser();
-                userSender.uuid = sender;
-                userSender.fillMissingInfo(true, null);
-                MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(userSender, "User not found") + " ");
-                if (frontier.getCopiedFromUser() != null && userSender.toPlayerId().equals(frontier.getCopiedFromUser())) {
+                PlayerId userSender = new PlayerId(sender);
+                MutableComponent text = Component.literal(PlayerNameFormatter.getDisplayName(userSender, "User not found") + " ");
+                if (frontier.getCopiedFromUser() != null && userSender.equals(frontier.getCopiedFromUser())) {
                     text.append("want to send a frontier to you: ");
                 } else {
                     PlayerId copiedFromUser = frontier.getCopiedFromUser();
                     String copiedFromName = copiedFromUser == null
                             ? "User not found"
-                            : SettingsUserFormatter.getDisplayName(copiedFromUser, "User not found");
+                            : PlayerNameFormatter.getDisplayName(copiedFromUser, "User not found");
                     text.append("want to send a frontier of " + copiedFromName + " to you: ");
                 }
 

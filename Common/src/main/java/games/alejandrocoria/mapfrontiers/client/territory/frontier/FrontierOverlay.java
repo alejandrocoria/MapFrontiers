@@ -20,7 +20,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRefresh
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRetryLimiter;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayLayer;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayState;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -303,6 +303,10 @@ public class FrontierOverlay extends FrontierData {
 
     public void setPreviewOwnerDisplayName(String ownerDisplayName) {
         previewOwnerDisplayName = ownerDisplayName;
+        invalidateLabels();
+    }
+
+    public void markOwnerNameDirty() {
         invalidateLabels();
     }
 
@@ -2364,7 +2368,7 @@ public class FrontierOverlay extends FrontierData {
         }
 
         String ownerName = previewOwnerDisplayName == null
-                ? SettingsUserFormatter.getDisplayName(owner, "")
+                ? PlayerNameFormatter.getDisplayName(owner, "")
                 : previewOwnerDisplayName;
         if (ownerVisible && !ownerName.isEmpty()) {
             ++lines;

@@ -4,7 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -93,11 +93,11 @@ public class PacketPersonalFrontierShared implements CustomPacketPayload {
         button.withStyle(style -> style.withBold(true));
         button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersaccept " + message.shareMessageID)));
 
-        MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
+        MutableComponent text = Component.literal(PlayerNameFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
         if (message.playerSharing.equals(message.owner)) {
             text.append("want to share a frontier with you: ");
         } else {
-            text.append("want to share a frontier of " + SettingsUserFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
+            text.append("want to share a frontier of " + PlayerNameFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
         }
 
         text.append(button);

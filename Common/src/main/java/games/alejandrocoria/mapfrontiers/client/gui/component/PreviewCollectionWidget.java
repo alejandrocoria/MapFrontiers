@@ -44,6 +44,7 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         previewCollectionData = createPreviewCollection(owner);
         previewCollectionOverlay = new CollectionOverlay(new CollectionOverlayKey(previewCollectionData.getId(), OVERWORLD), null,
                 previewCollectionData, List.of());
+        previewCollectionOverlay.setPreviewOwnerDisplayName(PreviewFrontierHelper.translate("mapfrontiers.preview_owner"));
 
         previewFrontiers.add(createPreviewFrontier(owner,
                 new BlockPos(30, 70, 45),

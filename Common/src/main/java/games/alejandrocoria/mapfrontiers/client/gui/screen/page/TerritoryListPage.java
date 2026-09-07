@@ -30,7 +30,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDia
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
@@ -141,6 +141,7 @@ public class TerritoryListPage extends PageScreen {
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             rebuildTerritories();
         });
+        MapFrontiersClient.getPlayerNameEvents().subscribeChanged(this, playerId -> rebuildTerritories());
     }
 
     @Override
@@ -201,6 +202,7 @@ public class TerritoryListPage extends PageScreen {
         MapFrontiersClient.getFrontierEvents().unsubscribe(this);
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        MapFrontiersClient.getPlayerNameEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
@@ -881,7 +883,7 @@ public class TerritoryListPage extends PageScreen {
         if (name.contains(searchText)) {
             return true;
         }
-        String ownerName = SettingsUserFormatter.getDisplayName(frontier.getOwner(), "");
+        String ownerName = PlayerNameFormatter.getDisplayName(frontier.getOwner(), "");
         if (!StringUtil.isBlank(ownerName) && ownerName.toLowerCase().contains(searchText)) {
             return true;
         }
@@ -1345,8 +1347,8 @@ public class TerritoryListPage extends PageScreen {
         if (second == null) {
             return 1;
         }
-        int byName = SettingsUserFormatter.getDisplayName(first).compareToIgnoreCase(
-                SettingsUserFormatter.getDisplayName(second));
+        int byName = PlayerNameFormatter.getDisplayName(first).compareToIgnoreCase(
+                PlayerNameFormatter.getDisplayName(second));
         return byName == 0 ? first.uuid().compareTo(second.uuid()) : byName;
     }
 

@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import net.minecraft.ChatFormatting;
@@ -98,7 +98,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
             }
         }
 
-        graphics.text(font, SettingsUserFormatter.getDisplayName(user.getPlayerId()), x + 16, y + 4, ColorConstants.USER_SHARED_TEXT);
+        graphics.text(font, PlayerNameFormatter.getDisplayName(user.getPlayerId()), x + 16, y + 4, ColorConstants.USER_SHARED_TEXT);
 
         updateFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);

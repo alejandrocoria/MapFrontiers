@@ -23,6 +23,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverl
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameEvents;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
@@ -658,6 +659,10 @@ public class MapFrontiersClient {
 
     public static PlayerNameRepository getPlayerNameRepository() {
         return requireTerritoryRuntime().getPlayerNameRepository();
+    }
+
+    public static PlayerNameEvents getPlayerNameEvents() {
+        return requireTerritoryRuntime().getPlayerNameEvents();
     }
 
     public static long nextRequestId() {

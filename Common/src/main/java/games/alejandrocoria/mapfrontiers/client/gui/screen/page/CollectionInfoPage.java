@@ -21,7 +21,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.BannerRenderer;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -168,6 +168,11 @@ public class CollectionInfoPage extends PageScreen {
         });
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> refreshViewState());
+        MapFrontiersClient.getPlayerNameEvents().subscribeChanged(this, playerId -> {
+            if (ownerLabel != null) {
+                refreshInfoLabels();
+            }
+        });
     }
 
     @Override
@@ -506,11 +511,11 @@ public class CollectionInfoPage extends PageScreen {
             }
         }
 
-        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getOwner()));
+        MutableComponent owner = Component.translatable(OWNER_KEY, PlayerNameFormatter.getDisplayName(collection.getOwner()));
         if (collection.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
             ownerLabel.setTooltip(Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(collection.getCopiedFromUser())))));
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, PlayerNameFormatter.getDisplayName(collection.getCopiedFromUser())))));
         } else {
             ownerLabel.setTooltip(null);
         }
@@ -595,6 +600,7 @@ public class CollectionInfoPage extends PageScreen {
         bannerRenderer.releaseTexture();
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        MapFrontiersClient.getPlayerNameEvents().unsubscribe(this);
         super.onClose();
     }
 
@@ -788,6 +794,7 @@ public class CollectionInfoPage extends PageScreen {
         bannerRenderer.releaseTexture();
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        MapFrontiersClient.getPlayerNameEvents().unsubscribe(this);
         MapFrontiersClient.getOperationService().deleteCollection(collection);
         super.onClose();
     }

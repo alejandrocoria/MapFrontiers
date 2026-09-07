@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPe
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameEvents;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import journeymap.api.v2.client.IClientAPI;
@@ -107,8 +108,7 @@ public class ClientTerritoryRuntime {
             syncService.bootstrapLocalPersonalData();
         }
 
-        playerNameRepository.getEvents().subscribeChanged(localPersistenceCoordinator,
-                localPersistenceCoordinator::onPlayerNameChanged);
+        playerNameRepository.getEvents().subscribeChanged(this, this::onPlayerNameChanged);
         observeLocalPlayerProfile();
 
         if (localOverrides == null) {
@@ -136,6 +136,11 @@ public class ClientTerritoryRuntime {
     public PlayerNameRepository getPlayerNameRepository() {
         ensureInitialized();
         return playerNameRepository;
+    }
+
+    public PlayerNameEvents getPlayerNameEvents() {
+        ensureInitialized();
+        return playerNameRepository.getEvents();
     }
 
     public FrontiersOverlayManager getPersonalFrontiersOverlayManager() {
@@ -329,6 +334,13 @@ public class ClientTerritoryRuntime {
 
         playerNameRepository.observe(new PlayerId(minecraft.player.getUUID()), minecraft.player.getGameProfile().name(),
                 PlayerNameSource.CONNECTED_PROFILE);
+    }
+
+    private void onPlayerNameChanged(PlayerId playerId) {
+        localPersistenceCoordinator.onPlayerNameChanged(playerId);
+        globalFrontiersOverlayManager.markPlayerNamePresentationDirty(playerId);
+        personalFrontiersOverlayManager.markPlayerNamePresentationDirty(playerId);
+        collectionOverlayManager.markPlayerNamePresentationDirty(playerId);
     }
 
     private static void closeStep(String name, Runnable action) {
