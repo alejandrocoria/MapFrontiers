@@ -53,6 +53,12 @@ public class MapFrontiers {
             PacketHandler.sendTo(serverRuntime.createSettingsProfilePacket(player), player);
         });
 
+        ServerGlobalEvents.subscribePlayerJoinedEvent(MapFrontiers.class, (server, player) -> {
+            if (serverRuntime != null) {
+                serverRuntime.onPlayerJoined(player);
+            }
+        });
+
         ServerGlobalEvents.subscribeServerTickEvent(MapFrontiers.class, server -> {
             if (serverRuntime != null) {
                 serverRuntime.onServerTick();

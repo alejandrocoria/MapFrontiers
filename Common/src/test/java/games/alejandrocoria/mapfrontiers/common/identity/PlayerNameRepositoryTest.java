@@ -88,6 +88,19 @@ class PlayerNameRepositoryTest {
     }
 
     @Test
+    void cacheAndConnectedProfileUpdatePersistedHintOnlyWhenTheNameChanges() {
+        PlayerNameRepository repository = new PlayerNameRepository(message -> {
+        });
+
+        assertTrue(repository.observe(PLAYER_ID, "OldName", PlayerNameSource.HINT));
+        assertTrue(repository.observe(PLAYER_ID, "CurrentName", PlayerNameSource.MINECRAFT_CACHE));
+        assertFalse(repository.observe(PLAYER_ID, "CurrentName", PlayerNameSource.CONNECTED_PROFILE));
+        assertTrue(repository.observe(PLAYER_ID, "RenamedName", PlayerNameSource.CONNECTED_PROFILE));
+
+        assertEquals("RenamedName", repository.resolveName(PLAYER_ID));
+    }
+
+    @Test
     void firstHintWinsAndOnlyFirstConflictWarns() {
         List<String> warnings = new ArrayList<>();
         PlayerNameRepository repository = new PlayerNameRepository(warnings::add);

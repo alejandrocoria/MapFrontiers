@@ -51,7 +51,7 @@ public final class ServerPlayerIdLookup implements PlayerIdLookup {
         }
 
         ServerPlayer player = server.getPlayerList().getPlayerByName(username);
-        return player == null ? null : new PlayerId(player.getGameProfile().id());
+        return player == null ? null : ServerPlayerIdFactory.from(player);
     }
 
     @Nullable

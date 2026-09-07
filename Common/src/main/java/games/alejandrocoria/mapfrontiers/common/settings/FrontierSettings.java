@@ -7,7 +7,6 @@ import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtR
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -125,15 +124,14 @@ public class FrontierSettings {
         return false;
     }
 
-    public SettingsProfile getProfile(ServerPlayer player) {
+    public SettingsProfile getProfile(PlayerId user, boolean isOP) {
         SettingsProfile profile = new SettingsProfile();
-        PlayerId user = new PlayerId(player.getUUID());
 
         for (Action action : owners.getActions()) {
             profile.setAction(action, SettingsProfile.State.Owner);
         }
 
-        if (MapFrontiers.isOPorHost(player)) {
+        if (isOP) {
             for (Action action : OPs.getActions()) {
                 profile.setAction(action, SettingsProfile.State.Enabled);
             }

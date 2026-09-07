@@ -8,6 +8,7 @@ import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
+import games.alejandrocoria.mapfrontiers.server.identity.ServerPlayerIdFactory;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -25,7 +26,7 @@ public class TerritoryPermissionEvaluator {
     }
 
     public PlayerId getPlayerUser(ServerPlayer player) {
-        return new PlayerId(player.getUUID());
+        return ServerPlayerIdFactory.from(player);
     }
 
     public boolean canCreateGlobalFrontier(ServerPlayer player) {
@@ -84,7 +85,7 @@ public class TerritoryPermissionEvaluator {
     }
 
     public SettingsProfile getProfile(ServerPlayer player) {
-        return getSettings().getProfile(player);
+        return getSettings().getProfile(getPlayerUser(player), MapFrontiers.isOPorHost(player));
     }
 
     public PacketSettingsProfile createProfilePacket(ServerPlayer player) {

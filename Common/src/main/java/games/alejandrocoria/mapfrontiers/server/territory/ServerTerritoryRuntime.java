@@ -2,11 +2,13 @@ package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.network.PacketTerritoriesSnapshot;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.server.api.MapFrontiersServerAPIImpl;
+import games.alejandrocoria.mapfrontiers.server.identity.ServerPlayerIdFactory;
 import games.alejandrocoria.mapfrontiers.server.identity.ServerPlayerIdLookup;
 import games.alejandrocoria.mapfrontiers.server.settings.ServerSettingsOperationService;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
@@ -17,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -38,6 +41,7 @@ public class ServerTerritoryRuntime {
         this.playerNameRepository = new PlayerNameRepository();
         this.territoriesManager = new TerritoriesManager(playerNameRepository, new ServerPlayerIdLookup(server));
         this.territoriesManager.loadOrCreateData(server);
+        hydratePlayerNamesFromMinecraftCache();
         this.permissionEvaluator = new TerritoryPermissionEvaluator(territoriesManager);
         this.frontierEvents = new ServerFrontierEvents();
         this.collectionEvents = new ServerCollectionEvents();
@@ -76,13 +80,21 @@ public class ServerTerritoryRuntime {
         territoriesManager.flushTerritoriesOnShutdown();
     }
 
+    public void onPlayerJoined(ServerPlayer player) {
+        PlayerId playerId = ServerPlayerIdFactory.from(player);
+        if (playerNameRepository.observe(playerId, player.getGameProfile().name(), PlayerNameSource.CONNECTED_PROFILE)
+                && territoriesManager.getReferencedPlayerIds().contains(playerId)) {
+            territoriesManager.markPlayerNameHintsDirty();
+        }
+    }
+
     public PacketSettingsProfile createSettingsProfilePacket(ServerPlayer player) {
         return permissionEvaluator.createProfilePacket(player);
     }
 
     public PacketTerritoriesSnapshot createTerritoriesSnapshot(ServerPlayer player) {
         PacketTerritoriesSnapshot packetTerritoriesSnapshot = new PacketTerritoriesSnapshot();
-        PlayerId playerUser = new PlayerId(player.getUUID());
+        PlayerId playerUser = ServerPlayerIdFactory.from(player);
         Set<UUID> includedPersonalCollectionIds = new HashSet<>();
 
         for (FrontierData frontier : territoriesManager.iterateGlobalFrontiers()) {
@@ -123,5 +135,20 @@ public class ServerTerritoryRuntime {
         frontierEvents.close();
         collectionEvents.close();
         playerNameRepository.close();
+    }
+
+    private void hydratePlayerNamesFromMinecraftCache() {
+        boolean changed = false;
+        for (PlayerId playerId : territoriesManager.getReferencedPlayerIds()) {
+            Optional<String> username = server.services().nameToIdCache().get(playerId.uuid())
+                    .map(nameAndId -> nameAndId.name());
+            if (username.isPresent()) {
+                changed |= playerNameRepository.observe(playerId, username.get(), PlayerNameSource.MINECRAFT_CACHE);
+            }
+        }
+
+        if (changed) {
+            territoriesManager.markPlayerNameHintsDirty();
+        }
     }
 }

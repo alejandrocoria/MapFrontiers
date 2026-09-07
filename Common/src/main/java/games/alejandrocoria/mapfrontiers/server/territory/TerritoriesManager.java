@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.common.identity.PlayerIdLookup;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
@@ -36,6 +37,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
@@ -137,6 +139,35 @@ public class TerritoriesManager {
     public Iterable<CollectionData> iteratePersonalCollections(PlayerId user) {
         List<CollectionData> collections = usersPersonalCollections.get(user);
         return collections != null ? collections : List.of();
+    }
+
+    Set<PlayerId> getReferencedPlayerIds() {
+        LinkedHashSet<PlayerId> playerIds = new LinkedHashSet<>();
+
+        for (FrontierData frontier : allFrontiers.values()) {
+            playerIds.add(frontier.getOwner());
+            if (frontier.getUserAccesses() != null) {
+                for (FrontierUserAccess userAccess : frontier.getUserAccesses()) {
+                    playerIds.add(userAccess.getPlayerId());
+                }
+            }
+            if (frontier.wasCopied() && frontier.getCopiedFromUser() != null) {
+                playerIds.add(frontier.getCopiedFromUser());
+            }
+        }
+
+        for (CollectionData collection : allCollections.values()) {
+            playerIds.add(collection.getOwner());
+            if (collection.wasCopied() && collection.getCopiedFromUser() != null) {
+                playerIds.add(collection.getCopiedFromUser());
+            }
+        }
+
+        for (SettingsGroup group : frontierSettings.getCustomGroups()) {
+            playerIds.addAll(group.getUsers());
+        }
+
+        return playerIds;
     }
 
     public List<FrontierData> getFrontiersInCollection(UUID collectionId) {
@@ -701,6 +732,13 @@ public class TerritoriesManager {
 
     public void markDirty() {
         persistenceController.markDirty(System.currentTimeMillis());
+    }
+
+    void markPlayerNameHintsDirty() {
+        markDirty();
+        if (ModDir != null) {
+            saveSettingsData();
+        }
     }
 
     public void flushTerritoriesOnShutdown() {
