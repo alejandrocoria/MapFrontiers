@@ -631,7 +631,7 @@ public class ClientTerritoryOperationService {
             return context.failure;
         }
 
-        PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontierId.value(), ApiConverters.toUser(user),
+        PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(frontierId.value(), ApiConverters.toPlayerId(user),
                 context.frontier.getSharingRevision(), MapFrontiersClient.nextRequestId()));
         return FrontierActionResult.acceptedAsync(frontierId);
     }
@@ -682,7 +682,7 @@ public class ClientTerritoryOperationService {
             case Add -> PacketHandler.sendToServer(new PacketSharePersonalFrontier(outbound.frontierId(), userShared,
                     outbound.baseRevision(), outbound.requestId()));
             case Remove -> PacketHandler.sendToServer(new PacketRemoveSharedUserPersonalFrontier(outbound.frontierId(),
-                    new SettingsUser(userShared.getPlayerId()), outbound.baseRevision(), outbound.requestId()));
+                    userShared.getPlayerId(), outbound.baseRevision(), outbound.requestId()));
             case Update -> PacketHandler.sendToServer(new PacketUpdateSharedUserPersonalFrontier(outbound.frontierId(),
                     userShared, outbound.baseRevision(), outbound.requestId()));
         }

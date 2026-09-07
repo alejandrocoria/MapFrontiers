@@ -5,7 +5,8 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -28,12 +29,12 @@ public class PacketPersonalFrontierShared implements CustomPacketPayload {
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontierShared> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontierShared::encode, PacketPersonalFrontierShared::new);
 
     private int shareMessageID;
-    private final SettingsUser playerSharing;
-    private final SettingsUser owner;
+    private final PlayerId playerSharing;
+    private final PlayerId owner;
     private String name1;
     private String name2;
 
-    public PacketPersonalFrontierShared(int shareMessageID, SettingsUser playerSharing, SettingsUser owner, String name1,
+    public PacketPersonalFrontierShared(int shareMessageID, PlayerId playerSharing, PlayerId owner, String name1,
             String name2) {
         this.shareMessageID = shareMessageID;
         this.playerSharing = playerSharing;
@@ -48,21 +49,17 @@ public class PacketPersonalFrontierShared implements CustomPacketPayload {
     }
 
     public PacketPersonalFrontierShared(FriendlyByteBuf buf) {
-        this.playerSharing = new SettingsUser();
-        this.owner = new SettingsUser();
-        if (buf.readableBytes() > 1) {
-            this.shareMessageID = buf.readInt();
-            this.playerSharing.fromBytes(buf);
-            this.owner.fromBytes(buf);
-            this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
-            this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
-        }
+        this.shareMessageID = buf.readInt();
+        this.playerSharing = PlayerIdNetworkCodec.read(buf);
+        this.owner = PlayerIdNetworkCodec.read(buf);
+        this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+        this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeInt(shareMessageID);
-        playerSharing.toBytes(buf);
-        owner.toBytes(buf);
+        PlayerIdNetworkCodec.write(buf, playerSharing);
+        PlayerIdNetworkCodec.write(buf, owner);
         buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
         buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
     }

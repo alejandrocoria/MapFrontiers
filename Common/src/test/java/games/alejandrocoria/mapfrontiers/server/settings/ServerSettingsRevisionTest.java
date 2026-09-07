@@ -60,6 +60,6 @@ class ServerSettingsRevisionTest {
                 return true;
             }
         };
-        return new ServerSettingsOperationService(null, manager, permissions);
+        return new ServerSettingsOperationService(null, manager, permissions, playerId -> null);
     }
 }

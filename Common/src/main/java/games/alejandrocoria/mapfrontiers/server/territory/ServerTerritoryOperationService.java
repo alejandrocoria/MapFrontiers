@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
@@ -14,6 +16,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierResync;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPlayerNameMappings;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
@@ -47,16 +50,19 @@ public class ServerTerritoryOperationService {
     private final TerritoryPermissionEvaluator permissionEvaluator;
     private final ServerFrontierEvents frontierEvents;
     private final ServerCollectionEvents collectionEvents;
+    private final PlayerNameResolver playerNameResolver;
 
     public ServerTerritoryOperationService(MinecraftServer server, TerritoriesManager territoriesManager,
                                            TerritoryPermissionEvaluator permissionEvaluator,
                                            ServerFrontierEvents frontierEvents,
-                                           ServerCollectionEvents collectionEvents) {
+                                           ServerCollectionEvents collectionEvents,
+                                           PlayerNameResolver playerNameResolver) {
         this.server = server;
         this.territoriesManager = territoriesManager;
         this.permissionEvaluator = permissionEvaluator;
         this.frontierEvents = frontierEvents;
         this.collectionEvents = collectionEvents;
+        this.playerNameResolver = playerNameResolver;
     }
 
     public @Nullable FrontierData getFrontier(UUID frontierId) {
@@ -191,7 +197,7 @@ public class ServerTerritoryOperationService {
             CollectionData payload = new CollectionData(collection);
             PacketCollectionUpdated broadcast = new PacketCollectionUpdated(payload, player.getId(), 0L,
                     OperationResolution.Accepted);
-            result.addNetworkAction(() -> sendCollectionUpdatedToUsers(broadcast, recipients));
+            result.addNetworkAction(() -> sendCollectionUpdatedToUsers(broadcast, payload, recipients));
         }
         return result;
     }
@@ -227,7 +233,7 @@ public class ServerTerritoryOperationService {
         }
 
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(frontier), player));
+        result.addNetworkAction(() -> sendFrontierResync(player, frontier));
         return result;
     }
 
@@ -644,7 +650,7 @@ public class ServerTerritoryOperationService {
             if (frontier.hasCollection() && !territoriesManager.userKnowsPersonalCollection(playerUser, frontier.getCollectionId())) {
                 result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(frontier.getCollectionId()), player));
             }
-            result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
+            result.addNetworkAction(() -> sendSharingUpdatedToUsersWithAccess(frontierSharingUpdatedPacket, frontier));
             frontierEvents.postUpdated(frontier);
             return result;
         }
@@ -739,7 +745,7 @@ public class ServerTerritoryOperationService {
             enqueueCollectionVisibilityChange(result, sourceCollection, sourceCollectionRecipientsBefore, false);
         }
         result.addNetworkAction(() -> PacketHandler.sendTo(new PacketChangeFrontierToGlobal(frontier.getId(), frontier.getModified()), relevantPlayers));
-        result.addNetworkAction(() -> PacketHandler.sendToAllExcept(new PacketFrontierCreated(frontier, player.getId()), server, relevantPlayers));
+        result.addNetworkAction(() -> sendFrontierCreatedToAllExcept(frontier, player.getId(), relevantPlayers));
         frontierEvents.postCreated(frontier);
         return result;
     }
@@ -794,7 +800,7 @@ public class ServerTerritoryOperationService {
         if (collection != null) {
             enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore, false);
         }
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, actorId), frontier, server));
+        result.addNetworkAction(() -> sendFrontierCreatedToUsersWithAccess(frontier, actorId));
         frontierEvents.postCreated(frontier);
         return result;
     }
@@ -807,7 +813,7 @@ public class ServerTerritoryOperationService {
         if (collection != null) {
             enqueueCollectionVisibilityChange(result, collection, collectionRecipientsBefore, false);
         }
-        result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketFrontierCreated(frontier, actorId), server));
+        result.addNetworkAction(() -> sendFrontierCreatedToAll(frontier, actorId));
         frontierEvents.postCreated(frontier);
         return result;
     }
@@ -842,7 +848,7 @@ public class ServerTerritoryOperationService {
             result.addNetworkAction(() -> sendCollectionCreatedToUsers(payload, recipients));
         } else {
             CollectionData payload = new CollectionData(collection);
-            result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionCreated(payload), server));
+            result.addNetworkAction(() -> sendCollectionCreatedToAll(payload));
         }
         collectionEvents.postCreated(collection);
         return result;
@@ -878,7 +884,7 @@ public class ServerTerritoryOperationService {
         if (!collection.getPersonal()) {
             if (metadataChanged) {
                 CollectionData payload = new CollectionData(collection);
-                result.addNetworkAction(() -> PacketHandler.sendToAll(new PacketCollectionUpdated(payload), server));
+                result.addNetworkAction(() -> sendCollectionUpdatedToAll(payload));
             }
             return;
         }
@@ -923,6 +929,82 @@ public class ServerTerritoryOperationService {
         }
     }
 
+    private void sendFrontierResync(ServerPlayer player, FrontierData frontier) {
+        sendPlayerNameMappings(player, PlayerReferenceCollector.collect(frontier));
+        PacketHandler.sendTo(new PacketFrontierResync(frontier), player);
+    }
+
+    private void sendFrontierCreatedToUsersWithAccess(FrontierData frontier, int actorId) {
+        PacketPlayerNameMappings mappings = createPlayerNameMappings(PlayerReferenceCollector.collect(frontier));
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendToUsersWithAccess(mappings, frontier, server);
+        }
+        PacketHandler.sendToUsersWithAccess(new PacketFrontierCreated(frontier, actorId), frontier, server);
+    }
+
+    private void sendFrontierCreatedToAll(FrontierData frontier, int actorId) {
+        sendPlayerNameMappingsToAll(PlayerReferenceCollector.collect(frontier));
+        PacketHandler.sendToAll(new PacketFrontierCreated(frontier, actorId), server);
+    }
+
+    private void sendFrontierCreatedToAllExcept(FrontierData frontier, int actorId, List<ServerPlayer> excludedPlayers) {
+        sendPlayerNameMappingsToAllExcept(PlayerReferenceCollector.collect(frontier), excludedPlayers);
+        PacketHandler.sendToAllExcept(new PacketFrontierCreated(frontier, actorId), server, excludedPlayers);
+    }
+
+    private void sendSharingUpdatedToUsersWithAccess(PacketFrontierSharingUpdated packet, FrontierData frontier) {
+        PacketPlayerNameMappings mappings = createPlayerNameMappings(PlayerReferenceCollector.collect(FrontierSharingChange.fromFrontierData(frontier)));
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendToUsersWithAccess(mappings, frontier, server);
+        }
+        PacketHandler.sendToUsersWithAccess(packet, frontier, server);
+    }
+
+    private void sendCollectionCreatedToAll(CollectionData collection) {
+        sendPlayerNameMappingsToAll(PlayerReferenceCollector.collect(collection));
+        PacketHandler.sendToAll(new PacketCollectionCreated(collection), server);
+    }
+
+    private void sendCollectionUpdatedToAll(CollectionData collection) {
+        sendPlayerNameMappingsToAll(PlayerReferenceCollector.collect(collection));
+        PacketHandler.sendToAll(new PacketCollectionUpdated(collection), server);
+    }
+
+    private void sendCollectionCreated(ServerPlayer player, CollectionData collection) {
+        sendPlayerNameMappings(player, PlayerReferenceCollector.collect(collection));
+        PacketHandler.sendTo(new PacketCollectionCreated(collection), player);
+    }
+
+    private void sendCollectionUpdated(ServerPlayer player, PacketCollectionUpdated packet, CollectionData collection) {
+        sendPlayerNameMappings(player, PlayerReferenceCollector.collect(collection));
+        PacketHandler.sendTo(packet, player);
+    }
+
+    private PacketPlayerNameMappings createPlayerNameMappings(Iterable<PlayerId> playerIds) {
+        return new PacketPlayerNameMappings(playerIds, playerNameResolver);
+    }
+
+    private void sendPlayerNameMappings(ServerPlayer player, Iterable<PlayerId> playerIds) {
+        PacketPlayerNameMappings mappings = createPlayerNameMappings(playerIds);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendTo(mappings, player);
+        }
+    }
+
+    private void sendPlayerNameMappingsToAll(Iterable<PlayerId> playerIds) {
+        PacketPlayerNameMappings mappings = createPlayerNameMappings(playerIds);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendToAll(mappings, server);
+        }
+    }
+
+    private void sendPlayerNameMappingsToAllExcept(Iterable<PlayerId> playerIds, List<ServerPlayer> excludedPlayers) {
+        PacketPlayerNameMappings mappings = createPlayerNameMappings(playerIds);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendToAllExcept(mappings, server, excludedPlayers);
+        }
+    }
+
     private void enqueueCollectionDeleted(ServerTerritoryOperationResult result, CollectionData collection, @Nullable Set<UUID> recipientsBefore) {
         collectionEvents.postDeleted(collection);
         if (!collection.getPersonal()) {
@@ -946,22 +1028,22 @@ public class ServerTerritoryOperationService {
                 continue;
             }
 
-            PacketHandler.sendTo(new PacketCollectionCreated(new CollectionData(payload)), recipient);
+            sendCollectionCreated(recipient, new CollectionData(payload));
         }
     }
 
     private void sendCollectionUpdatedToUsers(CollectionData payload, Set<UUID> recipientIds) {
-        sendCollectionUpdatedToUsers(new PacketCollectionUpdated(payload), recipientIds);
+        sendCollectionUpdatedToUsers(new PacketCollectionUpdated(payload), payload, recipientIds);
     }
 
-    private void sendCollectionUpdatedToUsers(PacketCollectionUpdated packet, Set<UUID> recipientIds) {
+    private void sendCollectionUpdatedToUsers(PacketCollectionUpdated packet, CollectionData collection, Set<UUID> recipientIds) {
         for (UUID recipientId : recipientIds) {
             ServerPlayer recipient = server.getPlayerList().getPlayer(recipientId);
             if (recipient == null) {
                 continue;
             }
 
-            PacketHandler.sendTo(packet, recipient);
+            sendCollectionUpdated(recipient, packet, collection);
         }
     }
 
@@ -979,7 +1061,7 @@ public class ServerTerritoryOperationService {
                                                  CollectionData collection, long requestId,
                                                  OperationResolution resolution) {
         PacketCollectionUpdated response = new PacketCollectionUpdated(collection, player.getId(), requestId, resolution);
-        result.addNetworkAction(() -> PacketHandler.sendTo(response, player));
+        result.addNetworkAction(() -> sendCollectionUpdated(player, response, collection));
     }
 
     private void sendCollectionDeletedToUsers(UUID collectionId, Set<UUID> recipientIds) {
@@ -1094,7 +1176,7 @@ public class ServerTerritoryOperationService {
                 frontier.getId(), player.getName().getString(), baseSyncHash, frontier.computeSyncHash()
         );
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.ignored(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(frontier), player));
+        result.addNetworkAction(() -> sendFrontierResync(player, frontier));
         return result;
     }
 
@@ -1102,7 +1184,7 @@ public class ServerTerritoryOperationService {
         MapFrontiers.LOGGER.warn("Rejected invalid frontier update. frontierId={}, player={}, reason={}",
                 frontier.getId(), player.getName().getString(), reason);
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.rejected(frontier);
-        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierResync(frontier), player));
+        result.addNetworkAction(() -> sendFrontierResync(player, frontier));
         return result;
     }
 

@@ -27,6 +27,7 @@ import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPlayerNameMappings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -453,6 +454,13 @@ public class MapFrontiersClient {
         publishClientApiIfReady();
         if (hud != null) {
             hud.frontierChanged();
+        }
+    }
+
+    public static void applyPlayerNameMappings(PacketPlayerNameMappings playerNameMappings) {
+        ClientTerritoryRuntime runtime = ensureTerritoryRuntime();
+        if (runtime != null) {
+            playerNameMappings.applyTo(runtime.getPlayerNameRepository());
         }
     }
 

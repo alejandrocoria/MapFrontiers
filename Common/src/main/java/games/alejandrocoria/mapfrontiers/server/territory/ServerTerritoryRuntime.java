@@ -3,6 +3,8 @@ package games.alejandrocoria.mapfrontiers.server.territory;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
+import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPlayerNameMappings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.network.PacketTerritoriesSnapshot;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -45,9 +47,9 @@ public class ServerTerritoryRuntime {
         this.permissionEvaluator = new TerritoryPermissionEvaluator(territoriesManager);
         this.frontierEvents = new ServerFrontierEvents();
         this.collectionEvents = new ServerCollectionEvents();
-        this.operationService = new ServerTerritoryOperationService(server, territoriesManager, permissionEvaluator, frontierEvents, collectionEvents);
-        this.shareService = new ServerFrontierShareService(server, territoriesManager, permissionEvaluator);
-        this.settingsOperationService = new ServerSettingsOperationService(server, territoriesManager, permissionEvaluator);
+        this.operationService = new ServerTerritoryOperationService(server, territoriesManager, permissionEvaluator, frontierEvents, collectionEvents, playerNameRepository);
+        this.shareService = new ServerFrontierShareService(server, territoriesManager, permissionEvaluator, playerNameRepository);
+        this.settingsOperationService = new ServerSettingsOperationService(server, territoriesManager, permissionEvaluator, playerNameRepository);
         this.serverApi = new MapFrontiersServerAPIImpl(operationService, frontierEvents, collectionEvents);
     }
 
@@ -82,9 +84,17 @@ public class ServerTerritoryRuntime {
 
     public void onPlayerJoined(ServerPlayer player) {
         PlayerId playerId = ServerPlayerIdFactory.from(player);
-        if (playerNameRepository.observe(playerId, player.getGameProfile().name(), PlayerNameSource.CONNECTED_PROFILE)
-                && territoriesManager.getReferencedPlayerIds().contains(playerId)) {
+        if (!playerNameRepository.observe(playerId, player.getGameProfile().name(), PlayerNameSource.CONNECTED_PROFILE)) {
+            return;
+        }
+
+        if (territoriesManager.getReferencedPlayerIds().contains(playerId)) {
             territoriesManager.markPlayerNameHintsDirty();
+        }
+
+        PacketPlayerNameMappings playerNameMappings = new PacketPlayerNameMappings(playerId, playerNameRepository.resolveName(playerId));
+        if (!playerNameMappings.isEmpty()) {
+            PacketHandler.sendToAll(playerNameMappings, server);
         }
     }
 
@@ -128,6 +138,10 @@ public class ServerTerritoryRuntime {
         }
 
         return packetTerritoriesSnapshot;
+    }
+
+    public PacketPlayerNameMappings createPlayerNameMappings(Iterable<PlayerId> playerIds) {
+        return new PacketPlayerNameMappings(playerIds, playerNameRepository);
     }
 
     public void close() {

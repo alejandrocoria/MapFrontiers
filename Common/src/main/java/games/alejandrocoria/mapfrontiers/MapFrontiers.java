@@ -4,6 +4,8 @@ import games.alejandrocoria.mapfrontiers.api.MapFrontiersAPIBootstrap;
 import games.alejandrocoria.mapfrontiers.common.api.MapFrontiersApiLogAdapter;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandshake;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPlayerNameMappings;
+import games.alejandrocoria.mapfrontiers.common.network.PacketTerritoriesSnapshot;
 import games.alejandrocoria.mapfrontiers.server.event.ServerGlobalEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryRuntime;
 import net.minecraft.server.MinecraftServer;
@@ -73,7 +75,12 @@ public class MapFrontiers {
 
         PacketHandler.sendTo(new PacketHandshake(nonce), player);
         PacketHandler.sendTo(serverRuntime.createSettingsProfilePacket(player), player);
-        PacketHandler.sendTo(serverRuntime.createTerritoriesSnapshot(player), player);
+        PacketTerritoriesSnapshot territoriesSnapshot = serverRuntime.createTerritoriesSnapshot(player);
+        PacketPlayerNameMappings playerNameMappings = serverRuntime.createPlayerNameMappings(territoriesSnapshot.getReferencedPlayerIds());
+        if (!playerNameMappings.isEmpty()) {
+            PacketHandler.sendTo(playerNameMappings, player);
+        }
+        PacketHandler.sendTo(territoriesSnapshot, player);
     }
 
     public static boolean isOPorHost(ServerPlayer player) {

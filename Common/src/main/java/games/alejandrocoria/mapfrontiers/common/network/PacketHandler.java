@@ -18,6 +18,7 @@ import java.util.UUID;
 public class PacketHandler {
     public static void init() {
         // server to client
+        CommonNetworkMod.registerPacket(PacketPlayerNameMappings.TYPE, PacketPlayerNameMappings.STREAM_CODEC, PacketPlayerNameMappings::handle);
         CommonNetworkMod.registerPacket(PacketTerritoriesSnapshot.TYPE, PacketTerritoriesSnapshot.STREAM_CODEC, PacketTerritoriesSnapshot::handle);
         CommonNetworkMod.registerPacket(PacketCollectionCreated.TYPE, PacketCollectionCreated.STREAM_CODEC, PacketCollectionCreated::handle);
         CommonNetworkMod.registerPacket(PacketCollectionUpdated.TYPE, PacketCollectionUpdated.STREAM_CODEC, PacketCollectionUpdated::handle);
@@ -76,6 +77,8 @@ public class PacketHandler {
         }
     }
 
+    // Some mods can make channel-support checks return false even though payload delivery still works.
+    // MapFrontiers intentionally bypasses those checks to avoid dropping valid packets.
     public static void sendTo(CustomPacketPayload message, ServerPlayer player) {
         Network.getNetworkHandler().sendToClient(message, player, true);
     }

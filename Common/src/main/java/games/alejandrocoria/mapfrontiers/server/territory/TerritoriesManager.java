@@ -4,9 +4,9 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerIdLookup;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
@@ -145,27 +145,14 @@ public class TerritoriesManager {
         LinkedHashSet<PlayerId> playerIds = new LinkedHashSet<>();
 
         for (FrontierData frontier : allFrontiers.values()) {
-            playerIds.add(frontier.getOwner());
-            if (frontier.getUserAccesses() != null) {
-                for (FrontierUserAccess userAccess : frontier.getUserAccesses()) {
-                    playerIds.add(userAccess.getPlayerId());
-                }
-            }
-            if (frontier.wasCopied() && frontier.getCopiedFromUser() != null) {
-                playerIds.add(frontier.getCopiedFromUser());
-            }
+            PlayerReferenceCollector.add(playerIds, frontier);
         }
 
         for (CollectionData collection : allCollections.values()) {
-            playerIds.add(collection.getOwner());
-            if (collection.wasCopied() && collection.getCopiedFromUser() != null) {
-                playerIds.add(collection.getCopiedFromUser());
-            }
+            PlayerReferenceCollector.add(playerIds, collection);
         }
 
-        for (SettingsGroup group : frontierSettings.getCustomGroups()) {
-            playerIds.addAll(group.getUsers());
-        }
+        PlayerReferenceCollector.add(playerIds, frontierSettings);
 
         return playerIds;
     }

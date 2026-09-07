@@ -1,6 +1,8 @@
 package games.alejandrocoria.mapfrontiers.server.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionDeleted;
@@ -9,7 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierDeleted;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSharingUpdated;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontierShared;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPlayerNameMappings;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
@@ -37,15 +39,18 @@ public class ServerFrontierShareService {
     private final MinecraftServer server;
     private final TerritoriesManager territoriesManager;
     private final TerritoryPermissionEvaluator permissionEvaluator;
+    private final PlayerNameResolver playerNameResolver;
     private final Map<Integer, PendingShareFrontier> pendingShareFrontiers = new HashMap<>();
     private int pendingShareFrontiersTick = 0;
     private int nextPendingShareMessageId = 0;
 
     public ServerFrontierShareService(MinecraftServer server, TerritoriesManager territoriesManager,
-                                      TerritoryPermissionEvaluator permissionEvaluator) {
+                                      TerritoryPermissionEvaluator permissionEvaluator,
+                                      PlayerNameResolver playerNameResolver) {
         this.server = server;
         this.territoriesManager = territoriesManager;
         this.permissionEvaluator = permissionEvaluator;
+        this.playerNameResolver = playerNameResolver;
     }
 
     public boolean canSendCommandAcceptFrontier(ServerPlayer player) {
@@ -93,8 +98,8 @@ public class ServerFrontierShareService {
         ServerTerritoryOperationResult result = ServerTerritoryOperationResult.success(frontier);
         enqueueDirectSharingResponse(result, player, frontier, requestId, OperationResolution.Accepted);
         PacketPersonalFrontierShared invitation = new PacketPersonalFrontierShared(shareMessageId,
-                new SettingsUser(playerUser), new SettingsUser(frontier.getOwner()), frontier.getName1(), frontier.getName2());
-        result.addNetworkAction(() -> PacketHandler.sendTo(invitation, targetPlayer));
+                playerUser, frontier.getOwner(), frontier.getName1(), frontier.getName2());
+        result.addNetworkAction(() -> sendInvitation(targetPlayer, invitation, playerUser, frontier.getOwner()));
         enqueueSharingBroadcast(result, player, frontier);
         return result;
     }
@@ -228,11 +233,11 @@ public class ServerFrontierShareService {
         if (frontier.hasCollection() && !targetAlreadySeesCollection) {
             CollectionData collection = territoriesManager.getCollectionFromID(frontier.getCollectionId());
             if (collection != null) {
-                result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionCreated(new CollectionData(collection)), player));
+                result.addNetworkAction(() -> sendCollectionCreated(player, new CollectionData(collection)));
             }
         }
-        result.addNetworkAction(() -> PacketHandler.sendTo(new PacketFrontierCreated(frontier), player));
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccess(frontierSharingUpdatedPacket, frontier, server));
+        result.addNetworkAction(() -> sendFrontierCreated(player, frontier));
+        result.addNetworkAction(() -> sendSharingUpdatedToUsersWithAccess(frontierSharingUpdatedPacket, frontier));
         return result;
     }
 
@@ -255,7 +260,7 @@ public class ServerFrontierShareService {
 
             FrontierData frontier = territoriesManager.getFrontierFromID(pending.frontierID);
             if (frontier != null && territoriesManager.expirePendingPersonalFrontierShare(pending.frontierID, pending.targetUser)) {
-                PacketHandler.sendToUsersWithAccess(createSharingUpdatedPacket(frontier), frontier, server);
+                sendSharingUpdatedToUsersWithAccess(createSharingUpdatedPacket(frontier), frontier);
             }
 
             expiredMessageIds.add(entry.getKey());
@@ -330,15 +335,62 @@ public class ServerFrontierShareService {
                                               FrontierData frontier, long requestId,
                                               OperationResolution resolution) {
         PacketFrontierSharingUpdated response = createSharingUpdatedPacket(frontier, player.getId(), requestId, resolution);
-        result.addNetworkAction(() -> PacketHandler.sendTo(response, player));
+        result.addNetworkAction(() -> sendSharingUpdated(player, response, frontier));
     }
 
     private void enqueueSharingBroadcast(ServerTerritoryOperationResult result, ServerPlayer actor,
                                          FrontierData frontier) {
         PacketFrontierSharingUpdated broadcast = createSharingUpdatedPacket(frontier, actor.getId(), 0L,
                 OperationResolution.Accepted);
-        result.addNetworkAction(() -> PacketHandler.sendToUsersWithAccessExcept(broadcast, frontier, server,
+        result.addNetworkAction(() -> sendSharingUpdatedToUsersWithAccessExcept(broadcast, frontier,
                 actor.getUUID()));
+    }
+
+    private void sendInvitation(ServerPlayer player, PacketPersonalFrontierShared invitation,
+                                PlayerId playerSharing, PlayerId owner) {
+        sendPlayerNameMappings(player, List.of(playerSharing, owner));
+        PacketHandler.sendTo(invitation, player);
+    }
+
+    private void sendCollectionCreated(ServerPlayer player, CollectionData collection) {
+        sendPlayerNameMappings(player, PlayerReferenceCollector.collect(collection));
+        PacketHandler.sendTo(new PacketCollectionCreated(collection), player);
+    }
+
+    private void sendFrontierCreated(ServerPlayer player, FrontierData frontier) {
+        sendPlayerNameMappings(player, PlayerReferenceCollector.collect(frontier));
+        PacketHandler.sendTo(new PacketFrontierCreated(frontier), player);
+    }
+
+    private void sendSharingUpdated(ServerPlayer player, PacketFrontierSharingUpdated packet, FrontierData frontier) {
+        sendPlayerNameMappings(player, PlayerReferenceCollector.collect(FrontierSharingChange.fromFrontierData(frontier)));
+        PacketHandler.sendTo(packet, player);
+    }
+
+    private void sendSharingUpdatedToUsersWithAccess(PacketFrontierSharingUpdated packet, FrontierData frontier) {
+        PacketPlayerNameMappings mappings = new PacketPlayerNameMappings(
+                PlayerReferenceCollector.collect(FrontierSharingChange.fromFrontierData(frontier)), playerNameResolver);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendToUsersWithAccess(mappings, frontier, server);
+        }
+        PacketHandler.sendToUsersWithAccess(packet, frontier, server);
+    }
+
+    private void sendSharingUpdatedToUsersWithAccessExcept(PacketFrontierSharingUpdated packet, FrontierData frontier,
+                                                            UUID excludedUserId) {
+        PacketPlayerNameMappings mappings = new PacketPlayerNameMappings(
+                PlayerReferenceCollector.collect(FrontierSharingChange.fromFrontierData(frontier)), playerNameResolver);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendToUsersWithAccessExcept(mappings, frontier, server, excludedUserId);
+        }
+        PacketHandler.sendToUsersWithAccessExcept(packet, frontier, server, excludedUserId);
+    }
+
+    private void sendPlayerNameMappings(ServerPlayer player, Iterable<PlayerId> playerIds) {
+        PacketPlayerNameMappings mappings = new PacketPlayerNameMappings(playerIds, playerNameResolver);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendTo(mappings, player);
+        }
     }
 
     private static PacketFrontierSharingUpdated createSharingUpdatedPacket(FrontierData frontier) {

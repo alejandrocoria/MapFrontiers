@@ -2,7 +2,6 @@ package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 import org.apache.commons.lang3.StringUtils;
@@ -61,38 +60,6 @@ public class SettingsUser implements Comparable<SettingsUser> {
             } else if (username == null) {
                 username = "";
             }
-        }
-    }
-
-    public void fromBytes(FriendlyByteBuf buf) {
-        boolean hasUsername = buf.readBoolean();
-        if (hasUsername) {
-            username = buf.readUtf(17);
-        } else {
-            username = "";
-        }
-
-        boolean hasUUID = buf.readBoolean();
-        if (hasUUID) {
-            uuid = UUIDHelper.fromBytes(buf);
-        } else {
-            uuid = null;
-        }
-    }
-
-    public void toBytes(FriendlyByteBuf buf) {
-        if (StringUtils.isBlank(username)) {
-            buf.writeBoolean(false);
-        } else {
-            buf.writeBoolean(true);
-            buf.writeUtf(username, 17);
-        }
-
-        if (uuid == null) {
-            buf.writeBoolean(false);
-        } else {
-            buf.writeBoolean(true);
-            UUIDHelper.toBytes(buf, uuid);
         }
     }
 

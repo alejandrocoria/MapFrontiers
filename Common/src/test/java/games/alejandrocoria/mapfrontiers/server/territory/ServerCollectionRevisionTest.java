@@ -24,7 +24,7 @@ class ServerCollectionRevisionTest {
         AtomicInteger updateEvents = new AtomicInteger();
         collectionEvents.subscribeUpdated(this, ignored -> updateEvents.incrementAndGet());
         ServerTerritoryOperationService service = new ServerTerritoryOperationService(
-                null, manager, null, new ServerFrontierEvents(), collectionEvents);
+                null, manager, null, new ServerFrontierEvents(), collectionEvents, playerId -> null);
 
         CollectionData changed = new CollectionData(collection);
         changed.setName("Changed");

@@ -61,7 +61,7 @@ class ServerFrontierServiceImplTest {
 
     private static ServerFrontierServiceImpl createService(TerritoriesManager manager) {
         ServerTerritoryOperationService operationService = new ServerTerritoryOperationService(
-                null, manager, null, null, null);
+                null, manager, null, null, null, playerId -> null);
         return new ServerFrontierServiceImpl(operationService);
     }
 

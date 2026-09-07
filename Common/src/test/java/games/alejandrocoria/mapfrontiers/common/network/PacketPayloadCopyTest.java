@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import io.netty.buffer.Unpooled;
@@ -87,21 +87,34 @@ class PacketPayloadCopyTest {
     @Test
     void removeSharingPacketCapturesTargetUser() {
         UUID frontierId = new UUID(6L, 7L);
-        SettingsUser targetUser = user("original", 3L);
+        PlayerId targetUser = playerId(3L);
         PacketRemoveSharedUserPersonalFrontier packet =
                 new PacketRemoveSharedUserPersonalFrontier(frontierId, targetUser, 13L, 14L);
-        targetUser.username = "changed";
-        targetUser.uuid = new UUID(0L, 4L);
 
         FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
         packet.encode(encoded);
         assertEquals(frontierId, UUIDHelper.fromBytes(encoded));
-        SettingsUser decoded = new SettingsUser();
-        decoded.fromBytes(encoded);
-        assertEquals("original", decoded.username);
-        assertEquals(new UUID(0L, 3L), decoded.uuid);
+        assertEquals(targetUser, PlayerIdNetworkCodec.read(encoded));
         assertEquals(13L, encoded.readLong());
         assertEquals(14L, encoded.readLong());
+        encoded.release();
+    }
+
+    @Test
+    void invitationPacketUsesPlayerIdsWithoutNames() {
+        PlayerId playerSharing = playerId(8L);
+        PlayerId owner = playerId(9L);
+        PacketPersonalFrontierShared packet = new PacketPersonalFrontierShared(10, playerSharing, owner,
+                "First", "Second");
+
+        FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
+        packet.encode(encoded);
+
+        assertEquals(10, encoded.readInt());
+        assertEquals(playerSharing, PlayerIdNetworkCodec.read(encoded));
+        assertEquals(owner, PlayerIdNetworkCodec.read(encoded));
+        assertEquals("First", encoded.readUtf());
+        assertEquals("Second", encoded.readUtf());
         encoded.release();
     }
 
@@ -118,13 +131,6 @@ class PacketPayloadCopyTest {
         assertEquals(baseRevision, encoded.readLong());
         assertEquals(requestId, encoded.readLong());
         encoded.release();
-    }
-
-    private static SettingsUser user(String username, long uuidValue) {
-        SettingsUser user = new SettingsUser();
-        user.username = username;
-        user.uuid = new UUID(0L, uuidValue);
-        return user;
     }
 
     private static PlayerId playerId(long uuidValue) {
