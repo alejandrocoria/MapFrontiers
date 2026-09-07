@@ -7,9 +7,9 @@ MapFrontiers is an addon for JourneyMap that allows you to divide the map into r
 ---
 
 [![Download from CurseForge](https://img.shields.io/curseforge/dt/366783?style=for-the-badge&logo=curseforge&label=Download%20from%20CurseForge)](https://www.curseforge.com/minecraft/mc-mods/mapfrontiers)
-&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
 [![Download from modrinth](https://img.shields.io/modrinth/dt/hWlsli6y?style=for-the-badge&logo=modrinth&label=Download%20from%20modrinth)](https://modrinth.com/mod/mapfrontiers)
-&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y3A7268HAV)
 ---
 
