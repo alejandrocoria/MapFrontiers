@@ -6,10 +6,10 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionS
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketPersonalFrontier;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
@@ -79,7 +79,7 @@ public class ClientTerritorySyncService {
             return;
         }
 
-        SettingsUser currentPlayer = mc.player == null ? null : new SettingsUser(mc.player);
+        PlayerId currentPlayer = mc.player == null ? null : new PlayerId(mc.player.getUUID());
         List<FrontierOverlay> existingLocalPersonal = personalManager.getAllFrontiers().values().stream()
                 .flatMap(List::stream)
                 .toList();

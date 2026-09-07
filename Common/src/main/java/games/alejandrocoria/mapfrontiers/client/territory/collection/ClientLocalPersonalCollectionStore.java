@@ -2,9 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
@@ -66,7 +66,7 @@ public class ClientLocalPersonalCollectionStore {
         saveFile("personal_collections.dat", nbtCollections);
     }
 
-    public void saveOwnedCollectionMirror(Collection<? extends CollectionData> collections, SettingsUser currentPlayer) {
+    public void saveOwnedCollectionMirror(Collection<? extends CollectionData> collections, PlayerId currentPlayer) {
         saveCollections(collections.stream()
                 .filter(ClientLocalPersonalCollectionStore::shouldPersist)
                 .filter(collection -> collection.getOwner().equals(currentPlayer))

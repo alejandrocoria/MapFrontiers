@@ -24,7 +24,6 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverl
 import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
@@ -758,18 +757,18 @@ public class CollectionInfoPage extends PageScreen {
             return false;
         }
 
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
+        PlayerId playerId = new PlayerId(minecraft.player.getUUID());
         if (collection.getPersonal()) {
-            return canManageLocalPersonalCollection(playerUser);
+            return canManageLocalPersonalCollection(playerId);
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
-                || (profile.deleteFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerUser)));
+                || (profile.deleteFrontier == SettingsProfile.State.Owner && collection.getOwner().equals(playerId)));
     }
 
-    private boolean canManageLocalPersonalCollection(SettingsUser playerUser) {
-        return collection.getOwner().equals(playerUser);
+    private boolean canManageLocalPersonalCollection(PlayerId playerId) {
+        return collection.getOwner().equals(playerId);
     }
 
     private Component getCollectionTypeLabel() {

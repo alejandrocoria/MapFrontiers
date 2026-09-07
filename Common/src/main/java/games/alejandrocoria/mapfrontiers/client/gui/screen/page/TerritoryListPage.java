@@ -34,7 +34,6 @@ import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVirtualIds;
@@ -850,7 +849,7 @@ public class TerritoryListPage extends PageScreen {
             return true;
         }
 
-        boolean ownerIsPlayer = minecraft.player != null && frontier.getOwner().equals(new SettingsUser(minecraft.player));
+        boolean ownerIsPlayer = minecraft.player != null && frontier.getOwner().equals(new PlayerId(minecraft.player.getUUID()));
 
         if (ClientConfig.FILTER_FRONTIER_OWNER.get() == FilterFrontierOwner.Self) {
             return ownerIsPlayer;

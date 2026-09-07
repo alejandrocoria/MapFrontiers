@@ -202,7 +202,7 @@ public class SharedAccessPage extends PageScreen {
 
     private void deleteUserPressed(ScrollElement element) {
         PlayerId user = ((UserSharedElement) element).getUser();
-        MapFrontiersClient.getOperationService().submitOptimisticRemoveSharedUser(frontier.getId(), new SettingsUser(user));
+        MapFrontiersClient.getOperationService().submitOptimisticRemoveSharedUser(frontier.getId(), user);
     }
 
     private void buttonNewUserPressed() {
@@ -244,6 +244,8 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
+        PlayerId target = user.toPlayerId();
+
         ClientPacketListener handler = minecraft.getConnection();
         if (handler != null) {
             if (handler.getPlayerInfo(user.uuid) == null) {
@@ -252,22 +254,22 @@ public class SharedAccessPage extends PageScreen {
             }
         }
 
-        if (user.username.equals(minecraft.player.getGameProfile().name())) {
+        if (target.equals(new PlayerId(minecraft.player.getUUID()))) {
             textNewUser.setError(ERROR_SELF_LABEL);
             return;
         }
 
-        if (frontier.getOwner().equals(user.toPlayerId())) {
+        if (frontier.getOwner().equals(target)) {
             textNewUser.setError(ERROR_OWNER_LABEL);
             return;
         }
 
-        if (frontier.hasUserAccess(user.toPlayerId())) {
+        if (frontier.hasUserAccess(target)) {
             textNewUser.setError(ERROR_REPEATED_LABEL);
             return;
         }
 
-        if (MapFrontiersClient.getOperationService().submitOptimisticShareFrontier(frontier.getId(), user)) {
+        if (MapFrontiersClient.getOperationService().submitOptimisticShareFrontier(frontier.getId(), target)) {
             users.scrollBottom();
             textNewUser.setValue("");
         }

@@ -13,8 +13,11 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontie
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import journeymap.api.v2.client.IClientAPI;
+import net.minecraft.client.Minecraft;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -103,6 +106,10 @@ public class ClientTerritoryRuntime {
                     personalFrontiersOverlayManager, collectionRuntime, localPersonalFrontierStore, localPersonalCollectionStore);
             syncService.bootstrapLocalPersonalData();
         }
+
+        playerNameRepository.getEvents().subscribeChanged(localPersistenceCoordinator,
+                localPersistenceCoordinator::onPlayerNameChanged);
+        observeLocalPlayerProfile();
 
         if (localOverrides == null) {
             localOverrides = new FrontierLocalOverrides();
@@ -312,6 +319,16 @@ public class ClientTerritoryRuntime {
     private void flushPendingLocalPersistenceOnClose() {
         ensureInitialized();
         localPersistenceCoordinator.flushOnClose();
+    }
+
+    private void observeLocalPlayerProfile() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return;
+        }
+
+        playerNameRepository.observe(new PlayerId(minecraft.player.getUUID()), minecraft.player.getGameProfile().name(),
+                PlayerNameSource.CONNECTED_PROFILE);
     }
 
     private static void closeStep(String name, Runnable action) {

@@ -15,8 +15,8 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.page.TerritoryListPag
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
@@ -208,25 +208,25 @@ public class FullscreenMap {
             }
 
             SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-            SettingsUser playerUser = new SettingsUser(player);
+            PlayerId playerId = new PlayerId(player.getUUID());
 
             ModPopupMenu subMenu = popupMenu.createSubItemList("MapFrontiers");
             subMenu.addMenuItem(I18n.get("mapfrontiers.button_mapfrontiers"), p -> buttonFrontiersPressed());
-            if (selectedCollection == null || canCreateFrontierInCollection(selectedCollection, playerUser)) {
+            if (selectedCollection == null || canCreateFrontierInCollection(selectedCollection, playerId)) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_new_frontier"), p -> buttonNewPressed(p));
             }
             if (selectedCollection != null) {
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_collection_info"), p -> buttonInfoPressed());
-                if (canUpdateSelectedCollection(playerUser)) {
+                if (canUpdateSelectedCollection(playerId)) {
                     subMenu.addMenuItem(selectedCollection.getVisibilityData().isVisible()
                             ? I18n.get("mapfrontiers.button_hide_collection")
                             : I18n.get("mapfrontiers.button_show_collection"), p -> buttonVisibleToggled());
                 }
-                if (canDeleteSelectedCollection(playerUser)) {
+                if (canDeleteSelectedCollection(playerId)) {
                     subMenu.addMenuItem(I18n.get("mapfrontiers.button_delete_collection"), p -> buttonDelete());
                 }
             } else if (frontierHighlighted != null) {
-                SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId());
+                SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerId);
                 subMenu.addMenuItem(I18n.get("mapfrontiers.button_frontier_info"), p -> buttonInfoPressed());
                 if (actions.canUpdate && frontierHighlighted.getVisibility(FrontierVisibility.Frontier)
                         && frontierHighlighted.getVisibility(FrontierVisibility.Fullscreen)) {
@@ -288,27 +288,27 @@ public class FullscreenMap {
         buttonDelete.setDrawButton(ClientConfig.FULLSCREEN_BUTTONS.get());
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        SettingsUser playerUser = new SettingsUser(player);
+        PlayerId playerId = new PlayerId(player.getUUID());
         UIState uiState = jmAPI.getUIState(Context.UI.Fullscreen);
         boolean selectedFrontierVisible = frontierHighlighted != null
                 && uiState != null
                 && frontierHighlighted.getDimension().equals(uiState.dimension)
                 && frontierHighlighted.isVisibleOnFullscreenMap(uiState.mapType);
         boolean hasSelection = frontierHighlighted != null || selectedCollection != null;
-        boolean canCreateInSelectedCollection = selectedCollection != null && canCreateFrontierInCollection(selectedCollection, playerUser);
-        boolean canUpdateSelectedCollection = selectedCollection != null && canUpdateSelectedCollection(playerUser);
-        boolean canDeleteSelectedCollection = selectedCollection != null && canDeleteSelectedCollection(playerUser);
+        boolean canCreateInSelectedCollection = selectedCollection != null && canCreateFrontierInCollection(selectedCollection, playerId);
+        boolean canUpdateSelectedCollection = selectedCollection != null && canUpdateSelectedCollection(playerId);
+        boolean canDeleteSelectedCollection = selectedCollection != null && canDeleteSelectedCollection(playerId);
 
         buttonFrontiers.setEnabled(!editing);
         buttonNew.setEnabled(!editing && (selectedCollection == null || canCreateInSelectedCollection));
         buttonInfo.setEnabled(hasSelection && !editing);
-        buttonEdit.setEnabled(frontierHighlighted != null && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId()).canUpdate
+        buttonEdit.setEnabled(frontierHighlighted != null && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerId).canUpdate
                 && selectedFrontierVisible);
         buttonVisible.setEnabled(!editing && ((frontierHighlighted != null
-                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId()).canUpdate)
+                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerId).canUpdate)
                 || canUpdateSelectedCollection));
         buttonDelete.setEnabled(!editing && ((frontierHighlighted != null
-                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerUser.toPlayerId()).canDelete)
+                && SettingsProfile.getAvailableActions(profile, frontierHighlighted, playerId).canDelete)
                 || canDeleteSelectedCollection));
 
         if (selectedCollection != null) {
@@ -901,34 +901,34 @@ public class FullscreenMap {
         return false;
     }
 
-    private boolean canCreateFrontierInCollection(CollectionData collection, SettingsUser playerUser) {
+    private boolean canCreateFrontierInCollection(CollectionData collection, PlayerId playerId) {
         if (collection.getPersonal()) {
-            return collection.getOwner().equals(playerUser);
+            return collection.getOwner().equals(playerId);
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && profile.createFrontier == SettingsProfile.State.Enabled;
     }
 
-    private boolean canUpdateSelectedCollection(SettingsUser playerUser) {
+    private boolean canUpdateSelectedCollection(PlayerId playerId) {
         if (selectedCollection == null) {
             return false;
         }
 
-        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), selectedCollection, playerUser.toPlayerId());
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), selectedCollection, playerId);
     }
 
-    private boolean canDeleteSelectedCollection(SettingsUser playerUser) {
+    private boolean canDeleteSelectedCollection(PlayerId playerId) {
         if (selectedCollection == null) {
             return false;
         }
 
         if (selectedCollection.getPersonal()) {
-            return selectedCollection.getOwner().equals(playerUser);
+            return selectedCollection.getOwner().equals(playerId);
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
         return profile != null && (profile.deleteFrontier == SettingsProfile.State.Enabled
-                || (profile.deleteFrontier == SettingsProfile.State.Owner && selectedCollection.getOwner().equals(playerUser)));
+                || (profile.deleteFrontier == SettingsProfile.State.Owner && selectedCollection.getOwner().equals(playerId)));
     }
 }

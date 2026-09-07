@@ -41,7 +41,6 @@ import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateCollection;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateFrontier;
 import games.alejandrocoria.mapfrontiers.common.network.PacketUpdateSharedUserPersonalFrontier;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -315,16 +314,15 @@ public class ClientTerritoryOperationService {
         return FrontierChangeApplicationResult.applied(frontier, effectiveChange);
     }
 
-    public boolean submitOptimisticShareFrontier(UUID frontierId, SettingsUser targetUser) {
+    public boolean submitOptimisticShareFrontier(UUID frontierId, PlayerId targetUser) {
         FrontierOverlay frontier = resolveOptimisticSharingFrontier(frontierId);
         if (frontier == null || mc.player == null) {
             return false;
         }
 
         PlayerId currentUser = new PlayerId(mc.player.getUUID());
-        PlayerId targetId = targetUser.toPlayerId();
-        FrontierUserAccess desiredUserShared = new FrontierUserAccess(targetId, true);
-        if (!applyOptimisticShareLocally(frontier, targetId, currentUser,
+        FrontierUserAccess desiredUserShared = new FrontierUserAccess(targetUser, true);
+        if (!applyOptimisticShareLocally(frontier, targetUser, currentUser,
                 () -> postOptimisticSharingUpdated(frontier))) {
             return false;
         }
@@ -636,19 +634,19 @@ public class ClientTerritoryOperationService {
         return FrontierActionResult.acceptedAsync(frontierId);
     }
 
-    public boolean submitOptimisticRemoveSharedUser(UUID frontierId, SettingsUser targetUser) {
+    public boolean submitOptimisticRemoveSharedUser(UUID frontierId, PlayerId targetUser) {
         FrontierOverlay frontier = resolveOptimisticSharingFrontier(frontierId);
         if (frontier == null || mc.player == null) {
             return false;
         }
 
-        if (!applyOptimisticRemoveSharedUserLocally(frontier, targetUser.toPlayerId(), new PlayerId(mc.player.getUUID()),
+        if (!applyOptimisticRemoveSharedUserLocally(frontier, targetUser, new PlayerId(mc.player.getUUID()),
                 () -> postOptimisticSharingUpdated(frontier))) {
             return false;
         }
 
         PendingOptimisticSharingUpdates.Outbound outbound = pendingOptimisticSharingUpdates.submit(frontierId,
-                PendingOptimisticSharingUpdates.Intent.remove(targetUser.toPlayerId()), frontier.getSharingRevision(),
+                PendingOptimisticSharingUpdates.Intent.remove(targetUser), frontier.getSharingRevision(),
                 MapFrontiersClient::nextRequestId);
         if (outbound != null) {
             sendSharingUpdate(outbound);
