@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
@@ -33,9 +34,11 @@ import java.util.UUID;
 
 public class ServerFrontierServiceImpl implements PluginScopedServerFrontierService {
     private final ServerTerritoryOperationService operationService;
+    private final PlayerNameRepository playerNameRepository;
 
-    public ServerFrontierServiceImpl(ServerTerritoryOperationService operationService) {
+    public ServerFrontierServiceImpl(ServerTerritoryOperationService operationService, PlayerNameRepository playerNameRepository) {
         this.operationService = operationService;
+        this.playerNameRepository = playerNameRepository;
     }
 
     @Override
@@ -50,7 +53,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         MapFrontiers.LOGGER.info("Created global frontier via server API. pluginModId={}, frontierId={}, owner={}, dimension={}",
                 pluginModId, frontier.getId(), frontier.getOwner().uuid(), frontier.getDimension().identifier());
 
-        FrontierDataView view = ApiConverters.fromFrontier(frontier);
+        FrontierDataView view = ApiConverters.fromFrontier(frontier, playerNameRepository);
         return view;
     }
 
@@ -63,7 +66,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
 
         FrontierChange change = FrontierChange.fromMutation(frontier, mutation);
         if (change.isEmpty()) {
-            return Optional.of(ApiConverters.fromFrontier(frontier));
+            return Optional.of(ApiConverters.fromFrontier(frontier, playerNameRepository));
         }
 
         ServerTerritoryOperationResult result = operationService.updateGlobalFrontier(frontierId.value(), change);
@@ -72,7 +75,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         }
         result.dispatchNetworkActions();
 
-        FrontierDataView view = ApiConverters.fromFrontier(frontier);
+        FrontierDataView view = ApiConverters.fromFrontier(frontier, playerNameRepository);
         return Optional.of(view);
     }
 
@@ -97,7 +100,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         if (frontier == null || frontier.getPersonal() || !frontier.isPersistent()) {
             return Optional.empty();
         }
-        return Optional.of(ApiConverters.fromFrontier(frontier));
+        return Optional.of(ApiConverters.fromFrontier(frontier, playerNameRepository));
     }
 
     @Override
@@ -105,7 +108,7 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         ResourceKey<Level> level = ApiConverters.toDimension(dimension);
         return operationService.getAllGlobalFrontiers(level).stream()
                 .filter(FrontierData::isPersistent)
-                .map(ApiConverters::fromFrontier)
+                .map(frontier -> ApiConverters.fromFrontier(frontier, playerNameRepository))
                 .toList();
     }
 
@@ -114,17 +117,17 @@ public class ServerFrontierServiceImpl implements PluginScopedServerFrontierServ
         return operationService.getFrontiersInCollection(collectionId.value()).stream()
                 .filter(frontier -> !frontier.getPersonal())
                 .filter(FrontierData::isPersistent)
-                .map(ApiConverters::fromFrontier)
+                .map(frontier -> ApiConverters.fromFrontier(frontier, playerNameRepository))
                 .toList();
     }
 
-    private static FrontierCreateSpec createGlobalFrontierSpec(String pluginModId, UserRef owner, FrontierCreateRequest request) {
+    private FrontierCreateSpec createGlobalFrontierSpec(String pluginModId, UserRef owner, FrontierCreateRequest request) {
         if (request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED) {
             throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
         }
 
         UUID frontierId = UUID.randomUUID();
-        var frontierOwner = ApiConverters.toPlayerId(owner);
+        var frontierOwner = ApiConverters.toPlayerId(owner, playerNameRepository);
         FrontierData defaults = new FrontierData(frontierOwner);
         ResourceKey<Level> dimension = ApiConverters.toDimension(request.dimension());
         UUID collectionId = request.collectionId().map(CollectionId::value).orElse(null);

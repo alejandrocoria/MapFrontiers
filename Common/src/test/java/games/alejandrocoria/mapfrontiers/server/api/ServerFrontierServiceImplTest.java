@@ -62,7 +62,7 @@ class ServerFrontierServiceImplTest {
     private static ServerFrontierServiceImpl createService(TerritoriesManager manager) {
         ServerTerritoryOperationService operationService = new ServerTerritoryOperationService(
                 null, manager, null, null, null, playerId -> null);
-        return new ServerFrontierServiceImpl(operationService);
+        return new ServerFrontierServiceImpl(operationService, new PlayerNameRepository());
     }
 
     private static FrontierCreateSpec frontierSpec(boolean personal, ResourceKey<Level> dimension, UUID collectionId) {

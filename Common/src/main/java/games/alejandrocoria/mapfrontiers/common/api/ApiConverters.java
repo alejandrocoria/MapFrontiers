@@ -22,7 +22,9 @@ import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.api.model.SharedUserAccess;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
@@ -111,13 +113,13 @@ public final class ApiConverters {
         return FrontierMutationApplier.toPathStyle(pathStyle);
     }
 
-    public static SharedUserAccess fromSharedUser(FrontierUserAccess userShared) {
+    public static SharedUserAccess fromSharedUser(FrontierUserAccess userShared, PlayerNameResolver playerNameResolver) {
         EnumSet<FrontierSharePermission> permissions = EnumSet.noneOf(FrontierSharePermission.class);
         for (FrontierUserAccess.Action action : userShared.getActions()) {
             permissions.add(toFrontierSharePermission(action));
         }
 
-        return new SharedUserAccess(fromUser(userShared.getPlayerId()), permissions, userShared.isPending());
+        return new SharedUserAccess(fromUser(userShared.getPlayerId(), playerNameResolver), permissions, userShared.isPending());
     }
 
     public static CollectionVisibilitySettings fromCollectionVisibility(CollectionVisibilityData visibilityData) {
@@ -174,12 +176,12 @@ public final class ApiConverters {
         setCollectionVisibilityFlags(visibilityData, visibilityFlags, false);
     }
 
-    public static CollectionDataView fromCollection(CollectionData collection) {
+    public static CollectionDataView fromCollection(CollectionData collection, PlayerNameResolver playerNameResolver) {
         return new CollectionDataView(
                 new CollectionId(collection.getId()),
                 collection.getPersonal() ? FrontierType.PERSONAL : FrontierType.GLOBAL,
                 fromLifetime(collection.getLifetime()),
-                fromUser(collection.getOwner()),
+                fromUser(collection.getOwner(), playerNameResolver),
                 collection.getName(),
                 collection.getColor(),
                 fromCollectionVisibility(collection.getVisibilityData()),
@@ -188,12 +190,12 @@ public final class ApiConverters {
         );
     }
 
-    public static FrontierDataView fromFrontier(FrontierData frontier) {
-        UserRef owner = fromUser(frontier.getOwner());
+    public static FrontierDataView fromFrontier(FrontierData frontier, PlayerNameResolver playerNameResolver) {
+        UserRef owner = fromUser(frontier.getOwner(), playerNameResolver);
         List<SharedUserAccess> sharedUsers = new ArrayList<>();
         if (frontier.getUserAccesses() != null) {
             for (FrontierUserAccess userShared : frontier.getUserAccesses()) {
-                sharedUsers.add(fromSharedUser(userShared));
+                sharedUsers.add(fromSharedUser(userShared, playerNameResolver));
             }
         }
 
@@ -231,26 +233,14 @@ public final class ApiConverters {
         };
     }
 
-    public static UserRef fromUser(SettingsUser user) {
-        return new UserRef(user.uuid, user.username);
+    public static UserRef fromUser(PlayerId user, PlayerNameResolver playerNameResolver) {
+        return new UserRef(user.uuid(), playerNameResolver.resolveName(user));
     }
 
-    public static UserRef fromUser(PlayerId user) {
-        return new UserRef(user.uuid(), null);
-    }
-
-    public static SettingsUser toUser(UserRef user) {
-        SettingsUser result = new SettingsUser();
-        result.uuid = user.id();
-        result.username = user.name() == null ? "" : user.name();
-        return result;
-    }
-
-    public static PlayerId toPlayerId(UserRef user) {
-        if (user.id() == null) {
-            throw new IllegalArgumentException("A UUID is required for player identity.");
-        }
-        return new PlayerId(user.id());
+    public static PlayerId toPlayerId(UserRef user, PlayerNameRepository playerNameRepository) {
+        PlayerId playerId = new PlayerId(user.id());
+        playerNameRepository.observe(playerId, user.name(), PlayerNameSource.HINT);
+        return playerId;
     }
 
     public static FrontierSharePermission toFrontierSharePermission(FrontierUserAccess.Action action) {

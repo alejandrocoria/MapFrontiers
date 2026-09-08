@@ -201,7 +201,7 @@ public class ClientTerritoryRuntime {
     public MapFrontiersClientAPIImpl getOrCreateClientApi() {
         ensureInitialized();
         if (clientApi == null) {
-            clientApi = new MapFrontiersClientAPIImpl(frontierEvents, collectionEvents);
+            clientApi = new MapFrontiersClientAPIImpl(frontierEvents, collectionEvents, playerNameRepository);
         }
 
         return clientApi;

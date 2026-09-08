@@ -50,7 +50,7 @@ public class ServerTerritoryRuntime {
         this.operationService = new ServerTerritoryOperationService(server, territoriesManager, permissionEvaluator, frontierEvents, collectionEvents, playerNameRepository);
         this.shareService = new ServerFrontierShareService(server, territoriesManager, permissionEvaluator, playerNameRepository);
         this.settingsOperationService = new ServerSettingsOperationService(server, territoriesManager, permissionEvaluator, playerNameRepository);
-        this.serverApi = new MapFrontiersServerAPIImpl(operationService, frontierEvents, collectionEvents);
+        this.serverApi = new MapFrontiersServerAPIImpl(operationService, frontierEvents, collectionEvents, playerNameRepository);
     }
 
     public ServerTerritoryOperationService getOperationService() {
