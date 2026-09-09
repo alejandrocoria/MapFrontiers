@@ -9,9 +9,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PacketPlayerNameMappingsTest {
     @Test
@@ -49,6 +51,30 @@ class PacketPlayerNameMappingsTest {
 
         decoded.applyTo(names);
         assertEquals(List.of(first, second), changes);
+    }
+
+    @Test
+    void appliesPortableHintsOnlyToAcceptedReferences() {
+        PlayerId accepted = playerId(4L);
+        PlayerId ignored = playerId(5L);
+        PlayerId known = playerId(6L);
+        PacketPlayerNameMappings mappings = new PacketPlayerNameMappings(List.of(accepted, ignored, known), playerId -> {
+            if (playerId.equals(accepted)) {
+                return "AcceptedName";
+            }
+            if (playerId.equals(ignored)) {
+                return "IgnoredName";
+            }
+            return "HintName";
+        });
+        PlayerNameRepository names = new PlayerNameRepository();
+        names.observe(known, "ConnectedName", PlayerNameSource.CONNECTED_PROFILE);
+
+        mappings.applyHintsTo(names, Set.of(accepted, known));
+
+        assertEquals("AcceptedName", names.resolveName(accepted));
+        assertNull(names.resolveName(ignored));
+        assertEquals("ConnectedName", names.resolveName(known));
     }
 
     private static PlayerId playerId(long value) {

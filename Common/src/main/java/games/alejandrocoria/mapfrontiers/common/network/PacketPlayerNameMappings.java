@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class PacketPlayerNameMappings implements CustomPacketPayload {
@@ -89,8 +90,20 @@ public class PacketPlayerNameMappings implements CustomPacketPayload {
     }
 
     public void applyTo(PlayerNameRepository repository) {
+        Objects.requireNonNull(repository, "repository");
         for (Entry entry : entries) {
             repository.observe(entry.playerId(), entry.username(), PlayerNameSource.SERVER_SYNC);
+        }
+    }
+
+    void applyHintsTo(PlayerNameRepository repository, Set<PlayerId> allowedPlayerIds) {
+        Objects.requireNonNull(repository, "repository");
+        Objects.requireNonNull(allowedPlayerIds, "allowedPlayerIds");
+
+        for (Entry entry : entries) {
+            if (allowedPlayerIds.contains(entry.playerId())) {
+                repository.observe(entry.playerId(), entry.username(), PlayerNameSource.HINT);
+            }
         }
     }
 

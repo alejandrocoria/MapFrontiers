@@ -3,6 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,9 +23,11 @@ public class PacketPersonalFrontier implements CustomPacketPayload {
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketPersonalFrontier::encode, PacketPersonalFrontier::new);
 
     private final FrontierData frontier;
+    private final PacketPlayerNameMappings playerNameMappings;
 
-    public PacketPersonalFrontier(FrontierData frontier) {
+    public PacketPersonalFrontier(FrontierData frontier, PlayerNameResolver playerNameResolver) {
         this.frontier = frontier;
+        playerNameMappings = new PacketPlayerNameMappings(PlayerReferenceCollector.collect(frontier), playerNameResolver);
     }
 
     @Override
@@ -33,10 +37,12 @@ public class PacketPersonalFrontier implements CustomPacketPayload {
 
     public PacketPersonalFrontier(FriendlyByteBuf buf) {
         this.frontier = FrontierData.fromBytes(buf);
+        playerNameMappings = new PacketPlayerNameMappings(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {
         frontier.toBytes(buf);
+        playerNameMappings.encode(buf);
     }
 
     public static void handle(PacketContext<PacketPersonalFrontier> ctx) {
@@ -47,7 +53,19 @@ public class PacketPersonalFrontier implements CustomPacketPayload {
                 return;
             }
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService().importPersonalFrontier(player, message.frontier);
+            if (result.isSuccess() && result.getFrontier() != null) {
+                message.playerNameMappings.applyHintsTo(MapFrontiers.getServerRuntime().getPlayerNameRepository(),
+                        PlayerReferenceCollector.collect(result.getFrontier()));
+            }
             result.dispatchNetworkActions();
         }
+    }
+
+    FrontierData getFrontier() {
+        return frontier;
+    }
+
+    PacketPlayerNameMappings getPlayerNameMappings() {
+        return playerNameMappings;
     }
 }

@@ -5,12 +5,14 @@ import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
@@ -57,11 +59,11 @@ public class ChatFrontiers {
         receivedFrontiers.remove(id);
     }
 
-    public static void sendFrontier(FrontierOverlay frontier, SettingsUser user) {
+    public static void sendFrontier(FrontierOverlay frontier, String targetUsername) {
         try {
             if (frontier.isSessionOnly()) {
                 MapFrontiers.LOGGER.debug("Rejected sendFrontier because source frontier is SESSION_ONLY. frontierId={}, targetUser={}",
-                        frontier.getId(), user.username);
+                        frontier.getId(), targetUsername);
                 return;
             }
 
@@ -85,7 +87,7 @@ public class ChatFrontiers {
             }
 
             String encodedData = encodeNBT(nbt);
-            String command = ClientConfig.SEND_COMMAND.get() + " " + user.username + " #MapFrontiers:";
+            String command = ClientConfig.SEND_COMMAND.get() + " " + targetUsername + " #MapFrontiers:";
             String format = "%d:%d:%d:%d:%s";
 
             List<String> dataList = new ArrayList<>();
@@ -104,7 +106,7 @@ public class ChatFrontiers {
             }
 
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to send frontier {} {} to user {}: {}", frontier.getName1(), frontier.getName2(), user.username, t);
+            MapFrontiers.LOGGER.error("Failed to send frontier {} {} to user {}: {}", frontier.getName1(), frontier.getName2(), targetUsername, t);
         }
     }
 
@@ -121,6 +123,7 @@ public class ChatFrontiers {
         } else if (player.getUUID().equals(sender)) {
             return true;
         }
+        observeSenderProfile(sender);
         message = message.substring(startIndex);
 
         try {
@@ -251,6 +254,19 @@ public class ChatFrontiers {
         PlayerReferenceNbtReadContext context = PlayerReferenceNbtReadContext.uuidOnly(
                 MapFrontiersClient.getPlayerNameRepository());
         return CollectionData.readFromNBT(payload.getCompoundOrEmpty("collection"), version, context).collection();
+    }
+
+    private static void observeSenderProfile(UUID sender) {
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        if (connection == null) {
+            return;
+        }
+
+        PlayerInfo playerInfo = connection.getPlayerInfo(sender);
+        if (playerInfo != null) {
+            MapFrontiersClient.getPlayerNameRepository().observe(new PlayerId(sender), playerInfo.getProfile().name(),
+                    PlayerNameSource.CONNECTED_PROFILE);
+        }
     }
 
     private static boolean shouldStartNewMessageAssembly(int messageId, int partIndex, int totalParts) {

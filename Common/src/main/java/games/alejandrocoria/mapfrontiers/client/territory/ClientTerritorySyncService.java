@@ -109,11 +109,17 @@ public class ClientTerritorySyncService {
         }
 
         List<FrontierOverlay> localOnlyOwnedFrontiers = new ArrayList<>();
+        List<FrontierOverlay> localFrontiersToDiscard = new ArrayList<>();
         List<CollectionData> localOnlyOwnedCollections = new ArrayList<>();
         if (currentPlayer != null) {
             for (FrontierOverlay localFrontier : existingLocalPersonal) {
-                if (!serverFrontierIds.contains(localFrontier.getId()) && localFrontier.getOwner().equals(currentPlayer)
-                        && localFrontier.isPersistent()) {
+                if (serverFrontierIds.contains(localFrontier.getId())) {
+                    continue;
+                }
+
+                if (!localFrontier.getOwner().equals(currentPlayer)) {
+                    localFrontiersToDiscard.add(localFrontier);
+                } else if (localFrontier.isPersistent()) {
                     localOnlyOwnedFrontiers.add(localFrontier);
                 }
             }
@@ -126,13 +132,17 @@ public class ClientTerritorySyncService {
             }
         }
 
+        for (FrontierOverlay frontier : localFrontiersToDiscard) {
+            personalManager.deleteFrontier(frontier.getDimension(), frontier.getId());
+        }
+
         for (CollectionData collection : localOnlyOwnedCollections) {
-            PacketHandler.sendToServer(new PacketPersonalCollection(collection));
+            PacketHandler.sendToServer(new PacketPersonalCollection(collection, runtime.getPlayerNameRepository()));
         }
 
         for (FrontierOverlay frontier : localOnlyOwnedFrontiers) {
             frontier.removeAllUserAccesses();
-            PacketHandler.sendToServer(new PacketPersonalFrontier(frontier));
+            PacketHandler.sendToServer(new PacketPersonalFrontier(frontier, runtime.getPlayerNameRepository()));
         }
         replaceCollectionRuntimeFrontierIndexes();
         markOwnedPersonalDataDirty();
