@@ -11,19 +11,9 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SettingsCopyTest {
-    @Test
-    void legacyAdapterConvertsStrictlyToAndFromPlayerId() {
-        PlayerId playerId = playerId(9L);
-        SettingsUser adapter = new SettingsUser(playerId);
-
-        assertEquals(playerId, adapter.toPlayerId());
-        assertThrows(IllegalStateException.class, new SettingsUser()::toPlayerId);
-    }
-
     @Test
     void frontierUserAccessCopiesActionsAndRetainsImmutableIdentity() {
         FrontierUserAccess original = sharedUser(1L);

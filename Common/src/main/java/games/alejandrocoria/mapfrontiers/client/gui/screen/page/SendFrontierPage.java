@@ -9,28 +9,21 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
+import games.alejandrocoria.mapfrontiers.client.gui.util.PlayerInputResolver;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
-import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.layouts.LinearLayout;
-import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class SendFrontierPage extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_send");
     private static final Component DESCRIPTION_LABEL = Component.translatable("mapfrontiers.send_description");
-    private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
-    private static final Component ERROR_UUID_FORMAT_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_format");
-    private static final Component ERROR_USER_NOT_FOUND_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
     private static final Component ERROR_SELF_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_self");
     private static final Component DONE_LABEL = Component.translatable("gui.done");
     private static final Tooltip SEND_TOOLTIP = Tooltip.create(Component.translatable("mapfrontiers.send.tooltip"));
@@ -95,61 +88,27 @@ public class SendFrontierPage extends PageScreen {
             return;
         }
 
-        SettingsUser user = new SettingsUser();
-
         String usernameOrUUID = textNewUser.getValue();
         clearTextBoxFocus(textNewUser);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
-        } else if (usernameOrUUID.length() < 28) {
-            user.username = usernameOrUUID;
-            user.fillMissingInfo(false, null);
-        } else {
-            usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
-            if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(ERROR_UUID_SIZE_LABEL);
-                return;
-            }
-            usernameOrUUID = usernameOrUUID.toLowerCase();
-            String uuid = usernameOrUUID.substring(0, 8) + "-" + usernameOrUUID.substring(8, 12) + "-"
-                    + usernameOrUUID.substring(12, 16) + "-" + usernameOrUUID.substring(16, 20) + "-"
-                    + usernameOrUUID.substring(20, 32);
-
-            try {
-                user.uuid = UUID.fromString(uuid);
-                user.fillMissingInfo(true, null);
-            } catch (Exception e) {
-                textNewUser.setError(ERROR_UUID_FORMAT_LABEL);
-                return;
-            }
         }
 
-        if (user.uuid == null) {
-            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
+        PlayerInputResolver.Result result = PlayerInputResolver.resolveOnline(usernameOrUUID, minecraft.getConnection(),
+                MapFrontiersClient.getPlayerNameRepository());
+        if (!result.isSuccess()) {
+            textNewUser.setError(result.failure().getMessage());
             return;
         }
 
-        ClientPacketListener handler = minecraft.getConnection();
-        PlayerInfo playerInfo = handler == null ? null : handler.getPlayerInfo(user.uuid);
-        if (playerInfo == null) {
-            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
-            return;
-        }
-
-        PlayerId targetPlayer = new PlayerId(playerInfo.getProfile().id());
-        String targetUsername = playerInfo.getProfile().name();
-        if (StringUtils.isBlank(targetUsername)) {
-            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
-            return;
-        }
+        PlayerId targetPlayer = result.requirePlayerId();
+        String targetUsername = result.requireConnectedUsername();
 
         if (targetPlayer.equals(new PlayerId(minecraft.player.getUUID()))) {
             textNewUser.setError(ERROR_SELF_LABEL);
             return;
         }
 
-        MapFrontiersClient.getPlayerNameRepository().observe(targetPlayer, targetUsername,
-                PlayerNameSource.CONNECTED_PROFILE);
         ChatFrontiers.sendFrontier(frontier, targetUsername);
 
         textNewUser.setValue("");
