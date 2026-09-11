@@ -2,7 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
@@ -22,7 +24,14 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class ClientLocalPersonalFrontierStore {
+    private final PlayerNameRepository playerNames;
+    private final PlayerReferenceNbtReadContext playerReferenceReadContext;
     private File modDir;
+
+    public ClientLocalPersonalFrontierStore(PlayerNameRepository playerNames) {
+        this.playerNames = playerNames;
+        playerReferenceReadContext = PlayerReferenceNbtReadContext.uuidOnly(playerNames);
+    }
 
     public List<FrontierData> loadFrontiers() {
         ensureDirectory();
@@ -57,7 +66,7 @@ public class ClientLocalPersonalFrontierStore {
         saveFile("personal_frontiers.dat", nbtFrontiers);
     }
 
-    public void saveOwnedFrontierMirror(Collection<? extends FrontierData> frontiers, SettingsUser currentPlayer) {
+    public void saveOwnedFrontierMirror(Collection<? extends FrontierData> frontiers, PlayerId currentPlayer) {
         saveFrontiers(frontiers.stream()
                 .filter(ClientLocalPersonalFrontierStore::shouldPersist)
                 .filter(frontier -> frontier.getOwner().equals(currentPlayer))
@@ -83,9 +92,10 @@ public class ClientLocalPersonalFrontierStore {
             ListTag frontiersTagList = nbt.getListOrEmpty("frontiers");
             for (int i = 0; i < frontiersTagList.size(); ++i) {
                 try {
-                    FrontierData frontier = new FrontierData();
                     CompoundTag frontierTag = NbtReadHelper.requireCompound(frontiersTagList, i, "frontiers");
-                    needBackup |= frontier.readFromNBT(frontierTag, version);
+                    FrontierData.NbtReadResult result = FrontierData.readFromNBT(frontierTag, version, playerReferenceReadContext);
+                    FrontierData frontier = result.frontier();
+                    needBackup |= result.changedDuringLoad();
                     if (!shouldPersist(frontier)) {
                         needBackup = true;
                         continue;
@@ -110,7 +120,7 @@ public class ClientLocalPersonalFrontierStore {
         for (FrontierData frontier : frontiers) {
             try {
                 CompoundTag frontierTag = new CompoundTag();
-                frontier.writeToNBT(frontierTag);
+                frontier.writeToNBT(frontierTag, playerNames);
                 frontiersTagList.add(frontierTag);
             } catch (RuntimeException e) {
                 skippedFrontiers++;

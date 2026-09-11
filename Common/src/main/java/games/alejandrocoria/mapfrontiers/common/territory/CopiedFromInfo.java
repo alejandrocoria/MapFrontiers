@@ -1,19 +1,40 @@
 package games.alejandrocoria.mapfrontiers.common.territory;
 
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtCodec;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
+import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Objects;
 import java.util.UUID;
 
-public class CopiedFromInfo {
-    private UUID id;
-    private SettingsUser user = new SettingsUser();
+@ParametersAreNonnullByDefault
+public final class CopiedFromInfo {
+    public record NbtReadResult(CopiedFromInfo copiedFrom, boolean changedDuringLoad) {
+        public NbtReadResult {
+            Objects.requireNonNull(copiedFrom, "copiedFrom");
+        }
+    }
 
-    public CopiedFromInfo() {
+    private final UUID id;
+    private final @Nullable PlayerId user;
+
+    public CopiedFromInfo(UUID id) {
+        this(id, null);
+    }
+
+    public CopiedFromInfo(UUID id, @Nullable PlayerId user) {
+        this.id = Objects.requireNonNull(id, "id");
+        this.user = user;
     }
 
     public CopiedFromInfo(CopiedFromInfo other) {
@@ -25,23 +46,18 @@ public class CopiedFromInfo {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public SettingsUser getUser() {
+    public @Nullable PlayerId getUser() {
         return user;
     }
 
-    public void setUser(SettingsUser user) {
-        this.user = user;
-    }
-
-    public void readFromNBT(CompoundTag nbt, int version) {
-        id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
-
-        user = new SettingsUser();
-        user.readFromNBT(nbt.getCompoundOrEmpty("user"));
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        return other instanceof CopiedFromInfo info
+                && id.equals(info.id)
+                && Objects.equals(user, info.user);
     }
 
     @Override
@@ -49,24 +65,43 @@ public class CopiedFromInfo {
         return Objects.hash(id, user);
     }
 
-    public void writeToNBT(CompoundTag nbt) {
-        nbt.putString("id", id.toString());
+    public static NbtReadResult readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
+        UUID id = UUID.fromString(NbtReadHelper.requireString(nbt, "id"));
+        if (!nbt.contains("user")) {
+            return new NbtReadResult(new CopiedFromInfo(id), false);
+        }
 
-        CompoundTag nbtOwner = new CompoundTag();
-        user.writeToNBT(nbtOwner);
-        nbt.put("user", nbtOwner);
+        try {
+            PlayerReferenceNbtCodec.ReadResult result = PlayerReferenceNbtCodec.read(
+                    NbtReadHelper.requireCompound(nbt, "user"), context);
+            return new NbtReadResult(new CopiedFromInfo(id, result.playerId()), result.repaired());
+        } catch (InvalidNbtFormatException e) {
+            MapFrontiers.LOGGER.warn("Ignoring invalid copied-from user for territory {}: {}", id, e.getMessage());
+            return new NbtReadResult(new CopiedFromInfo(id), true);
+        }
     }
 
-    public void fromBytes(FriendlyByteBuf buf) {
-        id = UUIDHelper.fromBytes(buf);
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
+        nbt.putString("id", id.toString());
+        nbt.remove("user");
+        if (user != null) {
+            CompoundTag userTag = new CompoundTag();
+            PlayerReferenceNbtCodec.write(userTag, user, resolver);
+            nbt.put("user", userTag);
+        }
+    }
 
-        user = new SettingsUser();
-        user.fromBytes(buf);
+    public static CopiedFromInfo fromBytes(FriendlyByteBuf buf) {
+        UUID id = UUIDHelper.fromBytes(buf);
+        PlayerId user = buf.readBoolean() ? PlayerIdNetworkCodec.read(buf) : null;
+        return new CopiedFromInfo(id, user);
     }
 
     public void toBytes(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, id);
-
-        user.toBytes(buf);
+        buf.writeBoolean(user != null);
+        if (user != null) {
+            PlayerIdNetworkCodec.write(buf, user);
+        }
     }
 }

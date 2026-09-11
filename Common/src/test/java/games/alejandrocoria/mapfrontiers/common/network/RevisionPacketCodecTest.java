@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
@@ -18,14 +19,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class RevisionPacketCodecTest {
     @Test
     void collectionRequestAndResponseCarryRevisionRequestAndResolution() {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(new PlayerId(UUID.randomUUID()));
         collection.setId(UUID.randomUUID());
         collection.setCollectionRevision(3L);
 
         FriendlyByteBuf request = new FriendlyByteBuf(Unpooled.buffer());
         new PacketUpdateCollection(collection, 3L, 41L).encode(request);
-        CollectionData requestedCollection = new CollectionData();
-        requestedCollection.fromBytes(request);
+        CollectionData requestedCollection = CollectionData.fromBytes(request);
         assertEquals(3L, requestedCollection.getCollectionRevision());
         assertEquals(3L, request.readLong());
         assertEquals(41L, request.readLong());
@@ -33,8 +33,7 @@ class RevisionPacketCodecTest {
 
         FriendlyByteBuf response = new FriendlyByteBuf(Unpooled.buffer());
         new PacketCollectionUpdated(collection, 12, 41L, OperationResolution.Rejected).encode(response);
-        CollectionData responseCollection = new CollectionData();
-        responseCollection.fromBytes(response);
+        CollectionData responseCollection = CollectionData.fromBytes(response);
         assertEquals(3L, responseCollection.getCollectionRevision());
         assertEquals(12, response.readInt());
         assertEquals(41L, response.readLong());

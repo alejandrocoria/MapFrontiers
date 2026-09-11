@@ -30,9 +30,10 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDia
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionUiStateStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
 import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVirtualIds;
@@ -140,6 +141,7 @@ public class TerritoryListPage extends PageScreen {
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> {
             rebuildTerritories();
         });
+        MapFrontiersClient.getPlayerNameEvents().subscribeChanged(this, playerId -> rebuildTerritories());
     }
 
     @Override
@@ -200,6 +202,7 @@ public class TerritoryListPage extends PageScreen {
         MapFrontiersClient.getFrontierEvents().unsubscribe(this);
         MapFrontiersClient.getCollectionEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        MapFrontiersClient.getPlayerNameEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
         super.onClose();
     }
@@ -582,13 +585,13 @@ public class TerritoryListPage extends PageScreen {
             return;
         }
 
-        CollectionData collection = ClientConfig.createConfiguredCollectionDefaults();
+        PlayerId owner = new PlayerId(minecraft.player.getUUID());
+        CollectionData collection = ClientConfig.createConfiguredCollectionDefaults(owner);
         collection.setId(UUID.randomUUID());
         collection.setPersonal(scope != CollectionScope.GLOBAL_PERSISTENT);
         collection.setLifetime(scope == CollectionScope.PERSONAL_SESSION
                 ? TerritoryLifetime.SESSION_ONLY
                 : TerritoryLifetime.PERSISTENT);
-        collection.setOwner(new SettingsUser(minecraft.player));
 
         MapFrontiersClient.getOperationService().createCollection(collection);
         new CollectionInfoPage(collection).display();
@@ -848,7 +851,7 @@ public class TerritoryListPage extends PageScreen {
             return true;
         }
 
-        boolean ownerIsPlayer = minecraft.player != null && frontier.getOwner().equals(new SettingsUser(minecraft.player));
+        boolean ownerIsPlayer = minecraft.player != null && frontier.getOwner().equals(new PlayerId(minecraft.player.getUUID()));
 
         if (ClientConfig.FILTER_FRONTIER_OWNER.get() == FilterFrontierOwner.Self) {
             return ownerIsPlayer;
@@ -880,11 +883,11 @@ public class TerritoryListPage extends PageScreen {
         if (name.contains(searchText)) {
             return true;
         }
-        if (!StringUtil.isBlank(frontier.getOwner().username) && frontier.getOwner().username.toLowerCase().contains(searchText)) {
+        String ownerName = PlayerNameFormatter.getDisplayName(frontier.getOwner(), "");
+        if (!StringUtil.isBlank(ownerName) && ownerName.toLowerCase().contains(searchText)) {
             return true;
         }
-        return !StringUtil.isBlank(frontier.getOwner().uuid.toString())
-                && frontier.getOwner().uuid.toString().toLowerCase().contains(searchText);
+        return frontier.getOwner().uuid().toString().toLowerCase().contains(searchText);
     }
 
     private int compareCollectionGroups(TerritoryGroupModel a, TerritoryGroupModel b) {
@@ -913,7 +916,7 @@ public class TerritoryListPage extends PageScreen {
                 int c = a.getName1().compareToIgnoreCase(b.getName1());
                 yield c == 0 ? a.getName2().compareToIgnoreCase(b.getName2()) : c;
             }
-            case Owner -> a.getOwner().compareTo(b.getOwner());
+            case Owner -> compareOwners(a.getOwner(), b.getOwner());
             case Shape -> Integer.compare(getShapeCount(a), getShapeCount(b));
             case Area -> Float.compare(a.area, b.area);
             case Modified -> compareNullableDates(a.getModified(), b.getModified());
@@ -924,7 +927,7 @@ public class TerritoryListPage extends PageScreen {
     private int compareCollectionGroupsBySort(TerritoryListSorting sort, TerritoryGroupModel a, TerritoryGroupModel b) {
         return switch (sort) {
             case Name -> a.title.compareToIgnoreCase(b.title);
-            case Owner -> a.owner.compareTo(b.owner);
+            case Owner -> compareOwners(a.owner, b.owner);
             case Shape -> 0;
             case Area -> Float.compare(a.totalArea, b.totalArea);
             case Modified -> compareNullableDates(a.modified, b.modified);
@@ -1267,7 +1270,8 @@ public class TerritoryListPage extends PageScreen {
         if (minecraft.player == null) {
             return new SettingsProfile.AvailableActions();
         }
-        return SettingsProfile.getAvailableActions(MapFrontiersClient.getSettingsProfile(), frontier, new SettingsUser(minecraft.player));
+        return SettingsProfile.getAvailableActions(MapFrontiersClient.getSettingsProfile(), frontier,
+                new PlayerId(minecraft.player.getUUID()));
     }
 
     private boolean canMarkFrontier(FrontierOverlay frontier) {
@@ -1276,11 +1280,11 @@ public class TerritoryListPage extends PageScreen {
         }
 
         if (frontier.getPersonal()) {
-            return frontier.getOwner().equals(new SettingsUser(minecraft.player));
+            return frontier.getOwner().equals(new PlayerId(minecraft.player.getUUID()));
         }
 
         SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(MapFrontiersClient.getSettingsProfile(),
-                frontier, new SettingsUser(minecraft.player));
+                frontier, new PlayerId(minecraft.player.getUUID()));
         return actions.canUpdate;
     }
 
@@ -1297,7 +1301,7 @@ public class TerritoryListPage extends PageScreen {
             return true;
         }
 
-        if (group.collection == null || !group.collection.getOwner().equals(new SettingsUser(minecraft.player))) {
+        if (group.collection == null || !group.collection.getOwner().equals(new PlayerId(minecraft.player.getUUID()))) {
             return false;
         }
 
@@ -1309,7 +1313,7 @@ public class TerritoryListPage extends PageScreen {
             return false;
         }
 
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
+        PlayerId playerUser = new PlayerId(minecraft.player.getUUID());
         if (collection.getPersonal()) {
             return collection.getOwner().equals(playerUser);
         }
@@ -1324,7 +1328,8 @@ public class TerritoryListPage extends PageScreen {
             return false;
         }
 
-        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection, new SettingsUser(minecraft.player));
+        return SettingsProfile.canUpdateCollection(MapFrontiersClient.getSettingsProfile(), collection,
+                new PlayerId(minecraft.player.getUUID()));
     }
 
     private static int getShapeCount(FrontierOverlay frontier) {
@@ -1333,6 +1338,18 @@ public class TerritoryListPage extends PageScreen {
             case Chunk -> frontier.getChunkCount();
             case Path -> frontier.getPointCount();
         };
+    }
+
+    private static int compareOwners(@Nullable PlayerId first, @Nullable PlayerId second) {
+        if (first == null) {
+            return second == null ? 0 : -1;
+        }
+        if (second == null) {
+            return 1;
+        }
+        int byName = PlayerNameFormatter.getDisplayName(first).compareToIgnoreCase(
+                PlayerNameFormatter.getDisplayName(second));
+        return byName == 0 ? first.uuid().compareTo(second.uuid()) : byName;
     }
 
     private static CollectionUiStateStore getCollectionUiStateStore() {
@@ -1352,7 +1369,7 @@ public class TerritoryListPage extends PageScreen {
         private final String title;
         private final boolean collapsed;
         private final List<FrontierOverlay> filteredFrontiers;
-        private final SettingsUser owner;
+        private final @Nullable PlayerId owner;
         private final @Nullable Date created;
         private final @Nullable Date modified;
         private final int totalFrontiers;
@@ -1373,7 +1390,7 @@ public class TerritoryListPage extends PageScreen {
             this.title = title;
             this.collapsed = collapsed;
             this.filteredFrontiers = filteredFrontiers;
-            owner = collection == null ? new SettingsUser() : collection.getOwner();
+            owner = collection == null ? null : collection.getOwner();
             created = collection == null ? null : collection.getCreated();
             modified = collection == null ? null : collection.getModified();
             totalFrontiers = allFrontiers.size();

@@ -13,13 +13,19 @@ import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientFrontie
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameEvents;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import journeymap.api.v2.client.IClientAPI;
+import net.minecraft.client.Minecraft;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class ClientTerritoryRuntime {
     private final IClientAPI journeyMapApi;
+    private PlayerNameRepository playerNameRepository;
     private FrontiersOverlayManager globalFrontiersOverlayManager;
     private FrontiersOverlayManager personalFrontiersOverlayManager;
     private CollectionOverlayManager collectionOverlayManager;
@@ -42,6 +48,10 @@ public class ClientTerritoryRuntime {
     }
 
     public void ensureInitialized() {
+        if (playerNameRepository == null) {
+            playerNameRepository = new PlayerNameRepository();
+        }
+
         if (globalFrontiersOverlayManager == null) {
             globalFrontiersOverlayManager = new FrontiersOverlayManager(journeyMapApi);
         }
@@ -59,11 +69,11 @@ public class ClientTerritoryRuntime {
         }
 
         if (localPersonalFrontierStore == null) {
-            localPersonalFrontierStore = new ClientLocalPersonalFrontierStore();
+            localPersonalFrontierStore = new ClientLocalPersonalFrontierStore(playerNameRepository);
         }
 
         if (localPersonalCollectionStore == null) {
-            localPersonalCollectionStore = new ClientLocalPersonalCollectionStore();
+            localPersonalCollectionStore = new ClientLocalPersonalCollectionStore(playerNameRepository);
         }
 
         if (frontierEvents == null) {
@@ -98,6 +108,9 @@ public class ClientTerritoryRuntime {
             syncService.bootstrapLocalPersonalData();
         }
 
+        playerNameRepository.getEvents().subscribeChanged(this, this::onPlayerNameChanged);
+        observeLocalPlayerProfile();
+
         if (localOverrides == null) {
             localOverrides = new FrontierLocalOverrides();
         }
@@ -118,6 +131,16 @@ public class ClientTerritoryRuntime {
     public FrontiersOverlayManager getGlobalFrontiersOverlayManager() {
         ensureInitialized();
         return globalFrontiersOverlayManager;
+    }
+
+    public PlayerNameRepository getPlayerNameRepository() {
+        ensureInitialized();
+        return playerNameRepository;
+    }
+
+    public PlayerNameEvents getPlayerNameEvents() {
+        ensureInitialized();
+        return playerNameRepository.getEvents();
     }
 
     public FrontiersOverlayManager getPersonalFrontiersOverlayManager() {
@@ -178,7 +201,7 @@ public class ClientTerritoryRuntime {
     public MapFrontiersClientAPIImpl getOrCreateClientApi() {
         ensureInitialized();
         if (clientApi == null) {
-            clientApi = new MapFrontiersClientAPIImpl(frontierEvents, collectionEvents);
+            clientApi = new MapFrontiersClientAPIImpl(frontierEvents, collectionEvents, playerNameRepository);
         }
 
         return clientApi;
@@ -213,6 +236,7 @@ public class ClientTerritoryRuntime {
         ClientCollectionEvents collectionEventsState = collectionEvents;
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
         ClientTerritoryOperationService operations = operationService;
+        PlayerNameRepository names = playerNameRepository;
 
         if (operations != null) {
             operations.clearPendingOptimisticUpdates();
@@ -238,6 +262,7 @@ public class ClientTerritoryRuntime {
         localOverrides = null;
         collectionLocalOverrides = null;
         collectionUiStateStore = null;
+        playerNameRepository = null;
 
         closeStep("global frontier overlays", () -> {
             if (globalManager != null) {
@@ -289,11 +314,33 @@ public class ClientTerritoryRuntime {
                 settingsEvents.close();
             }
         });
+        closeStep("player name repository", () -> {
+            if (names != null) {
+                names.close();
+            }
+        });
     }
 
     private void flushPendingLocalPersistenceOnClose() {
         ensureInitialized();
         localPersistenceCoordinator.flushOnClose();
+    }
+
+    private void observeLocalPlayerProfile() {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.player == null) {
+            return;
+        }
+
+        playerNameRepository.observe(new PlayerId(minecraft.player.getUUID()), minecraft.player.getGameProfile().name(),
+                PlayerNameSource.CONNECTED_PROFILE);
+    }
+
+    private void onPlayerNameChanged(PlayerId playerId) {
+        localPersistenceCoordinator.onPlayerNameChanged(playerId);
+        globalFrontiersOverlayManager.markPlayerNamePresentationDirty(playerId);
+        personalFrontiersOverlayManager.markPlayerNamePresentationDirty(playerId);
+        collectionOverlayManager.markPlayerNamePresentationDirty(playerId);
     }
 
     private static void closeStep(String name, Runnable action) {

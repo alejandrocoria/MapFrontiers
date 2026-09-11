@@ -14,6 +14,7 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionId;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierId;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
 import games.alejandrocoria.mapfrontiers.common.api.SimpleEventBus;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
@@ -25,22 +26,23 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
     private final ServerFrontierEvents frontierEvents;
     private final ServerCollectionEvents collectionEvents;
 
-    public MapFrontiersServerAPIImpl(ServerTerritoryOperationService operationService, ServerFrontierEvents frontierEvents, ServerCollectionEvents collectionEvents) {
+    public MapFrontiersServerAPIImpl(ServerTerritoryOperationService operationService, ServerFrontierEvents frontierEvents,
+                                    ServerCollectionEvents collectionEvents, PlayerNameRepository playerNameRepository) {
         this.frontierEvents = frontierEvents;
         this.collectionEvents = collectionEvents;
         this.eventBus = new SimpleEventBus();
-        this.frontiers = new ServerFrontierServiceImpl(operationService);
-        this.collections = new ServerCollectionServiceImpl(operationService);
+        this.frontiers = new ServerFrontierServiceImpl(operationService, playerNameRepository);
+        this.collections = new ServerCollectionServiceImpl(operationService, playerNameRepository);
 
         // Server API exposes only global territories, so personal/global conversions surface as created/deleted here.
         frontierEvents.subscribeCreated(this, frontier -> {
             if (!frontier.getPersonal() && frontier.isPersistent()) {
-                eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier)));
+                eventBus.post(new FrontierCreatedEvent(ApiConverters.fromFrontier(frontier, playerNameRepository)));
             }
         });
         frontierEvents.subscribeUpdated(this, frontier -> {
             if (!frontier.getPersonal() && frontier.isPersistent()) {
-                eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier)));
+                eventBus.post(new FrontierUpdatedEvent(ApiConverters.fromFrontier(frontier, playerNameRepository)));
             }
         });
         frontierEvents.subscribeDeleted(this, frontier -> {
@@ -50,12 +52,12 @@ public class MapFrontiersServerAPIImpl implements InternalMapFrontiersServerAPI 
         });
         collectionEvents.subscribeCreated(this, collection -> {
             if (!collection.getPersonal() && collection.isPersistent()) {
-                eventBus.post(new CollectionCreatedEvent(ApiConverters.fromCollection(collection)));
+                eventBus.post(new CollectionCreatedEvent(ApiConverters.fromCollection(collection, playerNameRepository)));
             }
         });
         collectionEvents.subscribeUpdated(this, collection -> {
             if (!collection.getPersonal() && collection.isPersistent()) {
-                eventBus.post(new CollectionUpdatedEvent(ApiConverters.fromCollection(collection)));
+                eventBus.post(new CollectionUpdatedEvent(ApiConverters.fromCollection(collection, playerNameRepository)));
             }
         });
         collectionEvents.subscribeDeleted(this, collection -> {

@@ -9,6 +9,7 @@ import games.alejandrocoria.mapfrontiers.api.model.CollectionMutation;
 import games.alejandrocoria.mapfrontiers.api.model.DefaultValuesProfile;
 import games.alejandrocoria.mapfrontiers.api.model.UserRef;
 import games.alejandrocoria.mapfrontiers.common.api.ApiConverters;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
@@ -23,9 +24,11 @@ import java.util.UUID;
 
 public class ServerCollectionServiceImpl implements PluginScopedServerCollectionService {
     private final ServerTerritoryOperationService operationService;
+    private final PlayerNameRepository playerNameRepository;
 
-    public ServerCollectionServiceImpl(ServerTerritoryOperationService operationService) {
+    public ServerCollectionServiceImpl(ServerTerritoryOperationService operationService, PlayerNameRepository playerNameRepository) {
         this.operationService = operationService;
+        this.playerNameRepository = playerNameRepository;
     }
 
     @Override
@@ -41,8 +44,8 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
             throw new IllegalStateException("Global collection creation succeeded without returning the created collection");
         }
         MapFrontiers.LOGGER.info("Created global collection via server API. pluginModId={}, collectionId={}, owner={}",
-                pluginModId, storedCollection.getId(), storedCollection.getOwner().username);
-        return ApiConverters.fromCollection(storedCollection);
+                pluginModId, storedCollection.getId(), storedCollection.getOwner().uuid());
+        return ApiConverters.fromCollection(storedCollection, playerNameRepository);
     }
 
     @Override
@@ -63,7 +66,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
         if (updatedCollection == null) {
             throw new IllegalStateException("Global collection update succeeded without returning the updated collection");
         }
-        return Optional.of(ApiConverters.fromCollection(updatedCollection));
+        return Optional.of(ApiConverters.fromCollection(updatedCollection, playerNameRepository));
     }
 
     @Override
@@ -85,7 +88,7 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
     public List<CollectionDataView> listGlobalCollections(String pluginModId) {
         List<CollectionDataView> collections = new java.util.ArrayList<>();
         for (CollectionData collection : operationService.iterateGlobalCollections()) {
-            collections.add(ApiConverters.fromCollection(collection));
+            collections.add(ApiConverters.fromCollection(collection, playerNameRepository));
         }
         return List.copyOf(collections);
     }
@@ -96,19 +99,19 @@ public class ServerCollectionServiceImpl implements PluginScopedServerCollection
         if (collection == null || collection.getPersonal() || !collection.isPersistent()) {
             return Optional.empty();
         }
-        return Optional.of(ApiConverters.fromCollection(collection));
+        return Optional.of(ApiConverters.fromCollection(collection, playerNameRepository));
     }
 
-    private static CollectionData createCollectionData(String pluginModId, UserRef owner, CollectionCreateRequest request) {
+    private CollectionData createCollectionData(String pluginModId, UserRef owner, CollectionCreateRequest request) {
         if (request.defaultValuesProfile() == DefaultValuesProfile.CONFIGURED) {
             throw new IllegalArgumentException("CONFIGURED defaults are not supported by the server API");
         }
 
-        CollectionData defaults = new CollectionData();
-        CollectionData collection = new CollectionData();
+        var collectionOwner = ApiConverters.toPlayerId(owner, playerNameRepository);
+        CollectionData defaults = new CollectionData(collectionOwner);
+        CollectionData collection = new CollectionData(collectionOwner);
         collection.setId(UUID.randomUUID());
         collection.setPersonal(false);
-        collection.setOwner(ApiConverters.toUser(owner));
         collection.setSourcePluginId(pluginModId);
         collection.setName(request.name().orElse(defaults.getName()));
         collection.setColor(request.color().orElseGet(ColorHelper::getRandomColor));

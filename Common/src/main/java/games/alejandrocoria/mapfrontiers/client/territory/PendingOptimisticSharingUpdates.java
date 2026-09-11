@@ -1,9 +1,9 @@
 package games.alejandrocoria.mapfrontiers.client.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -23,22 +23,22 @@ final class PendingOptimisticSharingUpdates {
 
     static final class Intent {
         private final Type type;
-        private final SettingsUserShared userShared;
+        private final FrontierUserAccess userShared;
 
-        private Intent(Type type, SettingsUserShared userShared) {
+        private Intent(Type type, FrontierUserAccess userShared) {
             this.type = type;
-            this.userShared = new SettingsUserShared(userShared);
+            this.userShared = new FrontierUserAccess(userShared);
         }
 
-        static Intent add(SettingsUserShared userShared) {
+        static Intent add(FrontierUserAccess userShared) {
             return new Intent(Type.Add, userShared);
         }
 
-        static Intent remove(SettingsUser user) {
-            return new Intent(Type.Remove, new SettingsUserShared(new SettingsUser(user), false));
+        static Intent remove(PlayerId user) {
+            return new Intent(Type.Remove, new FrontierUserAccess(user, false));
         }
 
-        static Intent update(SettingsUserShared userShared) {
+        static Intent update(FrontierUserAccess userShared) {
             return new Intent(Type.Update, userShared);
         }
 
@@ -46,35 +46,35 @@ final class PendingOptimisticSharingUpdates {
             return type;
         }
 
-        SettingsUserShared userShared() {
-            return new SettingsUserShared(userShared);
+        FrontierUserAccess userShared() {
+            return new FrontierUserAccess(userShared);
         }
 
         void replayOn(FrontierSharingChange change) {
-            List<SettingsUserShared> users = change.getUsersShared();
+            List<FrontierUserAccess> users = change.getUserAccesses();
             if (users == null) {
                 users = new ArrayList<>();
             }
 
-            SettingsUser target = userShared.getUser();
-            SettingsUserShared existing = users.stream()
-                    .filter(candidate -> candidate.getUser().equals(target))
+            PlayerId target = userShared.getPlayerId();
+            FrontierUserAccess existing = users.stream()
+                    .filter(candidate -> candidate.getPlayerId().equals(target))
                     .findFirst()
                     .orElse(null);
             switch (type) {
                 case Add -> {
                     if (existing == null) {
-                        users.add(new SettingsUserShared(userShared));
+                        users.add(new FrontierUserAccess(userShared));
                     }
                 }
-                case Remove -> users.removeIf(candidate -> candidate.getUser().equals(target));
+                case Remove -> users.removeIf(candidate -> candidate.getPlayerId().equals(target));
                 case Update -> {
                     if (existing != null) {
                         existing.setActions(userShared.getActions());
                     }
                 }
             }
-            change.setUsersShared(users);
+            change.setUserAccesses(users);
         }
     }
 

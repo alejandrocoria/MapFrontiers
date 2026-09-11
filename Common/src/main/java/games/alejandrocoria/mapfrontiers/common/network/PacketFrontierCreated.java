@@ -38,9 +38,8 @@ public class PacketFrontierCreated implements CustomPacketPayload {
     }
 
     public PacketFrontierCreated(FriendlyByteBuf buf) {
-        this.frontier = new FrontierData();
-        if (buf.readableBytes() > 1) {
-            this.frontier.fromBytes(buf);
+        this.frontier = FrontierData.fromBytes(buf);
+        if (buf.readableBytes() > 0) {
             this.playerID = buf.readInt();
         }
     }

@@ -36,9 +36,8 @@ public class PacketUpdateCollection implements CustomPacketPayload {
     }
 
     public PacketUpdateCollection(FriendlyByteBuf buf) {
-        this.collection = new CollectionData();
-        if (buf.readableBytes() > 1) {
-            this.collection.fromBytes(buf);
+        this.collection = CollectionData.fromBytes(buf);
+        if (buf.readableBytes() > 0) {
             baseRevision = buf.readLong();
             requestId = buf.readLong();
         }

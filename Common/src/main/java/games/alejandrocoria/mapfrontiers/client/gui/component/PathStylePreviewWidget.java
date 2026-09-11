@@ -1,7 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
@@ -91,11 +91,10 @@ public class PathStylePreviewWidget extends AbstractWidgetNoNarration {
     }
 
     private static FrontierData createPreviewFrontierData() {
-        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
+        PlayerId owner = PreviewFrontierHelper.createPreviewOwner();
 
-        FrontierData frontierData = new FrontierData();
+        FrontierData frontierData = new FrontierData(owner);
         frontierData.setShape(FrontierShape.Path);
-        frontierData.setOwner(owner);
         frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_path_name_1"));
         frontierData.setName2("");
         frontierData.setColor(0xFF60DDCC);

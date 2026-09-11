@@ -3,8 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,7 +14,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.EnumSet;
 import java.util.UUID;
 
 @ParametersAreNonnullByDefault
@@ -25,21 +23,13 @@ public class PacketSharePersonalFrontier implements CustomPacketPayload {
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketSharePersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketSharePersonalFrontier::encode, PacketSharePersonalFrontier::new);
 
     private UUID frontierID;
-    private final SettingsUserShared userShared;
+    private final FrontierUserAccess userShared;
     private long baseRevision;
     private long requestId;
 
-    public PacketSharePersonalFrontier() {
-        userShared = new SettingsUserShared();
-    }
-
-    public PacketSharePersonalFrontier(UUID frontierID, SettingsUser user, long baseRevision, long requestId) {
-        this(frontierID, createSharedUser(user), baseRevision, requestId);
-    }
-
-    public PacketSharePersonalFrontier(UUID frontierID, SettingsUserShared userShared, long baseRevision, long requestId) {
+    public PacketSharePersonalFrontier(UUID frontierID, FrontierUserAccess userShared, long baseRevision, long requestId) {
         this.frontierID = frontierID;
-        this.userShared = new SettingsUserShared(userShared);
+        this.userShared = new FrontierUserAccess(userShared);
         this.baseRevision = baseRevision;
         this.requestId = requestId;
     }
@@ -50,13 +40,10 @@ public class PacketSharePersonalFrontier implements CustomPacketPayload {
     }
 
     public PacketSharePersonalFrontier(FriendlyByteBuf buf) {
-        this.userShared = new SettingsUserShared();
-        if (buf.readableBytes() > 1) {
-            this.frontierID = UUIDHelper.fromBytes(buf);
-            this.userShared.fromBytes(buf);
-            baseRevision = buf.readLong();
-            requestId = buf.readLong();
-        }
+        this.frontierID = UUIDHelper.fromBytes(buf);
+        this.userShared = FrontierUserAccess.fromBytes(buf);
+        baseRevision = buf.readLong();
+        requestId = buf.readLong();
     }
 
     public void encode(FriendlyByteBuf buf) {
@@ -82,11 +69,5 @@ public class PacketSharePersonalFrontier implements CustomPacketPayload {
                             message.baseRevision, message.requestId);
             result.dispatchNetworkActions();
         }
-    }
-
-    private static SettingsUserShared createSharedUser(SettingsUser user) {
-        SettingsUserShared sharedUser = new SettingsUserShared(user, false);
-        sharedUser.setActions(EnumSet.noneOf(SettingsUserShared.Action.class));
-        return sharedUser;
     }
 }

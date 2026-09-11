@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
@@ -16,14 +17,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ServerCollectionRevisionTest {
     @Test
     void updateIncrementsRevisionOnceWhileNoOpAndTouchPreserveIt() {
-        TerritoriesManager manager = new TerritoriesManager();
+        TerritoriesManager manager = new TerritoriesManager(new PlayerNameRepository(), username -> null);
         CollectionData collection = collection();
         manager.addGlobalCollection(collection);
         ServerCollectionEvents collectionEvents = new ServerCollectionEvents();
         AtomicInteger updateEvents = new AtomicInteger();
         collectionEvents.subscribeUpdated(this, ignored -> updateEvents.incrementAndGet());
         ServerTerritoryOperationService service = new ServerTerritoryOperationService(
-                null, manager, null, new ServerFrontierEvents(), collectionEvents);
+                null, manager, null, new ServerFrontierEvents(), collectionEvents, playerId -> null);
 
         CollectionData changed = new CollectionData(collection);
         changed.setName("Changed");
@@ -46,12 +47,8 @@ class ServerCollectionRevisionTest {
     }
 
     private static CollectionData collection() {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(new PlayerId(UUID.randomUUID()));
         collection.setId(UUID.randomUUID());
-        SettingsUser owner = new SettingsUser();
-        owner.username = "Owner";
-        owner.uuid = UUID.randomUUID();
-        collection.setOwner(owner);
         collection.setName("Original");
         return collection;
     }

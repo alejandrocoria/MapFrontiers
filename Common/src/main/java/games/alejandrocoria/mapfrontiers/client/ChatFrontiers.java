@@ -3,12 +3,16 @@ package games.alejandrocoria.mapfrontiers.client;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
@@ -55,11 +59,11 @@ public class ChatFrontiers {
         receivedFrontiers.remove(id);
     }
 
-    public static void sendFrontier(FrontierOverlay frontier, SettingsUser user) {
+    public static void sendFrontier(FrontierOverlay frontier, String targetUsername) {
         try {
             if (frontier.isSessionOnly()) {
                 MapFrontiers.LOGGER.debug("Rejected sendFrontier because source frontier is SESSION_ONLY. frontierId={}, targetUser={}",
-                        frontier.getId(), user.username);
+                        frontier.getId(), targetUsername);
                 return;
             }
 
@@ -70,20 +74,20 @@ public class ChatFrontiers {
 
             CompoundTag nbt = new CompoundTag();
             CompoundTag frontierTag = new CompoundTag();
-            frontier.writeToNBT(frontierTag);
+            frontier.writeToNBT(frontierTag, MapFrontiersClient.getPlayerNameRepository());
             nbt.put("frontier", frontierTag);
 
             if (frontier.hasCollection()) {
                 CollectionData collection = MapFrontiersClient.getCollection(frontier.getCollectionId());
                 if (collection != null) {
                     CompoundTag collectionTag = new CompoundTag();
-                    collection.writeToNBT(collectionTag);
+                    collection.writeToNBT(collectionTag, MapFrontiersClient.getPlayerNameRepository());
                     nbt.put("collection", collectionTag);
                 }
             }
 
             String encodedData = encodeNBT(nbt);
-            String command = ClientConfig.SEND_COMMAND.get() + " " + user.username + " #MapFrontiers:";
+            String command = ClientConfig.SEND_COMMAND.get() + " " + targetUsername + " #MapFrontiers:";
             String format = "%d:%d:%d:%d:%s";
 
             List<String> dataList = new ArrayList<>();
@@ -102,7 +106,7 @@ public class ChatFrontiers {
             }
 
         } catch (Throwable t) {
-            MapFrontiers.LOGGER.error("Failed to send frontier {} {} to user {}: {}", frontier.getName1(), frontier.getName2(), user.username, t);
+            MapFrontiers.LOGGER.error("Failed to send frontier {} {} to user {}: {}", frontier.getName1(), frontier.getName2(), targetUsername, t);
         }
     }
 
@@ -119,6 +123,7 @@ public class ChatFrontiers {
         } else if (player.getUUID().equals(sender)) {
             return true;
         }
+        observeSenderProfile(sender);
         message = message.substring(startIndex);
 
         try {
@@ -152,16 +157,14 @@ public class ChatFrontiers {
                 CompoundTag payload = decodeNBT(encodedData);
                 FrontierData frontier = readFrontier(payload, version);
                 CollectionData collection = readCollection(payload, version);
-                frontier.setCopiedFromId(frontier.getId());
-                frontier.setCopiedFromUser(frontier.getOwner());
+                frontier.setCopiedFrom(frontier.getId(), frontier.getOwner());
                 frontier.setId(UUID.randomUUID());
-                frontier.setOwner(new SettingsUser(player));
+                frontier.setOwner(new PlayerId(player.getUUID()));
                 frontier.setPersonal(true);
                 if (collection != null) {
-                    collection.setCopiedFromId(collection.getId());
-                    collection.setCopiedFromUser(collection.getOwner());
+                    collection.setCopiedFrom(collection.getId(), collection.getOwner());
                     collection.setId(UUID.randomUUID());
-                    collection.setOwner(new SettingsUser(player));
+                    collection.setOwner(new PlayerId(player.getUUID()));
                     collection.setPersonal(true);
                     frontier.setCollectionId(collection.getId());
                 } else {
@@ -191,14 +194,16 @@ public class ChatFrontiers {
                 button.withStyle(style -> style.withBold(true));
                 button.withStyle(style -> style.withClickEvent(new ClickEvent.RunCommand("/mapfrontiersacceptcopy " + currentReceivedMessageId)));
 
-                SettingsUser userSender = new SettingsUser();
-                userSender.uuid = sender;
-                userSender.fillMissingInfo(true, null);
-                MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(userSender, "User not found") + " ");
-                if (userSender.equals(frontier.getCopiedFromUser())) {
+                PlayerId userSender = new PlayerId(sender);
+                MutableComponent text = Component.literal(PlayerNameFormatter.getDisplayName(userSender, "User not found") + " ");
+                if (frontier.getCopiedFromUser() != null && userSender.equals(frontier.getCopiedFromUser())) {
                     text.append("want to send a frontier to you: ");
                 } else {
-                    text.append("want to send a frontier of " + SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser(), "User not found") + " to you: ");
+                    PlayerId copiedFromUser = frontier.getCopiedFromUser();
+                    String copiedFromName = copiedFromUser == null
+                            ? "User not found"
+                            : PlayerNameFormatter.getDisplayName(copiedFromUser, "User not found");
+                    text.append("want to send a frontier of " + copiedFromName + " to you: ");
                 }
 
                 text.append(button);
@@ -232,13 +237,13 @@ public class ChatFrontiers {
     }
 
     private static FrontierData readFrontier(CompoundTag payload, int version) {
-        FrontierData frontier = new FrontierData();
+        PlayerReferenceNbtReadContext context = PlayerReferenceNbtReadContext.uuidOnly(
+                MapFrontiersClient.getPlayerNameRepository());
         if (payload.contains("frontier")) {
-            frontier.readFromNBT(payload.getCompoundOrEmpty("frontier"), version);
+            return FrontierData.readFromNBT(payload.getCompoundOrEmpty("frontier"), version, context).frontier();
         } else {
-            frontier.readFromNBT(payload, version);
+            return FrontierData.readFromNBT(payload, version, context).frontier();
         }
-        return frontier;
     }
 
     private static @Nullable CollectionData readCollection(CompoundTag payload, int version) {
@@ -246,9 +251,22 @@ public class ChatFrontiers {
             return null;
         }
 
-        CollectionData collection = new CollectionData();
-        collection.readFromNBT(payload.getCompoundOrEmpty("collection"), version);
-        return collection;
+        PlayerReferenceNbtReadContext context = PlayerReferenceNbtReadContext.uuidOnly(
+                MapFrontiersClient.getPlayerNameRepository());
+        return CollectionData.readFromNBT(payload.getCompoundOrEmpty("collection"), version, context).collection();
+    }
+
+    private static void observeSenderProfile(UUID sender) {
+        ClientPacketListener connection = Minecraft.getInstance().getConnection();
+        if (connection == null) {
+            return;
+        }
+
+        PlayerInfo playerInfo = connection.getPlayerInfo(sender);
+        if (playerInfo != null) {
+            MapFrontiersClient.getPlayerNameRepository().observe(new PlayerId(sender), playerInfo.getProfile().name(),
+                    PlayerNameSource.CONNECTED_PROFILE);
+        }
     }
 
     private static boolean shouldStartNewMessageAssembly(int messageId, int partIndex, int totalParts) {

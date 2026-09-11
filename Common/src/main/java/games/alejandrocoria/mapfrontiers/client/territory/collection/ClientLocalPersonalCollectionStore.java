@@ -2,7 +2,9 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.territory.ClientMapFrontiersStorageHelper;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameRepository;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
@@ -22,7 +24,14 @@ import java.util.List;
 
 @ParametersAreNonnullByDefault
 public class ClientLocalPersonalCollectionStore {
+    private final PlayerNameRepository playerNames;
+    private final PlayerReferenceNbtReadContext playerReferenceReadContext;
     private File modDir;
+
+    public ClientLocalPersonalCollectionStore(PlayerNameRepository playerNames) {
+        this.playerNames = playerNames;
+        playerReferenceReadContext = PlayerReferenceNbtReadContext.uuidOnly(playerNames);
+    }
 
     public List<CollectionData> loadCollections() {
         ensureDirectory();
@@ -57,7 +66,7 @@ public class ClientLocalPersonalCollectionStore {
         saveFile("personal_collections.dat", nbtCollections);
     }
 
-    public void saveOwnedCollectionMirror(Collection<? extends CollectionData> collections, SettingsUser currentPlayer) {
+    public void saveOwnedCollectionMirror(Collection<? extends CollectionData> collections, PlayerId currentPlayer) {
         saveCollections(collections.stream()
                 .filter(ClientLocalPersonalCollectionStore::shouldPersist)
                 .filter(collection -> collection.getOwner().equals(currentPlayer))
@@ -83,9 +92,10 @@ public class ClientLocalPersonalCollectionStore {
             ListTag collectionsTagList = nbt.getListOrEmpty("collections");
             for (int i = 0; i < collectionsTagList.size(); ++i) {
                 try {
-                    CollectionData collection = new CollectionData();
                     CompoundTag collectionTag = NbtReadHelper.requireCompound(collectionsTagList, i, "collections");
-                    needBackup |= collection.readFromNBT(collectionTag, version);
+                    CollectionData.NbtReadResult result = CollectionData.readFromNBT(collectionTag, version, playerReferenceReadContext);
+                    CollectionData collection = result.collection();
+                    needBackup |= result.changedDuringLoad();
                     if (!shouldPersist(collection)) {
                         needBackup = true;
                         continue;
@@ -110,7 +120,7 @@ public class ClientLocalPersonalCollectionStore {
         for (CollectionData collection : collections) {
             try {
                 CompoundTag collectionTag = new CompoundTag();
-                collection.writeToNBT(collectionTag);
+                collection.writeToNBT(collectionTag, playerNames);
                 collectionsTagList.add(collectionTag);
             } catch (RuntimeException e) {
                 skippedCollections++;

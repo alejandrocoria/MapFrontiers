@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
@@ -23,14 +23,14 @@ public class PacketUpdateSharedUserPersonalFrontier implements CustomPacketPaylo
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateSharedUserPersonalFrontier> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketUpdateSharedUserPersonalFrontier::encode, PacketUpdateSharedUserPersonalFrontier::new);
 
     private UUID frontierID;
-    private final SettingsUserShared userShared;
+    private final FrontierUserAccess userShared;
     private long baseRevision;
     private long requestId;
 
-    public PacketUpdateSharedUserPersonalFrontier(UUID frontierID, SettingsUserShared user,
+    public PacketUpdateSharedUserPersonalFrontier(UUID frontierID, FrontierUserAccess user,
                                                   long baseRevision, long requestId) {
         this.frontierID = frontierID;
-        userShared = new SettingsUserShared(user);
+        userShared = new FrontierUserAccess(user);
         this.baseRevision = baseRevision;
         this.requestId = requestId;
     }
@@ -41,13 +41,10 @@ public class PacketUpdateSharedUserPersonalFrontier implements CustomPacketPaylo
     }
 
     public PacketUpdateSharedUserPersonalFrontier(FriendlyByteBuf buf) {
-        this.userShared = new SettingsUserShared();
-        if (buf.readableBytes() > 1) {
-            this.frontierID = UUIDHelper.fromBytes(buf);
-            this.userShared.fromBytes(buf);
-            baseRevision = buf.readLong();
-            requestId = buf.readLong();
-        }
+        this.frontierID = UUIDHelper.fromBytes(buf);
+        this.userShared = FrontierUserAccess.fromBytes(buf);
+        baseRevision = buf.readLong();
+        requestId = buf.readLong();
     }
 
     public void encode(FriendlyByteBuf buf) {

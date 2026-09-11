@@ -3,7 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.gui.component;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionOverlayKey;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
@@ -40,10 +40,11 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         super(0, 0, SIZE, SIZE, Component.empty());
         previewPanel = new FrontierPreviewPanel();
 
-        SettingsUser owner = PreviewFrontierHelper.createPreviewOwner();
+        PlayerId owner = PreviewFrontierHelper.createPreviewOwner();
         previewCollectionData = createPreviewCollection(owner);
         previewCollectionOverlay = new CollectionOverlay(new CollectionOverlayKey(previewCollectionData.getId(), OVERWORLD), null,
                 previewCollectionData, List.of());
+        previewCollectionOverlay.setPreviewOwnerDisplayName(PreviewFrontierHelper.translate("mapfrontiers.preview_owner"));
 
         previewFrontiers.add(createPreviewFrontier(owner,
                 new BlockPos(30, 70, 45),
@@ -96,9 +97,8 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         previewPanel.drawPanelBorder(graphics, getX(), getY(), getWidth(), getHeight());
     }
 
-    private static FrontierOverlay createPreviewFrontier(SettingsUser owner, BlockPos... vertices) {
-        FrontierData frontierData = new FrontierData();
-        frontierData.setOwner(owner);
+    private static FrontierOverlay createPreviewFrontier(PlayerId owner, BlockPos... vertices) {
+        FrontierData frontierData = new FrontierData(owner);
         frontierData.setName1(PreviewFrontierHelper.translate("mapfrontiers.preview_name_1"));
         frontierData.setName2(PreviewFrontierHelper.translate("mapfrontiers.preview_name_2"));
         frontierData.setColor(0xFFAACC60);
@@ -117,10 +117,9 @@ public class PreviewCollectionWidget extends AbstractWidgetNoNarration {
         return new FrontierOverlay(frontierData, null);
     }
 
-    private static CollectionData createPreviewCollection(SettingsUser owner) {
-        CollectionData collection = new CollectionData();
+    private static CollectionData createPreviewCollection(PlayerId owner) {
+        CollectionData collection = new CollectionData(owner);
         collection.setId(UUID.randomUUID());
-        collection.setOwner(owner);
         collection.setName(PreviewFrontierHelper.translate("mapfrontiers.preview_collection"));
         collection.setColor(PREVIEW_COLLECTION_COLOR);
         collection.getVisibilityData().setVisible(true);

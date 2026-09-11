@@ -1,8 +1,11 @@
 package games.alejandrocoria.mapfrontiers.server.settings;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketFrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
+import games.alejandrocoria.mapfrontiers.common.network.PacketPlayerNameMappings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoryPermissionEvaluator;
@@ -16,12 +19,15 @@ public class ServerSettingsOperationService {
     private final MinecraftServer server;
     private final TerritoriesManager territoriesManager;
     private final TerritoryPermissionEvaluator permissionEvaluator;
+    private final PlayerNameResolver playerNameResolver;
 
     public ServerSettingsOperationService(MinecraftServer server, TerritoriesManager territoriesManager,
-                                          TerritoryPermissionEvaluator permissionEvaluator) {
+                                          TerritoryPermissionEvaluator permissionEvaluator,
+                                          PlayerNameResolver playerNameResolver) {
         this.server = server;
         this.territoriesManager = territoriesManager;
         this.permissionEvaluator = permissionEvaluator;
+        this.playerNameResolver = playerNameResolver;
     }
 
     public ServerSettingsOperationResult requestSettings(ServerPlayer player, long clientRevision) {
@@ -37,7 +43,7 @@ public class ServerSettingsOperationService {
         ServerSettingsOperationResult result = ServerSettingsOperationResult.success();
         PacketFrontierSettings settingsPacket = new PacketFrontierSettings(settings,
                 territoriesManager.getSettingsRevision(), 0L, OperationResolution.Accepted);
-        result.addNetworkAction(() -> PacketHandler.sendTo(settingsPacket, player));
+        result.addNetworkAction(() -> sendSettings(player, settingsPacket, settings));
         return result;
     }
 
@@ -86,12 +92,20 @@ public class ServerSettingsOperationService {
                                          OperationResolution resolution) {
         PacketFrontierSettings response = new PacketFrontierSettings(territoriesManager.getSettings(),
                 territoriesManager.getSettingsRevision(), requestId, resolution);
-        result.addNetworkAction(() -> PacketHandler.sendTo(response, player));
+        result.addNetworkAction(() -> sendSettings(player, response, territoriesManager.getSettings()));
     }
 
     private ServerSettingsOperationResult rejectedWithProfileRefresh(ServerPlayer player) {
         ServerSettingsOperationResult result = ServerSettingsOperationResult.rejected();
         result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
         return result;
+    }
+
+    private void sendSettings(ServerPlayer player, PacketFrontierSettings settingsPacket, FrontierSettings settings) {
+        PacketPlayerNameMappings mappings = new PacketPlayerNameMappings(PlayerReferenceCollector.collect(settings), playerNameResolver);
+        if (!mappings.isEmpty()) {
+            PacketHandler.sendTo(mappings, player);
+        }
+        PacketHandler.sendTo(settingsPacket, player);
     }
 }

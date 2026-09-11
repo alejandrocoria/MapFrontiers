@@ -12,6 +12,7 @@ import games.alejandrocoria.mapfrontiers.common.config.EnumConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.IntConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.StringListConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
@@ -736,15 +737,15 @@ public final class ClientConfig {
         FRONTIER_DEFAULT_PATH_STYLE_LABEL_AT_END.set(normalized.labelAtEnd);
     }
 
-    public static FrontierData createBuiltinFrontierDefaults(FrontierShape shape) {
-        FrontierData frontier = new FrontierData();
+    public static FrontierData createBuiltinFrontierDefaults(FrontierShape shape, PlayerId owner) {
+        FrontierData frontier = new FrontierData(owner);
         frontier.setShape(shape);
         frontier.setColor(ColorHelper.getRandomColor());
         return frontier;
     }
 
-    public static FrontierData createConfiguredFrontierDefaults(FrontierShape shape) {
-        FrontierData frontier = new FrontierData();
+    public static FrontierData createConfiguredFrontierDefaults(FrontierShape shape, PlayerId owner) {
+        FrontierData frontier = new FrontierData(owner);
         frontier.setShape(shape);
         frontier.setName1(normalizeName(FRONTIER_DEFAULT_NAME_1.get(), FrontierData.MAX_NAME_CHARACTERS));
         frontier.setName2(normalizeName(FRONTIER_DEFAULT_NAME_2.get(), FrontierData.MAX_NAME_CHARACTERS));
@@ -756,14 +757,14 @@ public final class ClientConfig {
         return frontier;
     }
 
-    public static CollectionData createBuiltinCollectionDefaults() {
-        CollectionData collection = new CollectionData();
+    public static CollectionData createBuiltinCollectionDefaults(PlayerId owner) {
+        CollectionData collection = new CollectionData(owner);
         collection.setColor(ColorHelper.getRandomColor());
         return collection;
     }
 
-    public static CollectionData createConfiguredCollectionDefaults() {
-        CollectionData collection = new CollectionData();
+    public static CollectionData createConfiguredCollectionDefaults(PlayerId owner) {
+        CollectionData collection = new CollectionData(owner);
         collection.setName(normalizeName(COLLECTION_DEFAULT_NAME.get(), CollectionData.MAX_NAME_CHARACTERS));
         collection.setColor(resolveNewCollectionColor());
         collection.setVisibilityData(getDefaultCollectionVisibility());

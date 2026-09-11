@@ -13,9 +13,10 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.scroll.UserSharedE
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBox;
 import games.alejandrocoria.mapfrontiers.client.gui.component.textbox.TextBoxUser;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.DeleteConfirmationDialog;
+import games.alejandrocoria.mapfrontiers.client.gui.util.PlayerInputResolver;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.Tooltip;
@@ -28,16 +29,12 @@ import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.UUID;
 
 @ParametersAreNonnullByDefault
 public class SharedAccessPage extends PageScreen {
     private static final Component TITLE_LABEL = Component.translatable("mapfrontiers.title_shared_access");
     private static final Component UPDATE_FRONTIER_LABEL = Component.translatable("mapfrontiers.update_frontier");
     private static final Component UPDATE_SETTINGS_LABEL = Component.translatable("mapfrontiers.update_settings");
-    private static final Component ERROR_UUID_SIZE_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_size");
-    private static final Component ERROR_UUID_FORMAT_LABEL = Component.translatable("mapfrontiers.new_user_error_uuid_format");
-    private static final Component ERROR_USER_NOT_FOUND_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_not_found");
     private static final Component ERROR_SELF_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_self");
     private static final Component ERROR_OWNER_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_owner");
     private static final Component ERROR_REPEATED_LABEL = Component.translatable("mapfrontiers.new_user_shared_error_user_repeated");
@@ -143,14 +140,10 @@ public class SharedAccessPage extends PageScreen {
 
             for (ScrollElement element : users.getElements()) {
                 UserSharedElement userElement = (UserSharedElement) element;
-                SettingsUser user = userElement.getUser();
+                PlayerId user = userElement.getUser();
                 PlayerInfo networkplayerinfo = null;
 
-                if (user.uuid != null) {
-                    networkplayerinfo = handler.getPlayerInfo(user.uuid);
-                } else if (!StringUtils.isBlank(user.username)) {
-                    networkplayerinfo = handler.getPlayerInfo(user.username);
-                }
+                networkplayerinfo = handler.getPlayerInfo(user.uuid());
 
                 if (networkplayerinfo == null) {
                     userElement.setPingBar(0);
@@ -204,7 +197,7 @@ public class SharedAccessPage extends PageScreen {
     }
 
     private void deleteUserPressed(ScrollElement element) {
-        SettingsUser user = ((UserSharedElement) element).getUser();
+        PlayerId user = ((UserSharedElement) element).getUser();
         MapFrontiersClient.getOperationService().submitOptimisticRemoveSharedUser(frontier.getId(), user);
     }
 
@@ -213,64 +206,37 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
-        SettingsUser user = new SettingsUser();
-
         String usernameOrUUID = textNewUser.getValue();
         clearTextBoxFocus(textNewUser);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
-        } else if (usernameOrUUID.length() < 28) {
-            user.username = usernameOrUUID;
-            user.fillMissingInfo(false, null);
-        } else {
-            usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
-            if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(ERROR_UUID_SIZE_LABEL);
-                return;
-            }
-            usernameOrUUID = usernameOrUUID.toLowerCase();
-            String uuid = usernameOrUUID.substring(0, 8) + "-" + usernameOrUUID.substring(8, 12) + "-"
-                    + usernameOrUUID.substring(12, 16) + "-" + usernameOrUUID.substring(16, 20) + "-"
-                    + usernameOrUUID.substring(20, 32);
-
-            try {
-                user.uuid = UUID.fromString(uuid);
-                user.fillMissingInfo(true, null);
-            } catch (Exception e) {
-                textNewUser.setError(ERROR_UUID_FORMAT_LABEL);
-                return;
-            }
         }
 
-        if (user.uuid == null) {
-            textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
+        PlayerInputResolver.Result result = PlayerInputResolver.resolveOnline(usernameOrUUID, minecraft.getConnection(),
+                MapFrontiersClient.getPlayerNameRepository());
+        if (!result.isSuccess()) {
+            textNewUser.setError(result.failure().getMessage());
             return;
         }
 
-        ClientPacketListener handler = minecraft.getConnection();
-        if (handler != null) {
-            if (handler.getPlayerInfo(user.uuid) == null) {
-                textNewUser.setError(ERROR_USER_NOT_FOUND_LABEL);
-                return;
-            }
-        }
+        PlayerId target = result.requirePlayerId();
 
-        if (user.username.equals(minecraft.player.getGameProfile().name())) {
+        if (target.equals(new PlayerId(minecraft.player.getUUID()))) {
             textNewUser.setError(ERROR_SELF_LABEL);
             return;
         }
 
-        if (frontier.getOwner().equals(user)) {
+        if (frontier.getOwner().equals(target)) {
             textNewUser.setError(ERROR_OWNER_LABEL);
             return;
         }
 
-        if (frontier.hasUserShared(user)) {
+        if (frontier.hasUserAccess(target)) {
             textNewUser.setError(ERROR_REPEATED_LABEL);
             return;
         }
 
-        if (MapFrontiersClient.getOperationService().submitOptimisticShareFrontier(frontier.getId(), user)) {
+        if (MapFrontiersClient.getOperationService().submitOptimisticShareFrontier(frontier.getId(), target)) {
             users.scrollBottom();
             textNewUser.setValue("");
         }
@@ -304,12 +270,12 @@ public class SharedAccessPage extends PageScreen {
         textNewUser.setEditable(canUpdate);
     }
 
-    private void actionChanged(SettingsUserShared user, SettingsUserShared.Action action, boolean checked) {
+    private void actionChanged(FrontierUserAccess user, FrontierUserAccess.Action action, boolean checked) {
         if (minecraft.player == null) {
             return;
         }
 
-        SettingsUserShared desiredUser = new SettingsUserShared(user);
+        FrontierUserAccess desiredUser = new FrontierUserAccess(user);
         if (checked) {
             desiredUser.addAction(action);
         } else {
@@ -328,10 +294,10 @@ public class SharedAccessPage extends PageScreen {
             return;
         }
 
-        SettingsUser player = new SettingsUser(minecraft.player);
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared user : frontier.getUsersShared()) {
-                users.addElement(new UserSharedElement(font, user, canUpdate, !user.getUser().equals(player), this::actionChanged));
+        PlayerId player = new PlayerId(minecraft.player.getUUID());
+        if (frontier.getUserAccesses() != null) {
+            for (FrontierUserAccess user : frontier.getUserAccesses()) {
+                users.addElement(new UserSharedElement(font, user, canUpdate, !user.getPlayerId().equals(player), this::actionChanged));
             }
         }
 
@@ -347,7 +313,7 @@ public class SharedAccessPage extends PageScreen {
         if (minecraft.player == null) {
             return;
         }
-        canUpdate = frontier.checkActionUserShared(new SettingsUser(minecraft.player), SettingsUserShared.Action.UpdateSettings);
+        canUpdate = frontier.checkUserAccess(new PlayerId(minecraft.player.getUUID()), FrontierUserAccess.Action.UpdateSettings);
     }
 
 }
