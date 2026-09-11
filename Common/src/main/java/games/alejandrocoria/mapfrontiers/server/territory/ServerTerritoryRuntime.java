@@ -84,12 +84,16 @@ public class ServerTerritoryRuntime {
 
     public void onPlayerJoined(ServerPlayer player) {
         PlayerId playerId = ServerPlayerIdFactory.from(player);
-        if (!playerNameRepository.observe(playerId, player.getGameProfile().name(), PlayerNameSource.CONNECTED_PROFILE)) {
-            return;
+        boolean wasKnownOnlyFromHint = playerNameRepository.isKnownOnlyFromHint(playerId);
+        boolean nameChanged = playerNameRepository.observe(playerId, player.getGameProfile().name(),
+                PlayerNameSource.CONNECTED_PROFILE);
+
+        if ((nameChanged || wasKnownOnlyFromHint) && territoriesManager.getReferencedPlayerIds().contains(playerId)) {
+            territoriesManager.markPlayerNameHintsDirty();
         }
 
-        if (territoriesManager.getReferencedPlayerIds().contains(playerId)) {
-            territoriesManager.markPlayerNameHintsDirty();
+        if (!nameChanged) {
+            return;
         }
 
         PacketPlayerNameMappings playerNameMappings = new PacketPlayerNameMappings(playerId, playerNameRepository.resolveName(playerId));
@@ -152,16 +156,19 @@ public class ServerTerritoryRuntime {
     }
 
     private void hydratePlayerNamesFromMinecraftCache() {
-        boolean changed = false;
+        boolean hintsNeedRefresh = false;
         for (PlayerId playerId : territoriesManager.getReferencedPlayerIds()) {
             Optional<String> username = server.services().nameToIdCache().get(playerId.uuid())
                     .map(nameAndId -> nameAndId.name());
             if (username.isPresent()) {
-                changed |= playerNameRepository.observe(playerId, username.get(), PlayerNameSource.MINECRAFT_CACHE);
+                boolean wasKnownOnlyFromHint = playerNameRepository.isKnownOnlyFromHint(playerId);
+                boolean nameChanged = playerNameRepository.observe(playerId, username.get(),
+                        PlayerNameSource.MINECRAFT_CACHE);
+                hintsNeedRefresh |= nameChanged || wasKnownOnlyFromHint;
             }
         }
 
-        if (changed) {
+        if (hintsNeedRefresh) {
             territoriesManager.markPlayerNameHintsDirty();
         }
     }

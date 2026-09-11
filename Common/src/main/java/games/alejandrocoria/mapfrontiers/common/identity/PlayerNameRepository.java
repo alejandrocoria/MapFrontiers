@@ -73,6 +73,11 @@ public final class PlayerNameRepository implements PlayerNameResolver, AutoClose
         return replace(playerId, candidate, source);
     }
 
+    public boolean isKnownOnlyFromHint(PlayerId playerId) {
+        Entry entry = entries.get(Objects.requireNonNull(playerId, "playerId"));
+        return entry != null && entry.source() == PlayerNameSource.HINT;
+    }
+
     @Override
     @Nullable
     public String resolveName(PlayerId playerId) {

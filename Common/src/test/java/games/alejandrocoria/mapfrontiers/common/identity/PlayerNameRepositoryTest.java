@@ -43,8 +43,11 @@ class PlayerNameRepositoryTest {
         List<PlayerId> changed = new ArrayList<>();
         repository.getEvents().subscribeChanged(this, changed::add);
 
+        assertFalse(repository.isKnownOnlyFromHint(PLAYER_ID));
         assertTrue(repository.observe(PLAYER_ID, "Alice", PlayerNameSource.HINT));
+        assertTrue(repository.isKnownOnlyFromHint(PLAYER_ID));
         assertFalse(repository.observe(PLAYER_ID, "Alice", PlayerNameSource.MINECRAFT_CACHE));
+        assertFalse(repository.isKnownOnlyFromHint(PLAYER_ID));
         assertFalse(repository.observe(PLAYER_ID, "Bob", PlayerNameSource.HINT));
 
         assertEquals("Alice", repository.resolveName(PLAYER_ID));

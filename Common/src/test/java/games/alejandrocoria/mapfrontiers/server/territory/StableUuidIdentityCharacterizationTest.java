@@ -6,6 +6,7 @@ import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameSource;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
+import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
@@ -58,26 +59,48 @@ class StableUuidIdentityCharacterizationTest {
         PlayerId renamedSharedUser = user(SHARED_ID);
         PlayerId differentUserWithSameName = user(UUID.randomUUID());
         PlayerNameRepository names = new PlayerNameRepository();
-        names.observe(oldSharedUser, "SharedName", PlayerNameSource.HINT);
-        names.observe(differentUserWithSameName, "SharedName", PlayerNameSource.HINT);
+        names.observe(oldOwner, "OldOwner", PlayerNameSource.CONNECTED_PROFILE);
+        names.observe(oldSharedUser, "OldShared", PlayerNameSource.CONNECTED_PROFILE);
+        names.observe(differentUserWithSameName, "RenamedOwner", PlayerNameSource.HINT);
         FrontierData frontier = new FrontierData(oldOwner);
         frontier.setPersonal(true);
         frontier.setOwner(oldOwner);
+        frontier.setCopiedFrom(new UUID(0L, 3L), oldSharedUser);
+        frontier.setSharingRevision(7L);
 
         FrontierUserAccess sharedAccess = new FrontierUserAccess(oldSharedUser, false);
         sharedAccess.addAction(FrontierUserAccess.Action.UpdateFrontier);
         frontier.addUserAccess(sharedAccess);
 
-        SettingsGroup group = new SettingsGroup("Builders", false);
+        CollectionData collection = new CollectionData(oldOwner);
+        collection.setCopiedFrom(new UUID(0L, 4L), oldSharedUser);
+        collection.setCollectionRevision(11L);
+
+        FrontierSettings settings = new FrontierSettings();
+        SettingsGroup group = settings.createCustomGroup("Builders");
         group.addAction(FrontierSettings.Action.UpdateGlobalFrontier);
         group.addUser(oldSharedUser);
+        TerritoriesManager manager = new TerritoriesManager(names, username -> null);
+        manager.setSettings(settings, 13L);
+
+        long syncHash = frontier.computeSyncHash();
+        names.observe(renamedOwner, "RenamedOwner", PlayerNameSource.CONNECTED_PROFILE);
+        names.observe(renamedSharedUser, "RenamedShared", PlayerNameSource.CONNECTED_PROFILE);
 
         assertTrue(frontier.checkUserAccess(renamedOwner, FrontierUserAccess.Action.UpdateSettings));
         assertTrue(frontier.checkUserAccess(renamedSharedUser, FrontierUserAccess.Action.UpdateFrontier));
-        assertTrue(group.hasUser(renamedSharedUser));
-        assertFalse(group.hasUser(differentUserWithSameName));
+        assertTrue(manager.getSettings().getCustomGroups().getFirst().hasUser(renamedSharedUser));
+        assertEquals(renamedOwner, collection.getOwner());
+        assertEquals(renamedSharedUser, frontier.getCopiedFromUser());
+        assertEquals(renamedSharedUser, collection.getCopiedFromUser());
+        assertEquals(syncHash, frontier.computeSyncHash());
+        assertEquals(7L, frontier.getSharingRevision());
+        assertEquals(11L, collection.getCollectionRevision());
+        assertEquals(13L, manager.getSettingsRevision());
+        assertFalse(manager.getSettings().getCustomGroups().getFirst().hasUser(differentUserWithSameName));
         assertFalse(frontier.checkUserAccess(differentUserWithSameName,
                 FrontierUserAccess.Action.UpdateFrontier));
+        assertFalse(collection.getOwner().equals(differentUserWithSameName));
     }
 
     private static FrontierCreateSpec frontierSpec(PlayerId owner) {

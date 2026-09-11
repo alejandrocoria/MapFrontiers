@@ -77,6 +77,29 @@ class PacketPlayerNameMappingsTest {
         assertEquals("ConnectedName", names.resolveName(known));
     }
 
+    @Test
+    void laterServerSyncPacketAppliesRenameExactlyOnce() {
+        PlayerId playerId = playerId(7L);
+        PlayerNameRepository names = new PlayerNameRepository();
+        List<PlayerId> changes = new ArrayList<>();
+        names.getEvents().subscribeChanged(this, changes::add);
+
+        roundTrip(new PacketPlayerNameMappings(playerId, "OldName")).applyTo(names);
+        roundTrip(new PacketPlayerNameMappings(playerId, "NewName")).applyTo(names);
+        roundTrip(new PacketPlayerNameMappings(playerId, "NewName")).applyTo(names);
+
+        assertEquals("NewName", names.resolveName(playerId));
+        assertEquals(List.of(playerId, playerId), changes);
+    }
+
+    private static PacketPlayerNameMappings roundTrip(PacketPlayerNameMappings packet) {
+        FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
+        packet.encode(encoded);
+        PacketPlayerNameMappings decoded = new PacketPlayerNameMappings(encoded);
+        encoded.release();
+        return decoded;
+    }
+
     private static PlayerId playerId(long value) {
         return new PlayerId(new UUID(0L, value));
     }
