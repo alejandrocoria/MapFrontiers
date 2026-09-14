@@ -4,9 +4,9 @@ import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.CheckBoxButton;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -21,7 +21,7 @@ import java.util.List;
 @MethodsReturnNonnullByDefault
 public class UserSharedElement extends ScrollBox.ScrollElement {
     private final Font font;
-    private final SettingsUserShared user;
+    private final FrontierUserAccess user;
     private final CheckBoxButton updateFrontier;
     private final CheckBoxButton updateSettings;
     private IconButton buttonDelete;
@@ -29,15 +29,15 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
     private final boolean enabled;
     private int pingBar = 0;
 
-    public UserSharedElement(Font font, SettingsUserShared user, boolean enabled, boolean removable, ActionChangedConsumer actionChangedCallback) {
+    public UserSharedElement(Font font, FrontierUserAccess user, boolean enabled, boolean removable, ActionChangedConsumer actionChangedCallback) {
         super(430, 15);
         this.font = font;
         this.user = user;
-        updateFrontier = new CheckBoxButton(user.hasAction(SettingsUserShared.Action.UpdateFrontier),
-                (b) -> actionChangedCallback.accept(user, SettingsUserShared.Action.UpdateFrontier, b.isChecked()));
+        updateFrontier = new CheckBoxButton(user.hasAction(FrontierUserAccess.Action.UpdateFrontier),
+                (b) -> actionChangedCallback.accept(user, FrontierUserAccess.Action.UpdateFrontier, b.isChecked()));
         updateFrontier.active = enabled;
-        updateSettings = new CheckBoxButton(user.hasAction(SettingsUserShared.Action.UpdateSettings),
-                (b) -> actionChangedCallback.accept(user, SettingsUserShared.Action.UpdateSettings, b.isChecked()));
+        updateSettings = new CheckBoxButton(user.hasAction(FrontierUserAccess.Action.UpdateSettings),
+                (b) -> actionChangedCallback.accept(user, FrontierUserAccess.Action.UpdateSettings, b.isChecked()));
         updateSettings.active = enabled;
 
         this.enabled = enabled;
@@ -49,8 +49,8 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
         children = List.of(updateFrontier, updateSettings);
     }
 
-    public SettingsUser getUser() {
-        return user.getUser();
+    public PlayerId getUser() {
+        return user.getPlayerId();
     }
 
     @Override
@@ -100,7 +100,7 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
             }
         }
 
-        graphics.text(font, SettingsUserFormatter.getDisplayName(user.getUser()), x + 16, y + 4, ColorConstants.USER_SHARED_TEXT);
+        graphics.text(font, PlayerNameFormatter.getDisplayName(user.getPlayerId()), x + 16, y + 4, ColorConstants.USER_SHARED_TEXT);
 
         updateFrontier.extractRenderState(graphics, mouseX, mouseY, partialTicks);
         updateSettings.extractRenderState(graphics, mouseX, mouseY, partialTicks);
@@ -164,6 +164,6 @@ public class UserSharedElement extends ScrollBox.ScrollElement {
 
     @FunctionalInterface
     public interface ActionChangedConsumer {
-        void accept(SettingsUserShared user, SettingsUserShared.Action action, boolean checked);
+        void accept(FrontierUserAccess user, FrontierUserAccess.Action action, boolean checked);
     }
 }

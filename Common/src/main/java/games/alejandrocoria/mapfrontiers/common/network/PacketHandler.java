@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.CommonNetworkMod;
 import commonnetwork.api.Dispatcher;
 import commonnetwork.api.Network;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -17,6 +17,7 @@ import java.util.UUID;
 public class PacketHandler {
     public static void init() {
         // server to client
+        CommonNetworkMod.registerPacket(PacketPlayerNameMappings.type(), PacketPlayerNameMappings.class, PacketPlayerNameMappings.STREAM_CODEC, PacketPlayerNameMappings::handle);
         CommonNetworkMod.registerPacket(PacketTerritoriesSnapshot.type(), PacketTerritoriesSnapshot.class, PacketTerritoriesSnapshot.STREAM_CODEC, PacketTerritoriesSnapshot::handle);
         CommonNetworkMod.registerPacket(PacketCollectionCreated.type(), PacketCollectionCreated.class, PacketCollectionCreated.STREAM_CODEC, PacketCollectionCreated::handle);
         CommonNetworkMod.registerPacket(PacketCollectionUpdated.type(), PacketCollectionUpdated.class, PacketCollectionUpdated.STREAM_CODEC, PacketCollectionUpdated::handle);
@@ -56,16 +57,17 @@ public class PacketHandler {
         sendToUsersWithAccessExcept(message, frontier, server, null);
     }
 
-    public static <MSG> void sendToUsersWithAccessExcept(MSG message, FrontierData frontier, MinecraftServer server, @Nullable UUID excludedUserId) {
-        ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid);
+    public static <MSG> void sendToUsersWithAccessExcept(MSG message, FrontierData frontier,
+                                                   MinecraftServer server, @Nullable UUID excludedUserId) {
+        ServerPlayer player = server.getPlayerList().getPlayer(frontier.getOwner().uuid());
         if (player != null && !player.getUUID().equals(excludedUserId)) {
             sendTo(message, player);
         }
 
-        if (frontier.getUsersShared() != null) {
-            for (SettingsUserShared userShared : frontier.getUsersShared()) {
+        if (frontier.getUserAccesses() != null) {
+            for (FrontierUserAccess userShared : frontier.getUserAccesses()) {
                 if (!userShared.isPending()) {
-                    player = server.getPlayerList().getPlayer(userShared.getUser().uuid);
+                    player = server.getPlayerList().getPlayer(userShared.getPlayerId().uuid());
                     if (player != null && !player.getUUID().equals(excludedUserId)) {
                         sendTo(message, player);
                     }
@@ -74,6 +76,8 @@ public class PacketHandler {
         }
     }
 
+    // Some mods can make channel-support checks return false even though payload delivery still works.
+    // MapFrontiers intentionally bypasses those checks to avoid dropping valid packets.
     public static <MSG> void sendTo(MSG message, ServerPlayer player) {
         Network.getNetworkHandler().sendToClient(message, player, true);
     }

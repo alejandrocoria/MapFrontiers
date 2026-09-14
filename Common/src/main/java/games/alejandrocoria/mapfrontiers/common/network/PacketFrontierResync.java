@@ -30,10 +30,7 @@ public class PacketFrontierResync {
     }
 
     public PacketFrontierResync(FriendlyByteBuf buf) {
-        frontier = new FrontierData();
-        if (buf.readableBytes() > 1) {
-            frontier.fromBytes(buf);
-        }
+        frontier = FrontierData.fromBytes(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {

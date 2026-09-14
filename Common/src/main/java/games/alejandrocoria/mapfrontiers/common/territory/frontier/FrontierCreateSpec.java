@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
@@ -24,7 +25,7 @@ import java.util.UUID;
 @ParametersAreNonnullByDefault
 public final class FrontierCreateSpec {
     private final UUID frontierId;
-    private final SettingsUser owner;
+    private final PlayerId owner;
     private final boolean personal;
     private final ResourceKey<Level> dimension;
     private final TerritoryLifetime lifetime;
@@ -42,7 +43,7 @@ public final class FrontierCreateSpec {
     private final FrontierData.PathStyle pathStyle;
 
     private FrontierCreateSpec(UUID frontierId,
-                               SettingsUser owner,
+                               PlayerId owner,
                                boolean personal,
                                ResourceKey<Level> dimension,
                                TerritoryLifetime lifetime,
@@ -59,7 +60,7 @@ public final class FrontierCreateSpec {
                                List<BlockPos> points,
                                FrontierData.PathStyle pathStyle) {
         this.frontierId = Objects.requireNonNull(frontierId, "frontierId");
-        this.owner = copyUser(Objects.requireNonNull(owner, "owner"));
+        this.owner = Objects.requireNonNull(owner, "owner");
         this.personal = personal;
         this.dimension = Objects.requireNonNull(dimension, "dimension");
         this.lifetime = Objects.requireNonNull(lifetime, "lifetime");
@@ -81,7 +82,7 @@ public final class FrontierCreateSpec {
     }
 
     public static FrontierCreateSpec vertex(UUID frontierId,
-                                            SettingsUser owner,
+                                            PlayerId owner,
                                             boolean personal,
                                             ResourceKey<Level> dimension,
                                             TerritoryLifetime lifetime,
@@ -99,7 +100,7 @@ public final class FrontierCreateSpec {
     }
 
     public static FrontierCreateSpec chunk(UUID frontierId,
-                                           SettingsUser owner,
+                                           PlayerId owner,
                                            boolean personal,
                                            ResourceKey<Level> dimension,
                                            TerritoryLifetime lifetime,
@@ -117,7 +118,7 @@ public final class FrontierCreateSpec {
     }
 
     public static FrontierCreateSpec path(UUID frontierId,
-                                          SettingsUser owner,
+                                          PlayerId owner,
                                           boolean personal,
                                           ResourceKey<Level> dimension,
                                           TerritoryLifetime lifetime,
@@ -138,8 +139,8 @@ public final class FrontierCreateSpec {
         return frontierId;
     }
 
-    public SettingsUser getOwner() {
-        return copyUser(owner);
+    public PlayerId getOwner() {
+        return owner;
     }
 
     public boolean isPersonal() {
@@ -202,14 +203,14 @@ public final class FrontierCreateSpec {
         return new FrontierData.PathStyle(pathStyle);
     }
 
-    public FrontierCreateSpec withOwner(SettingsUser owner) {
+    public FrontierCreateSpec withOwner(PlayerId owner) {
         return new FrontierCreateSpec(frontierId, owner, personal, dimension, lifetime, collectionId, sourcePluginId,
                 name1, name2, color, visibility, banner, frontierShape, vertices, chunks, points, pathStyle);
     }
 
     public void toBytes(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, frontierId);
-        owner.toBytes(buf);
+        PlayerIdNetworkCodec.write(buf, owner);
         buf.writeBoolean(personal);
         buf.writeIdentifier(dimension.identifier());
         buf.writeInt(lifetime.ordinal());
@@ -268,8 +269,7 @@ public final class FrontierCreateSpec {
 
     public static FrontierCreateSpec fromBytes(FriendlyByteBuf buf) {
         UUID frontierId = UUIDHelper.fromBytes(buf);
-        SettingsUser owner = new SettingsUser();
-        owner.fromBytes(buf);
+        PlayerId owner = PlayerIdNetworkCodec.read(buf);
         boolean personal = buf.readBoolean();
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, buf.readIdentifier());
         TerritoryLifetime lifetime = TerritoryLifetime.VALUES[buf.readInt()];
@@ -323,13 +323,6 @@ public final class FrontierCreateSpec {
                         color, visibility, banner, points, pathStyle);
             }
         };
-    }
-
-    private static SettingsUser copyUser(SettingsUser owner) {
-        SettingsUser copy = new SettingsUser();
-        copy.username = owner.username;
-        copy.uuid = owner.uuid;
-        return copy;
     }
 
     private static void validateTypeAndLifetime(boolean personal, TerritoryLifetime lifetime) {

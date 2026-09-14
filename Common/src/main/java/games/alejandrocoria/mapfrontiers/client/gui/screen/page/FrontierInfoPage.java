@@ -23,9 +23,9 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.PathStyleDialo
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierLocalOverrides;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -201,6 +201,11 @@ public class FrontierInfoPage extends PageScreen {
         });
 
         MapFrontiersClient.getSettingsProfileEvents().subscribeUpdated(this, profile -> refreshViewState());
+        MapFrontiersClient.getPlayerNameEvents().subscribeChanged(this, playerId -> {
+            if (ownerLabel != null) {
+                refreshInfoLabelsFromFrontier();
+            }
+        });
     }
 
     @Override
@@ -774,6 +779,7 @@ public class FrontierInfoPage extends PageScreen {
     private void unsubscribeEvents() {
         MapFrontiersClient.getFrontierEvents().unsubscribe(this);
         MapFrontiersClient.getSettingsProfileEvents().unsubscribe(this);
+        MapFrontiersClient.getPlayerNameEvents().unsubscribe(this);
         ClientGlobalEvents.unsubscribeAllEvents(this);
     }
 
@@ -907,11 +913,11 @@ public class FrontierInfoPage extends PageScreen {
     }
 
     private void refreshInfoLabelsFromFrontier() {
-        MutableComponent owner = Component.translatable(OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getOwner()));
+        MutableComponent owner = Component.translatable(OWNER_KEY, PlayerNameFormatter.getDisplayName(frontier.getOwner()));
         if (frontier.wasCopied()) {
             owner.append(Component.literal(ColorConstants.WARNING + " !"));
             ownerLabel.setTooltip(Tooltip.create(Component.literal(ColorConstants.WARNING + "! " + ChatFormatting.RESET)
-                    .append(Component.translatable(ORIGINAL_OWNER_KEY, SettingsUserFormatter.getDisplayName(frontier.getCopiedFromUser())))));
+                    .append(Component.translatable(ORIGINAL_OWNER_KEY, PlayerNameFormatter.getDisplayName(frontier.getCopiedFromUser())))));
         } else {
             ownerLabel.setTooltip(null);
         }
@@ -1027,8 +1033,8 @@ public class FrontierInfoPage extends PageScreen {
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        PlayerId playerId = new PlayerId(minecraft.player.getUUID());
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerId);
         canUpdateFrontierInfo = actions.canUpdate;
 
         textName1.setEditable(actions.canUpdate);
@@ -1047,7 +1053,7 @@ public class FrontierInfoPage extends PageScreen {
             buttonChangeToPersonalGlobal.visible = false;
         } else if (frontier.getPersonal()) {
             buttonChangeToPersonalGlobal.visible = MapFrontiersClient.isModOnServer()
-                    && frontier.getOwner().equals(playerUser)
+                    && frontier.getOwner().equals(playerId)
                     && profile != null
                     && profile.createFrontier == SettingsProfile.State.Enabled;
         } else {
@@ -1152,8 +1158,8 @@ public class FrontierInfoPage extends PageScreen {
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        PlayerId playerId = new PlayerId(minecraft.player.getUUID());
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerId);
 
         if (actions.canUpdate) {
             long currentSyncHash = frontier.computeSyncHash();
@@ -1171,8 +1177,8 @@ public class FrontierInfoPage extends PageScreen {
         }
 
         SettingsProfile profile = MapFrontiersClient.getSettingsProfile();
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerUser);
+        PlayerId playerId = new PlayerId(minecraft.player.getUUID());
+        SettingsProfile.AvailableActions actions = SettingsProfile.getAvailableActions(profile, frontier, playerId);
         return actions.canUpdate;
     }
 

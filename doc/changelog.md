@@ -6,6 +6,8 @@
 * Changed: Concurrent collection, shared access, and server settings edits now reject stale client updates instead of overwriting newer server state.
 * Fixed: Rapid consecutive edits to frontiers, collections, shared access, or server settings could be reverted or lost when an older server confirmation arrived.
 * Fixed: Collection visibility changes from the fullscreen map or frontier list could wait for the server response instead of appearing immediately.
+* Fixed: Player names could remain missing or outdated in frontier and collection ownership, copied-from information, shared access, and server settings, including after a Minecraft account username change.
+* Fixed: Personal frontiers rejected during server synchronization could remain visible on the client until reconnecting.
 
 **Beta 12:**
 * Changed: Significantly improved client performance when creating, editing, selecting, hiding, or updating frontiers and collections, especially very long Path frontiers and collections containing many frontiers.

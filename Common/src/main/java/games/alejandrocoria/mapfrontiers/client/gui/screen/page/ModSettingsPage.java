@@ -30,10 +30,12 @@ import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.FrontierVisibi
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewCollectionDefaultsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.screen.dialog.NewFrontierDefaultsDialog;
 import games.alejandrocoria.mapfrontiers.client.gui.util.DefaultValueBinding;
+import games.alejandrocoria.mapfrontiers.client.gui.util.PlayerInputResolver;
 import games.alejandrocoria.mapfrontiers.client.settings.PendingOptimisticSettingsUpdates;
 import games.alejandrocoria.mapfrontiers.client.util.ScreenHelper;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
 import games.alejandrocoria.mapfrontiers.common.config.ConfigEntry;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketHandler;
 import games.alejandrocoria.mapfrontiers.common.network.PacketRequestFrontierSettings;
@@ -42,7 +44,6 @@ import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings.Action;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsGroup;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityField;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
@@ -70,7 +71,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.ParametersAreNonnullByDefault;
-import java.util.UUID;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
@@ -735,14 +735,7 @@ public class ModSettingsPage extends PageScreen {
 
             for (ScrollElement element : users.getElements()) {
                 UserElement userElement = (UserElement) element;
-                SettingsUser user = userElement.getUser();
-                PlayerInfo networkplayerinfo = null;
-
-                if (user.uuid != null) {
-                    networkplayerinfo = handler.getPlayerInfo(user.uuid);
-                } else if (!StringUtils.isBlank(user.username)) {
-                    networkplayerinfo = handler.getPlayerInfo(user.username);
-                }
+                PlayerInfo networkplayerinfo = handler.getPlayerInfo(userElement.getUser().uuid());
 
                 if (networkplayerinfo == null) {
                     userElement.setPingBar(0);
@@ -1034,35 +1027,20 @@ public class ModSettingsPage extends PageScreen {
 
     private void newUserPressed() {
         SettingsGroup group = ((GroupElement) groups.getSelectedElement()).getGroup();
-        SettingsUser user = new SettingsUser();
-
         String usernameOrUUID = textNewUser.getValue();
         clearTextBoxFocus(textNewUser);
         if (StringUtils.isBlank(usernameOrUUID)) {
             return;
-        } else if (usernameOrUUID.length() < 28) {
-            user.username = usernameOrUUID;
-            user.fillMissingInfo(false, null);
-        } else {
-            usernameOrUUID = usernameOrUUID.replaceAll("[^0-9a-fA-F]", "");
-            if (usernameOrUUID.length() != 32) {
-                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_size"));
-                return;
-            }
-            usernameOrUUID = usernameOrUUID.toLowerCase();
-            String uuid = usernameOrUUID.substring(0, 8) + "-" + usernameOrUUID.substring(8, 12) + "-"
-                    + usernameOrUUID.substring(12, 16) + "-" + usernameOrUUID.substring(16, 20) + "-"
-                    + usernameOrUUID.substring(20, 32);
-
-            try {
-                user.uuid = UUID.fromString(uuid);
-                user.fillMissingInfo(true, null);
-            } catch (Exception e) {
-                textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_uuid_format"));
-                return;
-            }
         }
 
+        PlayerInputResolver.Result result = PlayerInputResolver.resolveAllowingOfflineUuid(usernameOrUUID,
+                minecraft.getConnection(), MapFrontiersClient.getPlayerNameRepository());
+        if (!result.isSuccess()) {
+            textNewUser.setError(result.failure().getMessage());
+            return;
+        }
+
+        PlayerId user = result.requirePlayerId();
         if (group.hasUser(user)) {
             textNewUser.setError(Component.translatable("mapfrontiers.new_user_error_user_repeated"));
             return;
@@ -1202,7 +1180,7 @@ public class ModSettingsPage extends PageScreen {
         users.removeAll();
         GroupElement element = (GroupElement) groups.getSelectedElement();
         if (element != null && !element.getGroup().isSpecial()) {
-            for (SettingsUser user : element.getGroup().getUsers()) {
+            for (PlayerId user : element.getGroup().getUsers()) {
                 users.addElement(new UserElement(font, user));
             }
         }

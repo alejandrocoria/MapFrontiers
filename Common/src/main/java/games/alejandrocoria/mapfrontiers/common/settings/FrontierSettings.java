@@ -1,10 +1,12 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -96,7 +98,7 @@ public class FrontierSettings {
         customGroups.remove(group);
     }
 
-    public boolean checkAction(Action action, @Nullable SettingsUser player, boolean isOP, @Nullable SettingsUser owner) {
+    public boolean checkAction(Action action, @Nullable PlayerId player, boolean isOP, @Nullable PlayerId owner) {
         if (player == null) {
             return false;
         }
@@ -122,15 +124,14 @@ public class FrontierSettings {
         return false;
     }
 
-    public SettingsProfile getProfile(ServerPlayer player) {
+    public SettingsProfile getProfile(PlayerId user, boolean isOP) {
         SettingsProfile profile = new SettingsProfile();
-        SettingsUser user = new SettingsUser(player);
 
         for (Action action : owners.getActions()) {
             profile.setAction(action, SettingsProfile.State.Owner);
         }
 
-        if (MapFrontiers.isOPorHost(player)) {
+        if (isOP) {
             for (Action action : OPs.getActions()) {
                 profile.setAction(action, SettingsProfile.State.Enabled);
             }
@@ -155,7 +156,7 @@ public class FrontierSettings {
         return profile;
     }
 
-    public boolean readFromNBT(CompoundTag nbt) {
+    public boolean readFromNBT(CompoundTag nbt, PlayerReferenceNbtReadContext context) {
         boolean needBackup = false;
         try {
             int version = nbt.getIntOr("Version", 0);
@@ -171,20 +172,20 @@ public class FrontierSettings {
             }
 
             CompoundTag OPsTag = nbt.getCompoundOrEmpty("OPs");
-            OPs.readFromNBT(OPsTag, version);
+            needBackup |= OPs.readFromNBT(OPsTag, version, context);
 
             CompoundTag ownersTag = nbt.getCompoundOrEmpty("Owners");
-            owners.readFromNBT(ownersTag, version);
+            needBackup |= owners.readFromNBT(ownersTag, version, context);
 
             CompoundTag everyoneTag = nbt.getCompoundOrEmpty("Everyone");
-            everyone.readFromNBT(everyoneTag, version);
+            needBackup |= everyone.readFromNBT(everyoneTag, version, context);
 
             customGroups.clear();
             ListTag customGroupsTagList = nbt.getListOrEmpty("customGroups");
             for (int i = 0; i < customGroupsTagList.size(); ++i) {
                 SettingsGroup group = new SettingsGroup();
                 CompoundTag groupTag = customGroupsTagList.getCompoundOrEmpty(i);
-                group.readFromNBT(groupTag, version);
+                needBackup |= group.readFromNBT(groupTag, version, context);
                 customGroups.add(group);
             }
 
@@ -196,23 +197,23 @@ public class FrontierSettings {
         return needBackup;
     }
 
-    public void writeToNBT(CompoundTag nbt) {
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
         CompoundTag OPsTag = new CompoundTag();
-        OPs.writeToNBT(OPsTag);
+        OPs.writeToNBT(OPsTag, resolver);
         nbt.put("OPs", OPsTag);
 
         CompoundTag ownersTag = new CompoundTag();
-        owners.writeToNBT(ownersTag);
+        owners.writeToNBT(ownersTag, resolver);
         nbt.put("Owners", ownersTag);
 
         CompoundTag everyoneTag = new CompoundTag();
-        everyone.writeToNBT(everyoneTag);
+        everyone.writeToNBT(everyoneTag, resolver);
         nbt.put("Everyone", everyoneTag);
 
         ListTag customGroupsTagList = new ListTag();
         for (SettingsGroup group : customGroups) {
             CompoundTag groupTag = new CompoundTag();
-            group.writeToNBT(groupTag);
+            group.writeToNBT(groupTag, resolver);
             customGroupsTagList.add(groupTag);
         }
         nbt.put("customGroups", customGroupsTagList);

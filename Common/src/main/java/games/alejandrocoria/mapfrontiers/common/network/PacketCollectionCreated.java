@@ -30,10 +30,7 @@ public class PacketCollectionCreated {
     }
 
     public PacketCollectionCreated(FriendlyByteBuf buf) {
-        this.collection = new CollectionData();
-        if (buf.readableBytes() > 1) {
-            this.collection.fromBytes(buf);
-        }
+        this.collection = CollectionData.fromBytes(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {

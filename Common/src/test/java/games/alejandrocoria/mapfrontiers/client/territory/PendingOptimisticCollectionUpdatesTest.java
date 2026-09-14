@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.territory;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import org.junit.jupiter.api.Test;
@@ -97,7 +98,7 @@ class PendingOptimisticCollectionUpdatesTest {
     }
 
     private static CollectionData collection(UUID id, String name, long revision, long modified) {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(new PlayerId(UUID.randomUUID()));
         collection.setId(id);
         collection.setName(name);
         collection.setModified(new Date(modified));
