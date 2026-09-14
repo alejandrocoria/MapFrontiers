@@ -18,26 +18,26 @@ public class PacketUpdateFrontier {
 
     private UUID frontierId = new UUID(0, 0);
     private FrontierChange change = new FrontierChange();
-    private long expectedSyncHash;
+    private long baseSyncHash;
 
-    public PacketUpdateFrontier(UUID frontierId, FrontierChange change, long expectedSyncHash) {
+    public PacketUpdateFrontier(UUID frontierId, FrontierChange change, long baseSyncHash) {
         this.frontierId = frontierId;
         this.change = change;
-        this.expectedSyncHash = expectedSyncHash;
+        this.baseSyncHash = baseSyncHash;
     }
 
     public PacketUpdateFrontier(FriendlyByteBuf buf) {
         if (buf.readableBytes() > 1) {
             this.frontierId = buf.readUUID();
             this.change = new FrontierChange(buf);
-            this.expectedSyncHash = buf.readLong();
+            this.baseSyncHash = buf.readLong();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeUUID(frontierId);
         change.toBytes(buf);
-        buf.writeLong(expectedSyncHash);
+        buf.writeLong(baseSyncHash);
     }
 
     public static void handle(PacketContext<PacketUpdateFrontier> ctx) {
@@ -52,7 +52,7 @@ public class PacketUpdateFrontier {
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
-                    .updateFrontier(player, message.frontierId, message.change, message.expectedSyncHash);
+                    .updateFrontier(player, message.frontierId, message.change, message.baseSyncHash);
             result.dispatchNetworkActions();
         }
     }

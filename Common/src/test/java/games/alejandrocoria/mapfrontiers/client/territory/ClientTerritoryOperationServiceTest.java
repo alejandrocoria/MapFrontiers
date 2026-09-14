@@ -1,5 +1,7 @@
 package games.alejandrocoria.mapfrontiers.client.territory;
 
+import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
+import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
@@ -51,5 +53,15 @@ class ClientTerritoryOperationServiceTest {
         assertTrue(ClientTerritoryOperationService.affectsCollectionVariants(shapeChange));
         assertTrue(ClientTerritoryOperationService.affectsCollectionMembership(collectionChange));
         assertTrue(ClientTerritoryOperationService.affectsCollectionVariants(collectionChange));
+    }
+
+    @Test
+    void affectsCollectionVariants_incrementalGeometryChange_changesMembership() {
+        FrontierChange change = FrontierChange.fromMutation(new FrontierData(), FrontierMutation.builder()
+                .insertPathPointAfterLast(new Point2i(16, 16))
+                .build());
+
+        assertTrue(ClientTerritoryOperationService.affectsCollectionMembership(change));
+        assertTrue(ClientTerritoryOperationService.affectsCollectionVariants(change));
     }
 }
