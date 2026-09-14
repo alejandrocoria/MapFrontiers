@@ -11,8 +11,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -81,7 +81,7 @@ class TerritoriesManagerGeometryChangeTest {
                 UUID.randomUUID(),
                 new SettingsUser(),
                 false,
-                ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("minecraft", "overworld")),
+                ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", "overworld")),
                 TerritoryLifetime.PERSISTENT,
                 null,
                 null,

@@ -5,8 +5,8 @@ import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 
 import java.awt.geom.Area;
-import java.awt.geom.Point2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

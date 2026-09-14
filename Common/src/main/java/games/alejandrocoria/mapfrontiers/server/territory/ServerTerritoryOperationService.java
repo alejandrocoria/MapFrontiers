@@ -70,6 +70,10 @@ public class ServerTerritoryOperationService {
         return territoriesManager.getAllGlobalFrontiers(dimension);
     }
 
+    public List<FrontierData> getFrontiersInCollection(UUID collectionId) {
+        return territoriesManager.getFrontiersInCollection(collectionId);
+    }
+
     public Iterable<CollectionData> iterateGlobalCollections() {
         return territoriesManager.iterateGlobalCollections();
     }
