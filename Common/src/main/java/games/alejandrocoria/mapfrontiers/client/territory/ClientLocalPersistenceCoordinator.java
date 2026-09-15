@@ -5,7 +5,8 @@ import games.alejandrocoria.mapfrontiers.client.territory.collection.ClientLocal
 import games.alejandrocoria.mapfrontiers.client.territory.collection.CollectionScope;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.ClientLocalPersonalFrontierStore;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.util.DebouncedPersistenceController;
@@ -66,6 +67,18 @@ final class ClientLocalPersistenceCoordinator {
         persistenceController.reset();
     }
 
+    void onPlayerNameChanged(PlayerId playerId) {
+        if (mc.isLocalServer() || mc.player == null) {
+            return;
+        }
+
+        PlayerId currentPlayer = new PlayerId(mc.player.getUUID());
+        if (referencesPlayerInOwnedPersistentData(getAllPersonalFrontiers(), getPersistentPersonalCollections(),
+                currentPlayer, playerId)) {
+            markDirty();
+        }
+    }
+
     private void flushPendingScheduledLocalSave() {
         long now = System.currentTimeMillis();
         if (persistenceController.shouldFlushOnTick(now)) {
@@ -79,9 +92,29 @@ final class ClientLocalPersistenceCoordinator {
             return;
         }
 
-        SettingsUser currentPlayer = new SettingsUser(mc.player);
+        PlayerId currentPlayer = new PlayerId(mc.player.getUUID());
         localPersonalFrontierStore.saveOwnedFrontierMirror(getPersistablePersonalFrontiers(), currentPlayer);
         localPersonalCollectionStore.saveOwnedCollectionMirror(getPersistentPersonalCollections(), currentPlayer);
+    }
+
+    static boolean referencesPlayerInOwnedPersistentData(Collection<? extends FrontierData> frontiers,
+                                                          Collection<? extends CollectionData> collections,
+                                                          PlayerId currentPlayer, PlayerId playerId) {
+        return frontiers.stream()
+                .filter(frontier -> frontier.getPersonal() && frontier.isPersistent()
+                        && frontier.getOwner().equals(currentPlayer))
+                .anyMatch(frontier -> PlayerReferenceCollector.collect(frontier).contains(playerId))
+                || collections.stream()
+                .filter(collection -> collection.getPersonal() && collection.isPersistent()
+                        && collection.getOwner().equals(currentPlayer))
+                .anyMatch(collection -> PlayerReferenceCollector.collect(collection).contains(playerId));
+    }
+
+    private Collection<FrontierData> getAllPersonalFrontiers() {
+        return personalManager.getAllFrontiers().values().stream()
+                .flatMap(List::stream)
+                .map(FrontierData::new)
+                .toList();
     }
 
     private Collection<FrontierData> getPersistablePersonalFrontiers() {

@@ -1,13 +1,14 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.network.PacketSettingsProfile;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.settings.SettingsProfile;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
+import games.alejandrocoria.mapfrontiers.server.identity.ServerPlayerIdFactory;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -24,8 +25,8 @@ public class TerritoryPermissionEvaluator {
         return territoriesManager.getSettings();
     }
 
-    public SettingsUser getPlayerUser(ServerPlayer player) {
-        return new SettingsUser(player);
+    public PlayerId getPlayerUser(ServerPlayer player) {
+        return ServerPlayerIdFactory.from(player);
     }
 
     public boolean canCreateGlobalFrontier(ServerPlayer player) {
@@ -67,7 +68,7 @@ public class TerritoryPermissionEvaluator {
     }
 
     public boolean canUpdatePersonalFrontier(ServerPlayer player, FrontierData frontier) {
-        return frontier.checkActionUserShared(getPlayerUser(player), SettingsUserShared.Action.UpdateFrontier);
+        return frontier.checkUserAccess(getPlayerUser(player), FrontierUserAccess.Action.UpdateFrontier);
     }
 
     public boolean canUpdatePersonalCollection(ServerPlayer player, CollectionData collection) {
@@ -75,7 +76,7 @@ public class TerritoryPermissionEvaluator {
     }
 
     public boolean canManagePersonalSharedAccess(ServerPlayer player, FrontierData frontier) {
-        return frontier.checkActionUserShared(getPlayerUser(player), SettingsUserShared.Action.UpdateSettings);
+        return frontier.checkUserAccess(getPlayerUser(player), FrontierUserAccess.Action.UpdateSettings);
     }
 
     public boolean canSendCommandAcceptFrontier(ServerPlayer player) {
@@ -84,7 +85,7 @@ public class TerritoryPermissionEvaluator {
     }
 
     public SettingsProfile getProfile(ServerPlayer player) {
-        return getSettings().getProfile(player);
+        return getSettings().getProfile(getPlayerUser(player), MapFrontiers.isOPorHost(player));
     }
 
     public PacketSettingsProfile createProfilePacket(ServerPlayer player) {

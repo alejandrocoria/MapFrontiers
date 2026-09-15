@@ -1,6 +1,11 @@
 package games.alejandrocoria.mapfrontiers.common.settings;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtCodec;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
@@ -21,7 +26,7 @@ import java.util.Set;
 @ParametersAreNonnullByDefault
 public class SettingsGroup {
     private String name;
-    private List<SettingsUser> users;
+    private List<PlayerId> users;
     private final Set<FrontierSettings.Action> actions;
     private final boolean special;
 
@@ -42,9 +47,7 @@ public class SettingsGroup {
     public SettingsGroup(SettingsGroup other) {
         name = other.name;
         users = new ArrayList<>(other.users.size());
-        for (SettingsUser user : other.users) {
-            users.add(new SettingsUser(user));
-        }
+        users.addAll(other.users);
         actions = other.actions.isEmpty()
                 ? EnumSet.noneOf(FrontierSettings.Action.class)
                 : EnumSet.copyOf(other.actions);
@@ -63,7 +66,7 @@ public class SettingsGroup {
         actions.add(action);
     }
 
-    public List<SettingsUser> getUsers() {
+    public List<PlayerId> getUsers() {
         return users;
     }
 
@@ -79,15 +82,15 @@ public class SettingsGroup {
         return actions;
     }
 
-    public void addUser(SettingsUser user) {
-        users.add(user);
+    public void addUser(PlayerId user) {
+        users.add(Objects.requireNonNull(user, "user"));
     }
 
-    public void removeUser(SettingsUser user) {
+    public void removeUser(PlayerId user) {
         users.remove(user);
     }
 
-    public boolean hasUser(SettingsUser user) {
+    public boolean hasUser(PlayerId user) {
         return users.contains(user);
     }
 
@@ -101,28 +104,24 @@ public class SettingsGroup {
             return false;
         }
 
-        for (int i = 0; i < users.size(); ++i) {
-            SettingsUser user = users.get(i);
-            SettingsUser otherUser = other.users.get(i);
-            if (!Objects.equals(user.username, otherUser.username) || !Objects.equals(user.uuid, otherUser.uuid)) {
-                return false;
-            }
-        }
-        return true;
+        return users.equals(other.users);
     }
 
-    public void readFromNBT(CompoundTag nbt, int version) {
+    public boolean readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
+        boolean changedDuringLoad = false;
         if (!special) {
             name = NbtCompat.getStringOr(nbt, "name", "");
             users.clear();
             ListTag usersTagList = NbtCompat.getListOrEmpty(nbt, "users");
             for (int i = 0; i < usersTagList.size(); ++i) {
                 try {
-                    SettingsUser user = new SettingsUser();
-                    user.readFromNBT(NbtReadHelper.requireCompound(usersTagList, i, "users"));
-                    users.add(user);
+                    CompoundTag userTag = NbtReadHelper.requireCompound(usersTagList, i, "users");
+                    PlayerReferenceNbtCodec.ReadResult result = PlayerReferenceNbtCodec.read(userTag, context);
+                    changedDuringLoad |= result.repaired();
+                    users.add(result.playerId());
                 } catch (InvalidNbtFormatException e) {
                     MapFrontiers.LOGGER.warn("Skipping invalid user in group {} at users[{}]: {}", name, i, e.getMessage());
+                    changedDuringLoad = true;
                 }
             }
         }
@@ -164,15 +163,17 @@ public class SettingsGroup {
                 MapFrontiers.LOGGER.warn("Unknown action in group {}. Found: \"{}\". Expected: {}", name, actionTag, availableActionsString);
             }
         }
+
+        return changedDuringLoad;
     }
 
-    public void writeToNBT(CompoundTag nbt) {
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
         if (!special) {
             nbt.putString("name", name);
             ListTag usersTagList = new ListTag();
-            for (SettingsUser user : users) {
+            for (PlayerId user : users) {
                 CompoundTag userTag = new CompoundTag();
-                user.writeToNBT(userTag);
+                PlayerReferenceNbtCodec.write(userTag, user, resolver);
                 usersTagList.add(userTag);
             }
 
@@ -195,9 +196,7 @@ public class SettingsGroup {
             users = new ArrayList<>();
             int usersCount = buf.readInt();
             for (int i = 0; i < usersCount; ++i) {
-                SettingsUser user = new SettingsUser();
-                user.fromBytes(buf);
-                users.add(user);
+                users.add(PlayerIdNetworkCodec.read(buf));
             }
         }
 
@@ -216,8 +215,8 @@ public class SettingsGroup {
             buf.writeUtf(name, SharedConstants.MAX_PLAYER_NAME_LENGTH);
 
             buf.writeInt(users.size());
-            for (SettingsUser user : users) {
-                user.toBytes(buf);
+            for (PlayerId user : users) {
+                PlayerIdNetworkCodec.write(buf, user);
             }
         }
 
