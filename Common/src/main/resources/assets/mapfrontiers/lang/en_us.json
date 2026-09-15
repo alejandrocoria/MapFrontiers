@@ -78,6 +78,8 @@
   "mapfrontiers.search": "Search",
   "mapfrontiers.send": "Send",
   "mapfrontiers.settings": "Settings",
+  "mapfrontiers.settings_server_state_reloaded": "Your changes conflicted with newer server settings and were discarded",
+  "mapfrontiers.settings_permission_lost": "Your changes were discarded because permission to edit server settings was lost",
 
   "mapfrontiers.add.tooltip": "Add",
   "mapfrontiers.assign_banner_warn.tooltip": "You need to have a banner in hand to assign it",

@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiersFabric;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -36,7 +37,12 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
                     ClientGlobalEvents.postMouseReleaseEvent(button));
         });
 
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> FabricClientCommandAccept.register(dispatcher));
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+            FabricClientCommandAccept.register(dispatcher);
+            if (ClientPacketDelivery.isDebugEnabled()) {
+                FabricClientCommandPacketDebug.register(dispatcher);
+            }
+        });
 
         ClientReceiveMessageEvents.ALLOW_CHAT.register((message, signedMessage, sender, params, receptionTimestamp) -> {
             boolean cancel = ChatFrontiers.receiveFrontierFromChat(message, sender != null ? sender.getId() : null);

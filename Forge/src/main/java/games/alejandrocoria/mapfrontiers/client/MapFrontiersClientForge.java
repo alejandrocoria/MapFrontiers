@@ -3,7 +3,9 @@ package games.alejandrocoria.mapfrontiers.client;
 import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiersForge;
 import games.alejandrocoria.mapfrontiers.client.command.ClientCommandAccept;
+import games.alejandrocoria.mapfrontiers.client.command.ClientCommandPacketDebug;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -71,6 +73,9 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
 
     public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
         ClientCommandAccept.register(event.getDispatcher());
+        if (ClientPacketDelivery.isDebugEnabled()) {
+            ClientCommandPacketDebug.register(event.getDispatcher());
+        }
     }
 
     public static void onClientChat(ClientChatReceivedEvent event) {

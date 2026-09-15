@@ -212,6 +212,11 @@ public class ClientTerritoryRuntime {
         ClientFrontierEvents events = frontierEvents;
         ClientCollectionEvents collectionEventsState = collectionEvents;
         ClientSettingsProfileEvents settingsEvents = settingsProfileEvents;
+        ClientTerritoryOperationService operations = operationService;
+
+        if (operations != null) {
+            operations.clearPendingOptimisticUpdates();
+        }
 
         if (persistence != null) {
             closeStep("local persistence flush", this::flushPendingLocalPersistenceOnClose);

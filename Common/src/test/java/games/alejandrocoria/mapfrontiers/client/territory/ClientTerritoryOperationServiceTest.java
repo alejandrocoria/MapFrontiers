@@ -2,6 +2,8 @@ package games.alejandrocoria.mapfrontiers.client.territory;
 
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
@@ -11,10 +13,13 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisib
 import net.minecraft.core.BlockPos;
 import org.junit.jupiter.api.Test;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -93,6 +98,67 @@ class ClientTerritoryOperationServiceTest {
         assertTrue(ClientTerritoryOperationService.affectsCollectionVariants(change));
     }
 
+    @Test
+    void optimisticShareMutatesOnceAndPostsOneEvent() {
+        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
+        SettingsUser currentUser = user("owner", 1L);
+        SettingsUser targetUser = user("target", 2L);
+        frontier.setOwner(currentUser);
+        AtomicInteger events = new AtomicInteger();
+
+        assertTrue(ClientTerritoryOperationService.applyOptimisticShareLocally(
+                frontier, targetUser, currentUser, events::incrementAndGet));
+
+        assertEquals(1, frontier.getUsersShared().size());
+        assertTrue(frontier.getUserShared(targetUser).isPending());
+        assertEquals(1, events.get());
+        assertFalse(ClientTerritoryOperationService.applyOptimisticShareLocally(
+                frontier, targetUser, currentUser, events::incrementAndGet));
+        assertEquals(1, frontier.getUsersShared().size());
+        assertEquals(1, events.get());
+    }
+
+    @Test
+    void optimisticSharedUserUpdateMutatesOnceAndPostsOneEvent() {
+        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
+        SettingsUser currentUser = user("owner", 3L);
+        SettingsUser targetUser = user("target", 4L);
+        frontier.setOwner(currentUser);
+        frontier.addUserShared(new SettingsUserShared(targetUser, false));
+        SettingsUserShared desiredUser = new SettingsUserShared(frontier.getUserShared(targetUser));
+        desiredUser.setActions(EnumSet.of(SettingsUserShared.Action.UpdateSettings));
+        AtomicInteger events = new AtomicInteger();
+
+        assertTrue(ClientTerritoryOperationService.applyOptimisticSharedUserUpdateLocally(
+                frontier, desiredUser, currentUser, events::incrementAndGet));
+
+        assertTrue(frontier.getUserShared(targetUser).hasAction(SettingsUserShared.Action.UpdateSettings));
+        assertEquals(1, frontier.getUsersShared().size());
+        assertEquals(1, events.get());
+        assertFalse(ClientTerritoryOperationService.applyOptimisticSharedUserUpdateLocally(
+                frontier, desiredUser, currentUser, events::incrementAndGet));
+        assertEquals(1, events.get());
+    }
+
+    @Test
+    void optimisticSharedUserRemovalMutatesOnceAndPostsOneEvent() {
+        FrontierData frontier = personalEntity(new FrontierData(), TerritoryLifetime.PERSISTENT);
+        SettingsUser currentUser = user("owner", 5L);
+        SettingsUser targetUser = user("target", 6L);
+        frontier.setOwner(currentUser);
+        frontier.addUserShared(new SettingsUserShared(targetUser, false));
+        AtomicInteger events = new AtomicInteger();
+
+        assertTrue(ClientTerritoryOperationService.applyOptimisticRemoveSharedUserLocally(
+                frontier, targetUser, currentUser, events::incrementAndGet));
+
+        assertFalse(frontier.hasUserShared(targetUser));
+        assertEquals(1, events.get());
+        assertFalse(ClientTerritoryOperationService.applyOptimisticRemoveSharedUserLocally(
+                frontier, targetUser, currentUser, events::incrementAndGet));
+        assertEquals(1, events.get());
+    }
+
     private static FrontierData personalEntity(FrontierData frontier, TerritoryLifetime lifetime) {
         frontier.setPersonal(true);
         frontier.setLifetime(lifetime);
@@ -103,5 +169,12 @@ class ClientTerritoryOperationServiceTest {
         collection.setPersonal(true);
         collection.setLifetime(lifetime);
         return collection;
+    }
+
+    private static SettingsUser user(String username, long uuidValue) {
+        SettingsUser user = new SettingsUser();
+        user.username = username;
+        user.uuid = new UUID(0L, uuidValue);
+        return user;
     }
 }

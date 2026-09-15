@@ -2,6 +2,10 @@
 * API - Added: Incremental Path, Vertex, and Chunk geometry editing operations to frontier mutations, allowing small edits without replacing the full shape.
 * API - Added: Immediate client-local creation, update, and deletion guarantees for temporary personal frontiers and collections, independent of server support.
 * API - Added: Frontier queries by collection on the client and server.
+* Added: A temporary notice in server settings when a local edit is discarded because the server state changed or editing permission was lost.
+* Changed: Concurrent collection, shared access, and server settings edits now reject stale client updates instead of overwriting newer server state.
+* Fixed: Rapid consecutive edits to frontiers, collections, shared access, or server settings could be reverted or lost when an older server confirmation arrived.
+* Fixed: Collection visibility changes from the fullscreen map or frontier list could wait for the server response instead of appearing immediately.
 
 **Beta 12:**
 * Changed: Significantly improved client performance when creating, editing, selecting, hiding, or updating frontiers and collections, especially very long Path frontiers and collections containing many frontiers.

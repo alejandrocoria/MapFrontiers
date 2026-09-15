@@ -3,11 +3,10 @@ package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.test.MinecraftTestBootstrap;
 import io.netty.buffer.Unpooled;
-import net.minecraft.SharedConstants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.Bootstrap;
 import net.minecraft.world.level.ChunkPos;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -27,8 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class GeometryChangeTest {
     @BeforeAll
     static void bootstrapMinecraft() {
-        SharedConstants.tryDetectVersion();
-        Bootstrap.bootStrap();
+        MinecraftTestBootstrap.initialize();
     }
 
     @Test

@@ -9,10 +9,12 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChang
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.test.MinecraftTestBootstrap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -23,6 +25,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TerritoriesManagerGeometryChangeTest {
+    @BeforeAll
+    static void bootstrapMinecraft() {
+        MinecraftTestBootstrap.initialize();
+    }
+
     @Test
     void rejectedSequenceDoesNotModifyRegisteredFrontierOrTimestamp() {
         TerritoriesManager manager = new TerritoriesManager();

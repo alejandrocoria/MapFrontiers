@@ -9,10 +9,12 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationService;
 import games.alejandrocoria.mapfrontiers.server.territory.TerritoriesManager;
+import games.alejandrocoria.mapfrontiers.test.MinecraftTestBootstrap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -24,16 +26,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServerFrontierServiceImplTest {
-    private static final ResourceKey<Level> OVERWORLD = dimension("overworld");
-    private static final ResourceKey<Level> NETHER = dimension("the_nether");
+    @BeforeAll
+    static void bootstrapMinecraft() {
+        MinecraftTestBootstrap.initialize();
+    }
 
     @Test
     void listGlobalFrontiersInCollectionUsesMembershipIndexAcrossDimensionsAndFiltersScope() {
         TerritoriesManager manager = new TerritoriesManager();
         UUID collectionId = UUID.randomUUID();
-        FrontierData firstGlobal = manager.createNewGlobalFrontier(frontierSpec(false, OVERWORLD, collectionId));
-        FrontierData secondGlobal = manager.createNewGlobalFrontier(frontierSpec(false, NETHER, collectionId));
-        manager.createNewPersonalFrontier(frontierSpec(true, OVERWORLD, collectionId));
+        FrontierData firstGlobal = manager.createNewGlobalFrontier(frontierSpec(false, overworld(), collectionId));
+        FrontierData secondGlobal = manager.createNewGlobalFrontier(frontierSpec(false, nether(), collectionId));
+        manager.createNewPersonalFrontier(frontierSpec(true, overworld(), collectionId));
         ServerFrontierServiceImpl service = createService(manager);
 
         List<FrontierDataView> result = service.listGlobalFrontiersInCollection(
@@ -49,7 +53,7 @@ class ServerFrontierServiceImplTest {
     void listGlobalFrontiersInCollectionReturnsEmptyForUnknownOrPersonalOnlyCollection() {
         TerritoriesManager manager = new TerritoriesManager();
         UUID personalCollectionId = UUID.randomUUID();
-        manager.createNewPersonalFrontier(frontierSpec(true, OVERWORLD, personalCollectionId));
+        manager.createNewPersonalFrontier(frontierSpec(true, overworld(), personalCollectionId));
         ServerFrontierServiceImpl service = createService(manager);
 
         assertTrue(service.listGlobalFrontiersInCollection(
@@ -88,5 +92,13 @@ class ServerFrontierServiceImplTest {
 
     private static ResourceKey<Level> dimension(String path) {
         return ResourceKey.create(Registries.DIMENSION, new ResourceLocation("minecraft", path));
+    }
+
+    private static ResourceKey<Level> overworld() {
+        return dimension("overworld");
+    }
+
+    private static ResourceKey<Level> nether() {
+        return dimension("the_nether");
     }
 }

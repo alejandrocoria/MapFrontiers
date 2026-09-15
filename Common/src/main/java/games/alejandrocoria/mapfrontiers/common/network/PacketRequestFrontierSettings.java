@@ -12,26 +12,27 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public class PacketRequestFrontierSettings {
+    public static final long UNKNOWN_REVISION = -1L;
     public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_request_frontier_settings");
 
-    private int changeCounter;
+    private long settingsRevision;
 
     public PacketRequestFrontierSettings() {
-        changeCounter = 0;
+        settingsRevision = UNKNOWN_REVISION;
     }
 
-    public PacketRequestFrontierSettings(int changeNonce) {
-        this.changeCounter = changeNonce;
+    public PacketRequestFrontierSettings(long settingsRevision) {
+        this.settingsRevision = settingsRevision;
     }
 
     public PacketRequestFrontierSettings(FriendlyByteBuf buf) {
         if (buf.readableBytes() > 1) {
-            this.changeCounter = buf.readInt();
+            this.settingsRevision = buf.readLong();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
-        buf.writeInt(changeCounter);
+        buf.writeLong(settingsRevision);
     }
 
     public static void handle(PacketContext<PacketRequestFrontierSettings> ctx) {
@@ -43,7 +44,7 @@ public class PacketRequestFrontierSettings {
             }
 
             ServerSettingsOperationResult result = MapFrontiers.getServerRuntime().getSettingsOperationService()
-                    .requestSettings(player, message.changeCounter);
+                    .requestSettings(player, message.settingsRevision);
             result.dispatchNetworkActions();
         }
     }
