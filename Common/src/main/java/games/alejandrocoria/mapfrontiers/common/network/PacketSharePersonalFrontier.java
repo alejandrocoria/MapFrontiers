@@ -25,18 +25,22 @@ public class PacketSharePersonalFrontier {
 
     private UUID frontierID;
     private final SettingsUserShared userShared;
+    private long baseRevision;
+    private long requestId;
 
     public PacketSharePersonalFrontier() {
         userShared = new SettingsUserShared();
     }
 
-    public PacketSharePersonalFrontier(UUID frontierID, SettingsUser user) {
-        this(frontierID, createSharedUser(user));
+    public PacketSharePersonalFrontier(UUID frontierID, SettingsUser user, long baseRevision, long requestId) {
+        this(frontierID, createSharedUser(user), baseRevision, requestId);
     }
 
-    public PacketSharePersonalFrontier(UUID frontierID, SettingsUserShared userShared) {
+    public PacketSharePersonalFrontier(UUID frontierID, SettingsUserShared userShared, long baseRevision, long requestId) {
         this.frontierID = frontierID;
-        this.userShared = userShared;
+        this.userShared = new SettingsUserShared(userShared);
+        this.baseRevision = baseRevision;
+        this.requestId = requestId;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -48,12 +52,16 @@ public class PacketSharePersonalFrontier {
         if (buf.readableBytes() > 1) {
             this.frontierID = UUIDHelper.fromBytes(buf);
             this.userShared.fromBytes(buf);
+            baseRevision = buf.readLong();
+            requestId = buf.readLong();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
         UUIDHelper.toBytes(buf, frontierID);
         userShared.toBytes(buf);
+        buf.writeLong(baseRevision);
+        buf.writeLong(requestId);
     }
 
     public static void handle(PacketContext<PacketSharePersonalFrontier> ctx) {
@@ -68,7 +76,8 @@ public class PacketSharePersonalFrontier {
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getShareService()
-                    .sharePersonalFrontier(player, message.frontierID, message.userShared);
+                    .sharePersonalFrontier(player, message.frontierID, message.userShared,
+                            message.baseRevision, message.requestId);
             result.dispatchNetworkActions();
         }
     }

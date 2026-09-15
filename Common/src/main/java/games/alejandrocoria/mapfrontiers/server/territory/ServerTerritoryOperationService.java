@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.server.territory;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.network.OperationResolution;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToGlobal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketChangeFrontierToPersonal;
 import games.alejandrocoria.mapfrontiers.common.network.PacketCollectionCreated;
@@ -138,18 +139,38 @@ public class ServerTerritoryOperationService {
         return createdCollection(collection);
     }
 
-    public ServerTerritoryOperationResult updateCollection(ServerPlayer player, UUID collectionId, CollectionData collectionData) {
+    public ServerTerritoryOperationResult updateCollection(ServerPlayer player, UUID collectionId,
+                                                            CollectionData collectionData, long baseRevision,
+                                                            long requestId) {
         CollectionData collection = territoriesManager.getCollectionFromID(collectionId);
         if (collection == null) {
-            return ServerTerritoryOperationResult.notFound();
+            ServerTerritoryOperationResult result = ServerTerritoryOperationResult.notFound();
+            result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(collectionId), player));
+            return result;
         }
 
         if (collection.getPersonal()) {
             if (!permissionEvaluator.canUpdatePersonalCollection(player, collection)) {
-                return ServerTerritoryOperationResult.ignored(null);
+                SettingsUser playerUser = permissionEvaluator.getPlayerUser(player);
+                if (!territoriesManager.userKnowsPersonalCollection(playerUser, collectionId)) {
+                    ServerTerritoryOperationResult result = ServerTerritoryOperationResult.notFound();
+                    result.addNetworkAction(() -> PacketHandler.sendTo(new PacketCollectionDeleted(collectionId), player));
+                    return result;
+                }
+                return rejectedCollectionUpdate(player, collection, requestId, false);
             }
         } else if (!permissionEvaluator.canUpdateGlobalCollection(player, collection)) {
-            return rejectedWithProfileRefresh(player, null);
+            return rejectedCollectionUpdate(player, collection, requestId, true);
+        }
+
+        if (baseRevision != collection.getCollectionRevision()) {
+            return rejectedCollectionUpdate(player, collection, requestId, false);
+        }
+
+        if (collection.hasSameEditableState(collectionData)) {
+            ServerTerritoryOperationResult result = ServerTerritoryOperationResult.successCollection(collection);
+            enqueueDirectCollectionResponse(result, player, collection, requestId, OperationResolution.Accepted);
+            return result;
         }
 
         collection.setName(collectionData.getName());
@@ -157,8 +178,22 @@ public class ServerTerritoryOperationService {
         collection.setVisibilityData(collectionData.getVisibilityData());
         collection.setBannerData(collectionData.getBannerData());
         collection.setModified(new Date());
+        collection.advanceCollectionRevision();
         territoriesManager.markDirty();
-        return updatedCollection(collection, null, true);
+
+        collectionEvents.postUpdated(collection);
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.successCollection(collection);
+        enqueueDirectCollectionResponse(result, player, collection, requestId, OperationResolution.Accepted);
+
+        Set<UUID> recipients = getCollectionRecipientIds(collection);
+        recipients.remove(player.getUUID());
+        if (!recipients.isEmpty()) {
+            CollectionData payload = new CollectionData(collection);
+            PacketCollectionUpdated broadcast = new PacketCollectionUpdated(payload, player.getId(), 0L,
+                    OperationResolution.Accepted);
+            result.addNetworkAction(() -> sendCollectionUpdatedToUsers(broadcast, recipients));
+        }
+        return result;
     }
 
     public ServerTerritoryOperationResult updateGlobalCollection(UUID collectionId, CollectionData collectionData) {
@@ -167,11 +202,16 @@ public class ServerTerritoryOperationService {
             return ServerTerritoryOperationResult.notFound();
         }
 
+        if (collection.hasSameEditableState(collectionData)) {
+            return ServerTerritoryOperationResult.successCollection(collection);
+        }
+
         collection.setName(collectionData.getName());
         collection.setColor(collectionData.getColor());
         collection.setVisibilityData(collectionData.getVisibilityData());
         collection.setBannerData(collectionData.getBannerData());
         collection.setModified(new Date());
+        collection.advanceCollectionRevision();
         territoriesManager.markDirty();
         return updatedCollection(collection, null, true);
     }
@@ -911,14 +951,35 @@ public class ServerTerritoryOperationService {
     }
 
     private void sendCollectionUpdatedToUsers(CollectionData payload, Set<UUID> recipientIds) {
+        sendCollectionUpdatedToUsers(new PacketCollectionUpdated(payload), recipientIds);
+    }
+
+    private void sendCollectionUpdatedToUsers(PacketCollectionUpdated packet, Set<UUID> recipientIds) {
         for (UUID recipientId : recipientIds) {
             ServerPlayer recipient = server.getPlayerList().getPlayer(recipientId);
             if (recipient == null) {
                 continue;
             }
 
-            PacketHandler.sendTo(new PacketCollectionUpdated(new CollectionData(payload)), recipient);
+            PacketHandler.sendTo(packet, recipient);
         }
+    }
+
+    private ServerTerritoryOperationResult rejectedCollectionUpdate(ServerPlayer player, CollectionData collection,
+                                                                     long requestId, boolean refreshProfile) {
+        ServerTerritoryOperationResult result = ServerTerritoryOperationResult.rejected(null);
+        enqueueDirectCollectionResponse(result, player, collection, requestId, OperationResolution.Rejected);
+        if (refreshProfile) {
+            result.addNetworkAction(() -> PacketHandler.sendTo(permissionEvaluator.createProfilePacket(player), player));
+        }
+        return result;
+    }
+
+    private void enqueueDirectCollectionResponse(ServerTerritoryOperationResult result, ServerPlayer player,
+                                                 CollectionData collection, long requestId,
+                                                 OperationResolution resolution) {
+        PacketCollectionUpdated response = new PacketCollectionUpdated(collection, player.getId(), requestId, resolution);
+        result.addNetworkAction(() -> PacketHandler.sendTo(response, player));
     }
 
     private void sendCollectionDeletedToUsers(UUID collectionId, Set<UUID> recipientIds) {
@@ -1010,7 +1071,7 @@ public class ServerTerritoryOperationService {
         return change;
     }
 
-    private void touchCollection(CollectionData collection, @Nullable Date modified) {
+    void touchCollection(CollectionData collection, @Nullable Date modified) {
         collection.setModified(modified == null ? new Date() : modified);
         territoriesManager.markDirty();
     }

@@ -1157,8 +1157,9 @@ public class FrontierInfoPage extends PageScreen {
         if (actions.canUpdate) {
             long currentSyncHash = frontier.computeSyncHash();
             if (currentSyncHash != frontierSyncHash) {
+                long baseSyncHash = frontierSyncHash;
                 frontierSyncHash = currentSyncHash;
-                MapFrontiersClient.getOperationService().updateFrontier(frontier, change);
+                MapFrontiersClient.getOperationService().submitOptimisticFrontierChange(frontier, change, baseSyncHash);
             }
         }
     }

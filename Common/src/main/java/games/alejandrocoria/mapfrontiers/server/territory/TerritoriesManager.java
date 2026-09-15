@@ -53,6 +53,7 @@ public class TerritoriesManager {
     private final HashMap<SettingsUser, HashMap<ResourceKey<Level>, LinkedHashSet<UUID>>> knownPersonalFrontierIdsByUserAndDimension;
     private final DebouncedPersistenceController persistenceController;
     private FrontierSettings frontierSettings;
+    private long settingsRevision;
     private File ModDir;
     private boolean frontierOwnersChecked = false;
 
@@ -73,13 +74,20 @@ public class TerritoriesManager {
         frontierSettings = new FrontierSettings();
     }
 
-    public void setSettings(FrontierSettings frontierSettings) {
-        this.frontierSettings = frontierSettings;
-        saveSettingsData();
+    public void setSettings(FrontierSettings frontierSettings, long settingsRevision) {
+        this.frontierSettings = new FrontierSettings(frontierSettings);
+        this.settingsRevision = settingsRevision;
+        if (ModDir != null) {
+            saveSettingsData();
+        }
     }
 
     public FrontierSettings getSettings() {
         return frontierSettings;
+    }
+
+    public long getSettingsRevision() {
+        return settingsRevision;
     }
 
     public List<FrontierData> getAllGlobalFrontiers(ResourceKey<Level> dimension) {
@@ -178,6 +186,7 @@ public class TerritoriesManager {
             throw new IllegalStateException("Created frontier id does not match the create spec");
         }
 
+        frontier.setSharingRevision(0L);
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
         indexFrontier(frontier);
@@ -191,6 +200,7 @@ public class TerritoriesManager {
             return;
         }
 
+        frontier.setSharingRevision(0L);
         List<FrontierData> frontiers = getAllPersonalFrontiers(frontier.getOwner(), frontier.getDimension());
         frontiers.add(frontier);
         allFrontiers.put(frontier.getId(), frontier);
@@ -203,6 +213,7 @@ public class TerritoriesManager {
             return;
         }
 
+        collection.setCollectionRevision(0L);
         globalCollections.add(collection);
         allCollections.put(collection.getId(), collection);
         ensureCollectionIndexEntry(collection.getId());
@@ -214,6 +225,7 @@ public class TerritoriesManager {
             return;
         }
 
+        collection.setCollectionRevision(0L);
         getAllPersonalCollections(collection.getOwner()).add(collection);
         allCollections.put(collection.getId(), collection);
         ensureCollectionIndexEntry(collection.getId());
@@ -225,6 +237,7 @@ public class TerritoriesManager {
             return;
         }
 
+        collection.setCollectionRevision(0L);
         List<CollectionData> collections = getAllPersonalCollections(collection.getOwner());
         collections.add(collection);
         allCollections.put(collection.getId(), collection);
@@ -274,12 +287,14 @@ public class TerritoriesManager {
 
     public boolean addPendingPersonalFrontierShare(UUID frontierId, SettingsUserShared userShared) {
         FrontierData frontier = allFrontiers.get(frontierId);
-        if (frontier == null || !frontier.getPersonal()) {
+        if (frontier == null || !frontier.getPersonal() || frontier.hasUserShared(userShared.getUser())) {
             return false;
         }
 
-        userShared.setPending(true);
-        frontier.addUserShared(userShared);
+        SettingsUserShared pendingUserShared = new SettingsUserShared(userShared);
+        pendingUserShared.setPending(true);
+        frontier.addUserShared(pendingUserShared);
+        frontier.advanceSharingRevision();
         markDirty();
         return true;
     }
@@ -294,8 +309,12 @@ public class TerritoriesManager {
         if (currentUserShared == null) {
             return false;
         }
+        if (currentUserShared.getActions().equals(userShared.getActions())) {
+            return false;
+        }
 
         currentUserShared.setActions(userShared.getActions());
+        frontier.advanceSharingRevision();
         markDirty();
         return true;
     }
@@ -316,6 +335,7 @@ public class TerritoriesManager {
             deletePersonalFrontierInternal(targetUser, frontier.getDimension(), frontierId, false);
         }
 
+        frontier.advanceSharingRevision();
         markDirty();
         return true;
     }
@@ -336,6 +356,7 @@ public class TerritoriesManager {
         }
 
         userShared.setPending(false);
+        frontier.advanceSharingRevision();
         markDirty();
         return true;
     }
@@ -352,6 +373,7 @@ public class TerritoriesManager {
         }
 
         frontier.removeUserShared(targetUser);
+        frontier.advanceSharingRevision();
         markDirty();
         return true;
     }

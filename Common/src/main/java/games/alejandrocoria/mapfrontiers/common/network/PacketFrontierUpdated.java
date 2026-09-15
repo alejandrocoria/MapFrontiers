@@ -4,6 +4,7 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
+import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -69,8 +70,9 @@ public class PacketFrontierUpdated {
                 return;
             }
             PacketFrontierUpdated message = ctx.message();
-            MapFrontiersClient.getOperationService().applyFrontierUpdated(message.dimension, message.frontierId, message.personal, message.change,
-                    message.authoritativeSyncHash, message.playerID);
+            ClientPacketDelivery.submit(() -> MapFrontiersClient.getOperationService()
+                    .applyFrontierUpdated(message.dimension, message.frontierId, message.personal, message.change,
+                            message.authoritativeSyncHash, message.playerID));
         }
     }
 }

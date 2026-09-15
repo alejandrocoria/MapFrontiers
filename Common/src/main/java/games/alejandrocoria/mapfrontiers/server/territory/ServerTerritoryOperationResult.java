@@ -96,6 +96,10 @@ public class ServerTerritoryOperationResult {
         networkActions.add(action);
     }
 
+    int getNetworkActionCount() {
+        return networkActions.size();
+    }
+
     public void dispatchNetworkActions() {
         for (Runnable action : networkActions) {
             action.run();

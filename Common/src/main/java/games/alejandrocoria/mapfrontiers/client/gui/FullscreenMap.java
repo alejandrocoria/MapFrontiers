@@ -77,6 +77,7 @@ public class FullscreenMap {
 
     private boolean editing = false;
     private boolean shapeDirty = false;
+    private long editingBaseSyncHash;
     private boolean relocating = false;
     private BlockPos relocatingPrevPos;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
@@ -259,7 +260,8 @@ public class FullscreenMap {
                 FrontierChange change = new FrontierChange();
                 change.setShape(frontierHighlighted.getVertices(), frontierHighlighted.getChunks(), frontierHighlighted.getPoints(),
                         frontierHighlighted.getShape());
-                MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
+                MapFrontiersClient.getOperationService().submitOptimisticFrontierChange(frontierHighlighted, change,
+                        editingBaseSyncHash);
             }
             shapeDirty = false;
         }
@@ -370,13 +372,14 @@ public class FullscreenMap {
             CollectionVisibilityData visibilityData = new CollectionVisibilityData(selectedCollection.getVisibilityData());
             visibilityData.setVisible(!visibilityData.isVisible());
             selectedCollection.setVisibilityData(visibilityData);
-            MapFrontiersClient.getOperationService().updateCollection(selectedCollection);
+            MapFrontiersClient.getOperationService().submitOptimisticCollectionUpdate(selectedCollection);
         } else if (frontierHighlighted != null) {
+            long baseSyncHash = frontierHighlighted.computeSyncHash();
             frontierHighlighted.setVisibility(FrontierVisibility.Frontier,
                     !frontierHighlighted.getVisibilityData().getFrontier());
             FrontierChange change = new FrontierChange();
             change.setVisibility(frontierHighlighted.getVisibilityData());
-            MapFrontiersClient.getOperationService().updateFrontier(frontierHighlighted, change);
+            MapFrontiersClient.getOperationService().submitOptimisticFrontierChange(frontierHighlighted, change, baseSyncHash);
         }
 
         updateButtons();
@@ -589,6 +592,7 @@ public class FullscreenMap {
 
         editing = true;
         shapeDirty = false;
+        editingBaseSyncHash = frontierHighlighted.computeSyncHash();
         relocating = false;
         drawingChunk = ChunkDrawing.Nothing;
         frontierHighlighted.beginInteractiveEdit();

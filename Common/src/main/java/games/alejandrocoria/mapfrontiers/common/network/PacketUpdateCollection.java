@@ -20,9 +20,13 @@ public class PacketUpdateCollection {
     public static final StreamCodec<RegistryFriendlyByteBuf, PacketUpdateCollection> STREAM_CODEC = PacketCodecs.guarded(CHANNEL, PacketUpdateCollection::encode, PacketUpdateCollection::new);
 
     private final CollectionData collection;
+    private long baseRevision;
+    private long requestId;
 
-    public PacketUpdateCollection(CollectionData collection) {
+    public PacketUpdateCollection(CollectionData collection, long baseRevision, long requestId) {
         this.collection = new CollectionData(collection);
+        this.baseRevision = baseRevision;
+        this.requestId = requestId;
     }
 
     public static CustomPacketPayload.Type<CustomPacketPayload> type() {
@@ -33,11 +37,15 @@ public class PacketUpdateCollection {
         this.collection = new CollectionData();
         if (buf.readableBytes() > 1) {
             this.collection.fromBytes(buf);
+            baseRevision = buf.readLong();
+            requestId = buf.readLong();
         }
     }
 
     public void encode(FriendlyByteBuf buf) {
         collection.toBytes(buf);
+        buf.writeLong(baseRevision);
+        buf.writeLong(requestId);
     }
 
     public static void handle(PacketContext<PacketUpdateCollection> ctx) {
@@ -49,7 +57,8 @@ public class PacketUpdateCollection {
             }
 
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService()
-                    .updateCollection(player, message.collection.getId(), message.collection);
+                    .updateCollection(player, message.collection.getId(), message.collection,
+                            message.baseRevision, message.requestId);
             result.dispatchNetworkActions();
         }
     }

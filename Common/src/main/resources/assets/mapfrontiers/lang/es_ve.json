@@ -78,6 +78,8 @@
   "mapfrontiers.search": "Buscar",
   "mapfrontiers.send": "Enviar",
   "mapfrontiers.settings": "Opciones",
+  "mapfrontiers.settings_server_state_reloaded": "Tus cambios entraron en conflicto con opciones más nuevas del servidor y se descartaron",
+  "mapfrontiers.settings_permission_lost": "Tus cambios se descartaron porque perdiste el permiso para editar las opciones del servidor",
 
   "mapfrontiers.add.tooltip": "Agregar",
   "mapfrontiers.assign_banner_warn.tooltip": "Necesitas tener un estandarte en mano para asignarlo",
