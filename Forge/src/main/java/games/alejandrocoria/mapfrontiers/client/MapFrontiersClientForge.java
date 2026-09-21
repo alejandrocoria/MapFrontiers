@@ -22,7 +22,6 @@ import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -59,14 +58,14 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     }
 
     public static void onMouseButtonPre(InputEvent.MouseButton.Pre event) {
-        if (event.getAction() == GLFW.GLFW_RELEASE) {
+        if (event.getAction() == InputConstants.RELEASE) {
             ClientGlobalEvents.postMouseReleaseEvent(event.getButton());
         }
     }
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory(), 0);
+                InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, MapFrontiersClient.registerKeyMappingCategory(), 0);
         event.register(openSettingsKey);
     }
 

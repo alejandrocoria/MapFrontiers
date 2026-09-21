@@ -24,7 +24,6 @@ import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.common.NeoForge;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -75,7 +74,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
     }
 
     public static void onMouseButtonPre(InputEvent.MouseButton.Pre event) {
-        if (event.getAction() == GLFW.GLFW_RELEASE) {
+        if (event.getAction() == InputConstants.RELEASE) {
             ClientGlobalEvents.postMouseReleaseEvent(event.getButton());
         }
     }
@@ -93,7 +92,7 @@ public class MapFrontiersClientNeoForge extends MapFrontiersClient {
         @SubscribeEvent
         public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
             openSettingsKey = new KeyMapping("mapfrontiers.key.open_settings", KeyConflictContext.IN_GAME,
-                    InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory());
+                    InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, MapFrontiersClient.registerKeyMappingCategory());
             event.register(openSettingsKey);
         }
     }

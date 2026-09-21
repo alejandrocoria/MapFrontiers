@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 @Mixin(GuiGraphicsExtractor.class)
 public class NeoForgeTooltipGuiGraphicsMixin {
-    @ModifyVariable(method = "tooltip(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;Lnet/minecraft/resources/Identifier;Lnet/minecraft/world/item/ItemStack;)V", at = @At("HEAD"), argsOnly = true, ordinal = 0)
+    @ModifyVariable(method = "tooltip(Lnet/minecraft/client/gui/Font;Ljava/util/List;IILnet/minecraft/client/gui/screens/inventory/tooltip/ClientTooltipPositioner;Lnet/minecraft/resources/Identifier;ZLnet/minecraft/world/item/ItemStack;)V", at = @At("HEAD"), argsOnly = true, name = "positioner")
     private ClientTooltipPositioner mapfrontiers$scaleTooltipScreenDimensions(ClientTooltipPositioner positioner) {
         Screen screen = Minecraft.getInstance().gui.screen();
         if (!(screen instanceof AutoScaledScreen autoScaledScreen) || autoScaledScreen.getScaleFactor() == 1.f) {

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen.page;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.ClientConfig;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
@@ -49,7 +50,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -580,10 +580,10 @@ public class CollectionInfoPage extends PageScreen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.input() == GLFW.GLFW_KEY_Z && event.hasControlDown() && !event.hasShiftDown() && !event.hasAltDown()) {
+        if (event.input() == InputConstants.KEY_Z && event.hasControlDown() && !event.hasShiftDown() && !event.hasAltDown()) {
             undo();
             return true;
-        } else if (event.input() == GLFW.GLFW_KEY_Z && event.hasControlDown() && event.hasShiftDown() && !event.hasAltDown()) {
+        } else if (event.input() == InputConstants.KEY_Z && event.hasControlDown() && event.hasShiftDown() && !event.hasAltDown()) {
             redo();
             return true;
         }

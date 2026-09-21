@@ -71,6 +71,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.net.URI;
 import java.util.function.Consumer;
 
 @ParametersAreNonnullByDefault
@@ -506,7 +507,7 @@ public class ModSettingsPage extends PageScreen {
 
     private void openExternalLink(String url) {
         MapFrontiersClient.setLastSettingsTab(tabSelected);
-        ConfirmLinkScreen.confirmLinkNow(this, url, false);
+        ConfirmLinkScreen.confirmLinkNow(this, URI.create(url), false);
     }
 
     private void onFrontierAppearancePressed() {

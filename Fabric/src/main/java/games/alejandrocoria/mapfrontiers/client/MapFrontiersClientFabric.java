@@ -17,7 +17,6 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenMouseEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -26,7 +25,7 @@ public class MapFrontiersClientFabric extends MapFrontiersClient implements Clie
     @Override
     public void onInitializeClient() {
         openSettingsKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-                "mapfrontiers.key.open_settings", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, MapFrontiersClient.registerKeyMappingCategory()
+                "mapfrontiers.key.open_settings", InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, MapFrontiersClient.registerKeyMappingCategory()
         ));
 
         ClientTickEvents.START_CLIENT_TICK.register(ClientGlobalEvents::postClientTickEvent);

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.config.AfterCreatingFrontier;
@@ -129,7 +130,7 @@ public class FullscreenMap {
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::updateButtons);
 
         ClientGlobalEvents.subscribeMouseReleaseEvent(this, button -> {
-            if (button != 1) {
+            if (button != InputConstants.MOUSE_BUTTON_RIGHT) {
                 return;
             }
 
@@ -614,7 +615,7 @@ public class FullscreenMap {
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
         if (editing && frontierHighlighted != null) {
-            if (ScreenHelper.hasControlDown() && button == 1) {
+            if (ScreenHelper.hasControlDown() && button == InputConstants.MOUSE_BUTTON_RIGHT) {
                 relocating = true;
                 relocatingPrevPos = position;
                 return true;
@@ -623,7 +624,7 @@ public class FullscreenMap {
                 frontierHighlighted.selectClosestVertex(position, maxDistanceToClosest);
             } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 frontierHighlighted.selectClosestPoint(position, maxDistanceToClosest);
-            } else if (button == 1) {
+            } else if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
                 lastEditedChunk = ChunkPos.containing(position);
                 if (ScreenHelper.hasShiftDown()) {
                     return false;

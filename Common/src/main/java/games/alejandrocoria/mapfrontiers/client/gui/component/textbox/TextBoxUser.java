@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -10,7 +11,6 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -61,7 +61,7 @@ public class TextBoxUser extends TextBox {
     @Override
     public boolean keyPressed(KeyEvent event) {
         // @Note: Can't use Tab because it's used for accessibility.
-        if (event.input() == GLFW.GLFW_KEY_LEFT_ALT) {
+        if (event.input() == InputConstants.KEY_LALT) {
             if (suggestions.isEmpty()) {
                 suggestionIndex = 0;
                 ClientPacketListener handler = mc.getConnection();

@@ -18,7 +18,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -203,11 +202,11 @@ public class ColorPicker extends AbstractWidgetNoNarration {
         }
 
         if (focusedPart == FocusPart.V) {
-            if (event.input() == GLFW.GLFW_KEY_HOME) {
+            if (event.input() == InputConstants.KEY_HOME) {
                 focusedV = 0.0;
                 return true;
             }
-            if (event.input() == GLFW.GLFW_KEY_END) {
+            if (event.input() == InputConstants.KEY_END) {
                 focusedV = 127.99;
                 return true;
             }
@@ -399,10 +398,10 @@ public class ColorPicker extends AbstractWidgetNoNarration {
 
         Minecraft minecraft = Minecraft.getInstance();
         var window = minecraft.getWindow();
-        boolean leftPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT);
-        boolean rightPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT);
-        boolean upPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_UP);
-        boolean downPressed = InputConstants.isKeyDown(window, org.lwjgl.glfw.GLFW.GLFW_KEY_DOWN);
+        boolean leftPressed = InputConstants.isKeyDown(InputConstants.KEY_LEFT);
+        boolean rightPressed = InputConstants.isKeyDown(InputConstants.KEY_RIGHT);
+        boolean upPressed = InputConstants.isKeyDown(InputConstants.KEY_UP);
+        boolean downPressed = InputConstants.isKeyDown(InputConstants.KEY_DOWN);
 
         if (!leftPressed && !rightPressed && !upPressed && !downPressed) {
             lastKeyboardMoveTimeNanos = -1L;

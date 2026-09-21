@@ -1,12 +1,12 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.textbox;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Consumer;
@@ -90,7 +90,7 @@ public class TextBox extends EditBox {
         if (active && isHoveredOrFocused()) {
             res = super.keyPressed(event);
 
-            if (event.input() == GLFW.GLFW_KEY_ENTER || event.input() == GLFW.GLFW_KEY_KP_ENTER) {
+            if (event.input() == InputConstants.KEY_RETURN || event.input() == InputConstants.KEY_NUMPADENTER) {
                 setFocused(false);
                 if (submitCallback != null) {
                     submitCallback.accept(getValue());

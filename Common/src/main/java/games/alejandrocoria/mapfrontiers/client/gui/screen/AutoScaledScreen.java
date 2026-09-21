@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.screen;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.LayoutConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.SimpleButton;
@@ -16,7 +17,6 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.PlainTextContents;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -225,7 +225,7 @@ public abstract class AutoScaledScreen extends LayeredScreen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.input() == GLFW.GLFW_KEY_ESCAPE || shouldCloseFromInventoryKey(event)) {
+        if (event.input() == InputConstants.KEY_ESCAPE || shouldCloseFromInventoryKey(event)) {
             this.onClose();
             return true;
         }

@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ComponentPath;
@@ -15,7 +16,6 @@ import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -652,16 +652,16 @@ public class ScrollBox extends AbstractContainerWidget {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (this.active && this.visible) {
-            if ((event.input() == GLFW.GLFW_KEY_HOME || event.input() == GLFW.GLFW_KEY_END) && isFocused()) {
-                ComponentPath focusPath = focusBoundaryElement(event.input() == GLFW.GLFW_KEY_END);
+            if ((event.input() == InputConstants.KEY_HOME || event.input() == InputConstants.KEY_END) && isFocused()) {
+                ComponentPath focusPath = focusBoundaryElement(event.input() == InputConstants.KEY_END);
                 if (focusPath != null) {
                     focusPath.applyFocus(true);
                 }
                 return true;
             }
 
-            if ((event.input() == GLFW.GLFW_KEY_PAGE_UP || event.input() == GLFW.GLFW_KEY_PAGE_DOWN) && isFocused()) {
-                ComponentPath focusPath = focusPageNavigationTarget(event.input() == GLFW.GLFW_KEY_PAGE_DOWN);
+            if ((event.input() == InputConstants.KEY_PAGEUP || event.input() == InputConstants.KEY_PAGEDOWN) && isFocused()) {
+                ComponentPath focusPath = focusPageNavigationTarget(event.input() == InputConstants.KEY_PAGEDOWN);
                 if (focusPath != null) {
                     focusPath.applyFocus(true);
                 }
@@ -693,7 +693,7 @@ public class ScrollBox extends AbstractContainerWidget {
                 return true;
             }
 
-            if (event.input() == GLFW.GLFW_KEY_DELETE && focused != -1) {
+            if (event.input() == InputConstants.KEY_DELETE && focused != -1) {
                 ScrollElement element = elements.get(focused);
                 if (element.isKeyboardFocusable() && element.canBeDeleted()) {
                     if (elementDeletePressedCallback != null) {

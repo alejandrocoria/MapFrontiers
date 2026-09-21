@@ -1,5 +1,6 @@
 package games.alejandrocoria.mapfrontiers.client.plugin;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
@@ -31,7 +32,7 @@ public class MapFrontiersPlugin implements IClientPlugin {
             }
 
             FullscreenMapEvent.Stage relevantStage;
-            if (clickEvent.getButton() == 1) {
+            if (clickEvent.getButton() == InputConstants.MOUSE_BUTTON_RIGHT) {
                 relevantStage = FullscreenMapEvent.Stage.PRE;
             } else {
                 relevantStage = FullscreenMapEvent.Stage.POST;
