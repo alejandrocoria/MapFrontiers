@@ -3,6 +3,8 @@ package games.alejandrocoria.mapfrontiers.common.network;
 import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.server.territory.ServerTerritoryOperationResult;
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,20 +18,21 @@ public class PacketPersonalFrontier {
     public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_personal_frontier");
 
     private final FrontierData frontier;
+    private final PacketPlayerNameMappings playerNameMappings;
 
-    public PacketPersonalFrontier(FrontierData frontier) {
+    public PacketPersonalFrontier(FrontierData frontier, PlayerNameResolver playerNameResolver) {
         this.frontier = frontier;
+        playerNameMappings = new PacketPlayerNameMappings(PlayerReferenceCollector.collect(frontier), playerNameResolver);
     }
 
     public PacketPersonalFrontier(FriendlyByteBuf buf) {
-        this.frontier = new FrontierData();
-        if (buf.readableBytes() > 1) {
-            this.frontier.fromBytes(buf);
-        }
+        this.frontier = FrontierData.fromBytes(buf);
+        playerNameMappings = new PacketPlayerNameMappings(buf);
     }
 
     public void encode(FriendlyByteBuf buf) {
         frontier.toBytes(buf);
+        playerNameMappings.encode(buf);
     }
 
     public static void handle(PacketContext<PacketPersonalFrontier> ctx) {
@@ -40,7 +43,19 @@ public class PacketPersonalFrontier {
                 return;
             }
             ServerTerritoryOperationResult result = MapFrontiers.getServerRuntime().getOperationService().importPersonalFrontier(player, message.frontier);
+            if (result.isSuccess() && result.getFrontier() != null) {
+                message.playerNameMappings.applyHintsTo(MapFrontiers.getServerRuntime().getPlayerNameRepository(),
+                        PlayerReferenceCollector.collect(result.getFrontier()));
+            }
             result.dispatchNetworkActions();
         }
+    }
+
+    FrontierData getFrontier() {
+        return frontier;
+    }
+
+    PacketPlayerNameMappings getPlayerNameMappings() {
+        return playerNameMappings;
     }
 }

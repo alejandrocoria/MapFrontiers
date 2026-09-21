@@ -33,9 +33,8 @@ public class PacketCollectionUpdated {
     }
 
     public PacketCollectionUpdated(FriendlyByteBuf buf) {
-        this.collection = new CollectionData();
-        if (buf.readableBytes() > 1) {
-            this.collection.fromBytes(buf);
+        this.collection = CollectionData.fromBytes(buf);
+        if (buf.readableBytes() > 0) {
             playerId = buf.readInt();
             requestId = buf.readLong();
             resolution = OperationResolution.VALUES[buf.readInt()];

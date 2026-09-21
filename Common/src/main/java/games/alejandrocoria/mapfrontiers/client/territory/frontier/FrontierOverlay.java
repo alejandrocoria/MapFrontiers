@@ -19,8 +19,8 @@ import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRefresh
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.OverlayRetryLimiter;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayLayer;
 import games.alejandrocoria.mapfrontiers.client.territory.overlay.PolygonOverlayState;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
@@ -30,6 +30,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChang
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
@@ -121,6 +122,7 @@ public class FrontierOverlay extends FrontierData {
     private @Nullable BannerData renderedBannerData;
     private int previewTextSize = -1;
     private int previewBannerSize = -1;
+    private @Nullable String previewOwnerDisplayName;
     private boolean previewCollectionStyleEnabled = false;
     private int previewCollectionColor = ColorConstants.WHITE;
 
@@ -233,7 +235,7 @@ public class FrontierOverlay extends FrontierData {
         if (hashDirty) {
             hashDirty = false;
             CollectionData collection = getCollection();
-            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, points, frontierShape, pathStyle, banner, usersShared,
+            hash = Objects.hash(id, color, dimension, name1, name2, visibilityData, vertices, chunks, points, frontierShape, pathStyle, banner,
                     copiedFrom, inheritCollectionBanner, collectionId, sourcePluginId,
                     collection == null ? null : collection.getName(),
                     collection == null ? null : collection.getColor(),
@@ -295,6 +297,15 @@ public class FrontierOverlay extends FrontierData {
     public void setPreviewLabelSizes(int textSize, int bannerSize) {
         previewTextSize = Math.max(1, textSize);
         previewBannerSize = Math.max(1, bannerSize);
+        invalidateLabels();
+    }
+
+    public void setPreviewOwnerDisplayName(String ownerDisplayName) {
+        previewOwnerDisplayName = ownerDisplayName;
+        invalidateLabels();
+    }
+
+    public void markOwnerNameDirty() {
         invalidateLabels();
     }
 
@@ -717,7 +728,7 @@ public class FrontierOverlay extends FrontierData {
 
     public void setCurrentPlayerAsOwner() {
         if (Minecraft.getInstance().player != null) {
-            owner = new SettingsUser(Minecraft.getInstance().player);
+            owner = new PlayerId(Minecraft.getInstance().player.getUUID());
         }
     }
 
@@ -1105,8 +1116,8 @@ public class FrontierOverlay extends FrontierData {
     }
 
     @Override
-    public void addUserShared(SettingsUserShared userShared) {
-        super.addUserShared(userShared);
+    public void addUserAccess(FrontierUserAccess userShared) {
+        super.addUserAccess(userShared);
         hashDirty = true;
     }
 
@@ -2355,13 +2366,16 @@ public class FrontierOverlay extends FrontierData {
             label += ChatFormatting.BOLD + collectionName + ChatFormatting.RESET;
         }
 
-        if (ownerVisible && !owner.username.isEmpty()) {
+        String ownerName = previewOwnerDisplayName == null
+                ? PlayerNameFormatter.getDisplayName(owner, "")
+                : previewOwnerDisplayName;
+        if (ownerVisible && !ownerName.isEmpty()) {
             ++lines;
-            textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(owner.username));
+            textWidthPx = Math.max(textWidthPx, Minecraft.getInstance().font.width(ownerName));
             if (!label.isEmpty()) {
                 label += "\n";
             }
-            label += ChatFormatting.ITALIC + owner.username;
+            label += ChatFormatting.ITALIC + ownerName;
         }
 
         int textSize = getTextSize();

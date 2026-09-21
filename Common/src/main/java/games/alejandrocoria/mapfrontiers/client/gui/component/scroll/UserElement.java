@@ -3,8 +3,8 @@ package games.alejandrocoria.mapfrontiers.client.gui.component.scroll;
 import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
 import games.alejandrocoria.mapfrontiers.client.gui.component.button.IconButton;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
@@ -14,11 +14,11 @@ import javax.annotation.ParametersAreNonnullByDefault;
 @MethodsReturnNonnullByDefault
 public class UserElement extends ScrollBox.ScrollElement {
     private final Font font;
-    private final SettingsUser user;
+    private final PlayerId user;
     private final IconButton buttonDelete;
     private int pingBar = 0;
 
-    public UserElement(Font font, SettingsUser user) {
+    public UserElement(Font font, PlayerId user) {
         super(258, 15);
         this.font = font;
         this.user = user;
@@ -26,7 +26,7 @@ public class UserElement extends ScrollBox.ScrollElement {
         buttonDelete = new IconButton(IconButton.Type.Remove, (button) -> {});
     }
 
-    public SettingsUser getUser() {
+    public PlayerId getUser() {
         return user;
     }
 
@@ -67,7 +67,7 @@ public class UserElement extends ScrollBox.ScrollElement {
             buttonDelete.render(graphics, mouseX, mouseY, partialTicks);
         }
 
-        graphics.drawString(font, SettingsUserFormatter.getDisplayName(user), x + 16, y + 3, color);
+        graphics.drawString(font, PlayerNameFormatter.getDisplayName(user), x + 16, y + 3, color);
 
         if (pingBar > 0) {
             drawPingLine(graphics, x + 3, y + 11, 2);

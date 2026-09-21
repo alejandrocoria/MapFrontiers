@@ -2,7 +2,7 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontiersOverlayManager;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
@@ -206,7 +206,7 @@ public class ClientCollectionRuntime {
     }
 
     private void pruneNonOwnedPersonalCollectionsWithoutIndexedFrontiers() {
-        SettingsUser currentPlayer = mc.player == null ? null : new SettingsUser(mc.player);
+        PlayerId currentPlayer = mc.player == null ? null : new PlayerId(mc.player.getUUID());
         if (currentPlayer == null) {
             return;
         }

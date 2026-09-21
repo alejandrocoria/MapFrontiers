@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.plugin.MapFrontiersPlugin;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChangeApplicationResult;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
@@ -285,6 +286,16 @@ public class FrontiersOverlayManager {
         for (FrontierOverlay frontier : frontiers) {
             if (collectionId.equals(frontier.getCollectionId())) {
                 frontier.markCollectionPresentationDirty();
+            }
+        }
+    }
+
+    public void markPlayerNamePresentationDirty(PlayerId playerId) {
+        for (List<FrontierOverlay> frontiers : dimensionsFrontiers.values()) {
+            for (FrontierOverlay frontier : frontiers) {
+                if (playerId.equals(frontier.getOwner())) {
+                    frontier.markOwnerNameDirty();
+                }
             }
         }
     }

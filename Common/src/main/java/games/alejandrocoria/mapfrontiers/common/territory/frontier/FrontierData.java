@@ -2,8 +2,11 @@ package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.gui.ColorConstants;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUserShared;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerNameResolver;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtCodec;
+import games.alejandrocoria.mapfrontiers.common.identity.nbt.PlayerReferenceNbtReadContext;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.territory.BannerData;
 import games.alejandrocoria.mapfrontiers.common.territory.CopiedFromInfo;
 import games.alejandrocoria.mapfrontiers.common.territory.TerritoryLifetime;
@@ -22,8 +25,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import org.apache.commons.lang3.StringUtils;
@@ -59,12 +60,12 @@ public class FrontierData {
     protected FrontierVisibilityData visibilityData;
     protected int color = ColorConstants.WHITE;
     protected ResourceKey<Level> dimension;
-    protected SettingsUser owner = new SettingsUser();
+    protected PlayerId owner;
     protected BannerData banner;
     protected boolean inheritCollectionBanner = true;
     protected boolean personal = false;
     protected TerritoryLifetime lifetime = TerritoryLifetime.PERSISTENT;
-    protected List<SettingsUserShared> usersShared;
+    protected @Nullable List<FrontierUserAccess> userAccesses;
     protected CopiedFromInfo copiedFrom;
     protected @Nullable UUID collectionId;
     protected @Nullable String sourcePluginId;
@@ -77,8 +78,15 @@ public class FrontierData {
     private boolean chunksSyncHashDirty = true;
     private long cachedChunksSyncHash;
 
-    public FrontierData() {
+    public record NbtReadResult(FrontierData frontier, boolean changedDuringLoad) {
+        public NbtReadResult {
+            Objects.requireNonNull(frontier, "frontier");
+        }
+    }
+
+    public FrontierData(PlayerId owner) {
         id = new UUID(0, 0);
+        this.owner = Objects.requireNonNull(owner, "owner");
         visibilityData = new FrontierVisibilityData();
         pathStyle = new PathStyle();
     }
@@ -103,7 +111,7 @@ public class FrontierData {
         }
         inheritCollectionBanner = other.inheritCollectionBanner;
 
-        usersShared = copyUsersShared(other.usersShared);
+        userAccesses = copyUserAccesses(other.userAccesses);
 
         vertices.clear();
         vertices.addAll(other.vertices);
@@ -114,7 +122,7 @@ public class FrontierData {
         frontierShape = other.frontierShape;
         pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
-        copiedFrom = other.copiedFrom;
+        copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         collectionId = other.collectionId;
         sourcePluginId = other.sourcePluginId;
 
@@ -143,7 +151,7 @@ public class FrontierData {
         name2 = other.name2;
         banner = other.banner == null ? null : new BannerData(other.banner);
         inheritCollectionBanner = other.inheritCollectionBanner;
-        usersShared = copyUsersShared(other.usersShared);
+        userAccesses = copyUserAccesses(other.userAccesses);
         vertices.clear();
         vertices.addAll(other.vertices);
         chunks.clear();
@@ -153,7 +161,7 @@ public class FrontierData {
         frontierShape = other.frontierShape;
         pathStyle = other.pathStyle == null ? new PathStyle() : new PathStyle(other.pathStyle);
 
-        copiedFrom = other.copiedFrom;
+        copiedFrom = other.copiedFrom == null ? null : new CopiedFromInfo(other.copiedFrom);
         collectionId = other.collectionId;
         sourcePluginId = other.sourcePluginId;
         created = other.created;
@@ -262,40 +270,18 @@ public class FrontierData {
     }
 
     public void applySharingChange(FrontierSharingChange sharingChange) {
-        usersShared = sharingChange.getUsersShared();
+        userAccesses = sharingChange.getUserAccesses();
         sharingRevision = sharingChange.getSharingRevision();
         sanitizeSharedUsers();
         invalidateSyncHash();
     }
 
-    public void setOwner(SettingsUser owner) {
-        this.owner = owner;
+    public void setOwner(PlayerId owner) {
+        this.owner = Objects.requireNonNull(owner, "owner");
         invalidateSyncHash();
     }
 
-    public void ensureOwner(MinecraftServer server) {
-        String previousUsername = owner.username;
-        UUID previousUuid = owner.uuid;
-        if (owner.isEmpty()) {
-            //noinspection StatementWithEmptyBody
-            if (server.isDedicatedServer()) {
-                // @Incomplete: I can't find a way to get the server owner.
-                //owner = new SettingsUser(server.getServerOwner());
-            } else {
-                List<ServerPlayer> playerList = server.getPlayerList().getPlayers();
-                if (!playerList.isEmpty()) {
-                    owner = new SettingsUser(playerList.get(0));
-                }
-            }
-        } else {
-            owner.fillMissingInfo(false, server);
-        }
-        if (!Objects.equals(previousUsername, owner.username) || !Objects.equals(previousUuid, owner.uuid)) {
-            invalidateSyncHash();
-        }
-    }
-
-    public SettingsUser getOwner() {
+    public PlayerId getOwner() {
         return owner;
     }
 
@@ -638,73 +624,73 @@ public class FrontierData {
         return lifetime == TerritoryLifetime.SESSION_ONLY;
     }
 
-    public void addUserShared(SettingsUserShared userShared) {
+    public void addUserAccess(FrontierUserAccess userShared) {
         if (!canHaveSharedUsers()) {
             return;
         }
 
-        if (usersShared == null) {
-            usersShared = new ArrayList<>();
+        if (userAccesses == null) {
+            userAccesses = new ArrayList<>();
         }
 
-        usersShared.add(userShared);
+        userAccesses.add(Objects.requireNonNull(userShared, "userAccess"));
         invalidateSyncHash();
     }
 
-    private static @Nullable List<SettingsUserShared> copyUsersShared(@Nullable List<SettingsUserShared> usersShared) {
-        if (usersShared == null) {
+    private static @Nullable List<FrontierUserAccess> copyUserAccesses(@Nullable List<FrontierUserAccess> userAccesses) {
+        if (userAccesses == null) {
             return null;
         }
 
-        List<SettingsUserShared> copy = new ArrayList<>(usersShared.size());
-        for (SettingsUserShared userShared : usersShared) {
-            copy.add(new SettingsUserShared(userShared));
+        List<FrontierUserAccess> copy = new ArrayList<>(userAccesses.size());
+        for (FrontierUserAccess userShared : userAccesses) {
+            copy.add(new FrontierUserAccess(userShared));
         }
         return copy;
     }
 
-    public void removeUserShared(SettingsUser user) {
-        if (usersShared == null) {
+    public void removeUserAccess(PlayerId user) {
+        if (userAccesses == null) {
             return;
         }
 
-        usersShared.removeIf(x -> x.getUser().equals(user));
+        userAccesses.removeIf(x -> x.getPlayerId().equals(user));
         invalidateSyncHash();
     }
 
-    public void removeAllUserShared() {
-        if (usersShared == null) {
+    public void removeAllUserAccesses() {
+        if (userAccesses == null) {
             return;
         }
 
-        usersShared = null;
+        userAccesses = null;
         invalidateSyncHash();
     }
 
-    public void removePendingUsersShared() {
-        if (usersShared == null) {
+    public void removePendingUserAccesses() {
+        if (userAccesses == null) {
             return;
         }
 
-        usersShared.removeIf(SettingsUserShared::isPending);
+        userAccesses.removeIf(FrontierUserAccess::isPending);
         sanitizeSharedUsers();
         invalidateSyncHash();
     }
 
-    public List<SettingsUserShared> getUsersShared() {
+    public @Nullable List<FrontierUserAccess> getUserAccesses() {
         if (!canHaveSharedUsers()) {
             return null;
         }
-        return usersShared;
+        return userAccesses;
     }
 
-    public SettingsUserShared getUserShared(SettingsUser user) {
-        if (usersShared == null) {
+    public FrontierUserAccess getUserAccess(PlayerId user) {
+        if (userAccesses == null) {
             return null;
         }
 
-        for (SettingsUserShared u : usersShared) {
-            if (u.getUser().equals(user)) {
+        for (FrontierUserAccess u : userAccesses) {
+            if (u.getPlayerId().equals(user)) {
                 return u;
             }
         }
@@ -712,20 +698,20 @@ public class FrontierData {
         return null;
     }
 
-    public boolean hasUserShared(SettingsUser user) {
-        return getUserShared(user) != null;
+    public boolean hasUserAccess(PlayerId user) {
+        return getUserAccess(user) != null;
     }
 
-    public boolean checkActionUserShared(SettingsUser user, SettingsUserShared.Action action) {
+    public boolean checkUserAccess(PlayerId user, FrontierUserAccess.Action action) {
         if (user.equals(owner)) {
             return true;
         }
 
-        if (usersShared == null) {
+        if (userAccesses == null) {
             return false;
         }
 
-        SettingsUserShared userShared = getUserShared(user);
+        FrontierUserAccess userShared = getUserAccess(user);
         if (userShared == null) {
             return false;
         }
@@ -752,14 +738,6 @@ public class FrontierData {
         invalidateSyncHash();
     }
 
-    public void setCopiedFromId(UUID id) {
-        if (!wasCopied()) {
-            copiedFrom = new CopiedFromInfo();
-        }
-        copiedFrom.setId(id);
-        invalidateSyncHash();
-    }
-
     public UUID getCopiedFromId() {
         if (copiedFrom == null) {
             return id;
@@ -767,15 +745,12 @@ public class FrontierData {
         return copiedFrom.getId();
     }
 
-    public void setCopiedFromUser(SettingsUser user) {
-        if (!wasCopied()) {
-            copiedFrom = new CopiedFromInfo();
-        }
-        copiedFrom.setUser(user);
+    public void setCopiedFrom(UUID id, @Nullable PlayerId user) {
+        copiedFrom = new CopiedFromInfo(id, user);
         invalidateSyncHash();
     }
 
-    public SettingsUser getCopiedFromUser() {
+    public @Nullable PlayerId getCopiedFromUser() {
         if (copiedFrom == null) {
             return owner;
         }
@@ -817,7 +792,7 @@ public class FrontierData {
             hash = mixBoolean(hash, personal);
             hash = mixEnum(hash, lifetime);
             hash = mixIdentifier(hash, dimension == null ? null : dimension.location());
-            hash = mixSettingsUser(hash, owner);
+            hash = mixUuid(hash, owner.uuid());
             hash = mixString(hash, name1);
             hash = mixString(hash, name2);
             hash = mixInt(hash, color);
@@ -845,14 +820,22 @@ public class FrontierData {
         return sourcePluginId;
     }
 
-    public boolean readFromNBT(CompoundTag nbt, int version) {
+    public static NbtReadResult readFromNBT(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
+        PlayerReferenceNbtCodec.ReadResult ownerResult = PlayerReferenceNbtCodec.read(
+                NbtCompat.getCompoundOrEmpty(nbt, "owner"), context);
+        FrontierData frontier = new FrontierData(ownerResult.playerId());
+        boolean changedDuringLoad = ownerResult.repaired() | frontier.readFromNBTData(nbt, version, context);
+        return new NbtReadResult(frontier, changedDuringLoad);
+    }
+
+    private boolean readFromNBTData(CompoundTag nbt, int version, PlayerReferenceNbtReadContext context) {
         boolean changedDuringLoad = false;
         vertices.clear();
         chunks.clear();
         points.clear();
         pathStyle = new PathStyle();
         copiedFrom = null;
-        usersShared = null;
+        userAccesses = null;
         banner = null;
         inheritCollectionBanner = true;
         sharingRevision = 0L;
@@ -879,9 +862,6 @@ public class FrontierData {
         }
         setSourcePluginId(NbtCompat.getStringOr(nbt, "sourcePluginId", null));
 
-        owner = new SettingsUser();
-        owner.readFromNBT(NbtCompat.getCompoundOrEmpty(nbt, "owner"));
-
         if (nbt.contains("banner")) {
             banner = new BannerData();
             changedDuringLoad |= banner.readFromNBT(NbtReadHelper.requireCompound(nbt, "banner"));
@@ -889,18 +869,20 @@ public class FrontierData {
         inheritCollectionBanner = NbtCompat.getBooleanOr(nbt, "inheritCollectionBanner", true);
 
         if (personal) {
-            ListTag usersSharedTagList = NbtCompat.getListOrEmpty(nbt, "usersShared");
-            if (!usersSharedTagList.isEmpty()) {
-                usersShared = new ArrayList<>();
+            ListTag userAccessesTagList = NbtCompat.getListOrEmpty(nbt, "usersShared");
+            if (!userAccessesTagList.isEmpty()) {
+                userAccesses = new ArrayList<>();
 
-                for (int i = 0; i < usersSharedTagList.size(); ++i) {
+                for (int i = 0; i < userAccessesTagList.size(); ++i) {
                     try {
-                        SettingsUserShared userShared = new SettingsUserShared();
-                        userShared.readFromNBT(NbtReadHelper.requireCompound(usersSharedTagList, i, "usersShared"));
-                        usersShared.add(userShared);
+                        CompoundTag sharedTag = NbtReadHelper.requireCompound(userAccessesTagList, i, "usersShared");
+                        FrontierUserAccess.NbtReadResult accessResult = FrontierUserAccess.readFromNBT(sharedTag, context);
+                        changedDuringLoad |= accessResult.repaired();
+                        userAccesses.add(accessResult.access());
                     } catch (InvalidNbtFormatException e) {
-                        throw new InvalidNbtFormatException("Invalid shared user at usersShared[" + i + "] for frontier " + id + ": "
-                                + e.getMessage(), e);
+                        MapFrontiers.LOGGER.warn("Skipping invalid shared user at usersShared[{}] for frontier {}: {}",
+                                i, id, e.getMessage());
+                        changedDuringLoad = true;
                     }
                 }
             }
@@ -960,8 +942,10 @@ public class FrontierData {
         }
 
         if (nbt.contains("copiedFrom")) {
-            copiedFrom = new CopiedFromInfo();
-            copiedFrom.readFromNBT(NbtReadHelper.requireCompound(nbt, "copiedFrom"), version);
+            CompoundTag copiedFromTag = NbtReadHelper.requireCompound(nbt, "copiedFrom");
+            CopiedFromInfo.NbtReadResult copiedResult = CopiedFromInfo.readFromNBT(copiedFromTag, context);
+            copiedFrom = copiedResult.copiedFrom();
+            changedDuringLoad |= copiedResult.changedDuringLoad();
         }
 
         if (nbt.contains("collectionId")) {
@@ -984,7 +968,7 @@ public class FrontierData {
         return changedDuringLoad;
     }
 
-    public void writeToNBT(CompoundTag nbt) {
+    public void writeToNBT(CompoundTag nbt, PlayerNameResolver resolver) {
         assertSerializableLifetime();
 
         nbt.putString("id", id.toString());
@@ -1002,7 +986,7 @@ public class FrontierData {
         }
 
         CompoundTag nbtOwner = new CompoundTag();
-        owner.writeToNBT(nbtOwner);
+        PlayerReferenceNbtCodec.write(nbtOwner, owner, resolver);
         nbt.put("owner", nbtOwner);
 
         if (banner != null) {
@@ -1012,15 +996,15 @@ public class FrontierData {
         }
         nbt.putBoolean("inheritCollectionBanner", inheritCollectionBanner);
 
-        if (personal && usersShared != null) {
-            ListTag usersSharedTagList = new ListTag();
-            for (SettingsUserShared userShared : usersShared) {
+        if (personal && userAccesses != null) {
+            ListTag userAccessesTagList = new ListTag();
+            for (FrontierUserAccess userShared : userAccesses) {
                 CompoundTag nbtUserShared = new CompoundTag();
-                userShared.writeToNBT(nbtUserShared);
-                usersSharedTagList.add(nbtUserShared);
+                userShared.writeToNBT(nbtUserShared, resolver);
+                userAccessesTagList.add(nbtUserShared);
             }
 
-            nbt.put("usersShared", usersSharedTagList);
+            nbt.put("usersShared", userAccessesTagList);
         }
 
         nbt.putString("mode", frontierShape.name());
@@ -1066,7 +1050,7 @@ public class FrontierData {
 
         if (wasCopied()) {
             CompoundTag nbtCopiedFrom = new CompoundTag();
-            copiedFrom.writeToNBT(nbtCopiedFrom);
+            copiedFrom.writeToNBT(nbtCopiedFrom, resolver);
             nbt.put("copiedFrom", nbtCopiedFrom);
         }
 
@@ -1083,20 +1067,24 @@ public class FrontierData {
         }
     }
 
-    public void fromBytes(FriendlyByteBuf buf) {
-        vertices.clear();
-        chunks.clear();
-        points.clear();
-        pathStyle = new PathStyle();
-
-        id = UUIDHelper.fromBytes(buf);
-        dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
-        personal = buf.readBoolean();
-        lifetime = readLifetimeFromBytes(buf);
+    public static FrontierData fromBytes(FriendlyByteBuf buf) {
+        UUID id = UUIDHelper.fromBytes(buf);
+        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, buf.readResourceLocation());
+        boolean personal = buf.readBoolean();
+        TerritoryLifetime lifetime = readLifetimeFromBytes(buf);
         validateTypeAndLifetime(personal, lifetime);
-        setSourcePluginId(buf.readBoolean() ? buf.readUtf() : null);
-        owner = new SettingsUser();
-        owner.fromBytes(buf);
+        String sourcePluginId = buf.readBoolean() ? buf.readUtf() : null;
+        FrontierData frontier = new FrontierData(PlayerIdNetworkCodec.read(buf));
+        frontier.id = id;
+        frontier.dimension = dimension;
+        frontier.personal = personal;
+        frontier.lifetime = lifetime;
+        frontier.setSourcePluginId(sourcePluginId);
+        frontier.readRemainingBytes(buf);
+        return frontier;
+    }
+
+    private void readRemainingBytes(FriendlyByteBuf buf) {
         visibilityData.fromBytes(buf);
         color = buf.readInt();
 
@@ -1119,15 +1107,13 @@ public class FrontierData {
         inheritCollectionBanner = buf.readBoolean();
 
         if (buf.readBoolean()) {
-            usersShared = new ArrayList<>();
+            userAccesses = new ArrayList<>();
             int usersCount = buf.readInt();
             for (int i = 0; i < usersCount; ++i) {
-                SettingsUserShared userShared = new SettingsUserShared();
-                userShared.fromBytes(buf);
-                usersShared.add(userShared);
+                userAccesses.add(FrontierUserAccess.fromBytes(buf));
             }
         } else {
-            usersShared = null;
+            userAccesses = null;
         }
 
         frontierShape = FrontierShape.VALUES[buf.readInt()];
@@ -1155,8 +1141,7 @@ public class FrontierData {
         }
 
         if (buf.readBoolean()) {
-            copiedFrom = new CopiedFromInfo();
-            copiedFrom.fromBytes(buf);
+            copiedFrom = CopiedFromInfo.fromBytes(buf);
         } else {
             copiedFrom = null;
         }
@@ -1198,7 +1183,7 @@ public class FrontierData {
             buf.writeBoolean(true);
             buf.writeUtf(sourcePluginId);
         }
-        owner.toBytes(buf);
+        PlayerIdNetworkCodec.write(buf, owner);
         visibilityData.toBytes(buf);
         buf.writeInt(color);
 
@@ -1213,11 +1198,11 @@ public class FrontierData {
         }
         buf.writeBoolean(inheritCollectionBanner);
 
-        if (personal && usersShared != null) {
+        if (personal && userAccesses != null) {
             buf.writeBoolean(true);
 
-            buf.writeInt(usersShared.size());
-            for (SettingsUserShared userShared : usersShared) {
+            buf.writeInt(userAccesses.size());
+            for (FrontierUserAccess userShared : userAccesses) {
                 userShared.toBytes(buf);
             }
         } else {
@@ -1346,7 +1331,7 @@ public class FrontierData {
 
     private void sanitizeSharedUsers() {
         if (!canHaveSharedUsers()) {
-            usersShared = null;
+            userAccesses = null;
         }
     }
 
@@ -1434,16 +1419,6 @@ public class FrontierData {
         hash = mixBoolean(hash, pathStyle.labelAtMiddle);
         hash = mixBoolean(hash, pathStyle.labelAtEnd);
         return hash;
-    }
-
-    private static long mixSettingsUser(long hash, @Nullable SettingsUser user) {
-        if (user == null) {
-            return mixBoolean(hash, false);
-        }
-
-        hash = mixBoolean(hash, true);
-        hash = mixString(hash, user.username);
-        return mixUuid(hash, user.uuid);
     }
 
     private static long mixTag(long hash, @Nullable Tag tag) {

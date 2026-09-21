@@ -5,6 +5,8 @@ import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerReferenceCollector;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,7 +14,9 @@ import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @ParametersAreNonnullByDefault
 public class PacketTerritoriesSnapshot {
@@ -58,6 +62,23 @@ public class PacketTerritoriesSnapshot {
         globalCollections.addAll(collections);
     }
 
+    public Set<PlayerId> getReferencedPlayerIds() {
+        LinkedHashSet<PlayerId> playerIds = new LinkedHashSet<>();
+        for (FrontierData frontier : globalFrontiers) {
+            PlayerReferenceCollector.add(playerIds, frontier);
+        }
+        for (FrontierData frontier : personalFrontiers) {
+            PlayerReferenceCollector.add(playerIds, frontier);
+        }
+        for (CollectionData collection : globalCollections) {
+            PlayerReferenceCollector.add(playerIds, collection);
+        }
+        for (CollectionData collection : personalCollections) {
+            PlayerReferenceCollector.add(playerIds, collection);
+        }
+        return playerIds;
+    }
+
     public PacketTerritoriesSnapshot(FriendlyByteBuf buf) {
         globalFrontiers = new ArrayList<>();
         personalFrontiers = new ArrayList<>();
@@ -66,30 +87,22 @@ public class PacketTerritoriesSnapshot {
         if (buf.readableBytes() > 1) {
             int size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                FrontierData frontier = new FrontierData();
-                frontier.fromBytes(buf);
-                this.addGlobalFrontier(frontier);
+                this.addGlobalFrontier(FrontierData.fromBytes(buf));
             }
 
             size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                FrontierData frontier = new FrontierData();
-                frontier.fromBytes(buf);
-                this.addPersonalFrontier(frontier);
+                this.addPersonalFrontier(FrontierData.fromBytes(buf));
             }
 
             size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                CollectionData collection = new CollectionData();
-                collection.fromBytes(buf);
-                this.addGlobalCollection(collection);
+                this.addGlobalCollection(CollectionData.fromBytes(buf));
             }
 
             size = buf.readInt();
             for (int i = 0; i < size; ++i) {
-                CollectionData collection = new CollectionData();
-                collection.fromBytes(buf);
-                this.addPersonalCollection(collection);
+                this.addPersonalCollection(CollectionData.fromBytes(buf));
             }
         }
     }

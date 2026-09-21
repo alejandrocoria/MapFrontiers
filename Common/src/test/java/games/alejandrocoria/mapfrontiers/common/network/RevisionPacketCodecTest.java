@@ -1,14 +1,14 @@
 package games.alejandrocoria.mapfrontiers.common.network;
 
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.settings.FrontierSettings;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.test.MinecraftTestBootstrap;
+import games.alejandrocoria.mapfrontiers.test.TestResourceKeys;
 import io.netty.buffer.Unpooled;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,14 +25,13 @@ class RevisionPacketCodecTest {
 
     @Test
     void collectionRequestAndResponseCarryRevisionRequestAndResolution() {
-        CollectionData collection = new CollectionData();
+        CollectionData collection = new CollectionData(new PlayerId(UUID.randomUUID()));
         collection.setId(UUID.randomUUID());
         collection.setCollectionRevision(3L);
 
         FriendlyByteBuf request = new FriendlyByteBuf(Unpooled.buffer());
         new PacketUpdateCollection(collection, 3L, 41L).encode(request);
-        CollectionData requestedCollection = new CollectionData();
-        requestedCollection.fromBytes(request);
+        CollectionData requestedCollection = CollectionData.fromBytes(request);
         assertEquals(3L, requestedCollection.getCollectionRevision());
         assertEquals(3L, request.readLong());
         assertEquals(41L, request.readLong());
@@ -40,8 +39,7 @@ class RevisionPacketCodecTest {
 
         FriendlyByteBuf response = new FriendlyByteBuf(Unpooled.buffer());
         new PacketCollectionUpdated(collection, 12, 41L, OperationResolution.Rejected).encode(response);
-        CollectionData responseCollection = new CollectionData();
-        responseCollection.fromBytes(response);
+        CollectionData responseCollection = CollectionData.fromBytes(response);
         assertEquals(3L, responseCollection.getCollectionRevision());
         assertEquals(12, response.readInt());
         assertEquals(41L, response.readLong());
@@ -54,8 +52,7 @@ class RevisionPacketCodecTest {
         FrontierSharingChange change = new FrontierSharingChange();
         change.setSharingRevision(5L);
         UUID frontierId = UUID.randomUUID();
-        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION,
-                new ResourceLocation("minecraft", "overworld"));
+        ResourceKey<Level> dimension = TestResourceKeys.dimension("overworld");
 
         FriendlyByteBuf encoded = new FriendlyByteBuf(Unpooled.buffer());
         new PacketFrontierSharingUpdated(frontierId, dimension, change, 14, 43L,

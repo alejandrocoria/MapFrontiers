@@ -1,9 +1,10 @@
 package games.alejandrocoria.mapfrontiers.client.gui.component;
 
 import games.alejandrocoria.mapfrontiers.client.territory.BannerDataHelper;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
+import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
@@ -13,10 +14,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 @ParametersAreNonnullByDefault
 public final class PreviewFrontierHelper {
-    public static SettingsUser createPreviewOwner() {
-        SettingsUser owner = new SettingsUser();
-        owner.username = translate("mapfrontiers.preview_owner");
-        return owner;
+    public static PlayerId createPreviewOwner() {
+        return new PlayerId(Minecraft.getInstance().player.getUUID());
     }
 
     public static String translate(String key) {

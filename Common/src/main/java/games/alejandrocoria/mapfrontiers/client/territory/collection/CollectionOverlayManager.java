@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.client.territory.collection;
 import games.alejandrocoria.mapfrontiers.client.MapFrontiersClient;
 import games.alejandrocoria.mapfrontiers.client.event.ClientGlobalEvents;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionVisibilityMask;
@@ -80,6 +81,12 @@ public class CollectionOverlayManager {
 
     public void markCollectionDirty(UUID collectionId) {
         refreshCollectionDimensions(collectionId);
+    }
+
+    public void markPlayerNamePresentationDirty(PlayerId playerId) {
+        for (CollectionOverlay overlay : overlaysByKey.values()) {
+            overlay.markOwnerNameDirty(playerId);
+        }
     }
 
     public void markFrontierMembershipDirty(FrontierOverlay frontier) {

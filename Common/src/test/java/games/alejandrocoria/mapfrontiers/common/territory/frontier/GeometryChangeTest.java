@@ -3,6 +3,7 @@ package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.test.MinecraftTestBootstrap;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
@@ -16,6 +17,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -79,7 +81,7 @@ class GeometryChangeTest {
 
     @Test
     void treatsIdempotentChunkBatchAsNoChange() {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(new PlayerId(UUID.randomUUID()));
         frontier.setShape(FrontierShape.Chunk);
         frontier.addChunk(new ChunkPos(2, 3));
         frontier.setModified(new Date(123L));
@@ -95,7 +97,7 @@ class GeometryChangeTest {
 
     @Test
     void chunkGeometryCommitInvalidatesCachedChunkHash() {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(new PlayerId(UUID.randomUUID()));
         frontier.setShape(FrontierShape.Chunk);
         frontier.addChunk(new ChunkPos(1, 1));
         long initialHash = frontier.computeSyncHash();
@@ -111,7 +113,7 @@ class GeometryChangeTest {
 
     @Test
     void omitsNeutralGeometryWhenAnotherFieldChanges() {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(new PlayerId(UUID.randomUUID()));
         frontier.setShape(FrontierShape.Chunk);
         frontier.addChunk(new ChunkPos(2, 3));
         FrontierChange change = geometryChange(new GeometryChange.AddChunks(Set.of(new ChunkPos(2, 3))));
@@ -308,7 +310,7 @@ class GeometryChangeTest {
                 GeometryChange.RemoveVertexAt.class
         ), vertexChange.getGeometryChanges().stream().map(Object::getClass).toList());
 
-        FrontierData chunks = new FrontierData();
+        FrontierData chunks = new FrontierData(new PlayerId(UUID.randomUUID()));
         chunks.setShape(FrontierShape.Chunk);
         FrontierChange chunkChange = FrontierChange.fromMutation(chunks, FrontierMutation.builder()
                 .addChunk(new ChunkCoord(1, 2))
@@ -342,7 +344,7 @@ class GeometryChangeTest {
     }
 
     private static FrontierData pathFrontier(BlockPos... points) {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(new PlayerId(UUID.randomUUID()));
         frontier.setShape(FrontierShape.Path);
         for (BlockPos point : points) {
             frontier.addPoint(point);
@@ -351,7 +353,7 @@ class GeometryChangeTest {
     }
 
     private static FrontierData vertexFrontier(BlockPos... vertices) {
-        FrontierData frontier = new FrontierData();
+        FrontierData frontier = new FrontierData(new PlayerId(UUID.randomUUID()));
         frontier.setShape(FrontierShape.Vertex);
         for (BlockPos vertex : vertices) {
             frontier.addVertex(vertex);

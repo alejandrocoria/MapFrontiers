@@ -4,7 +4,7 @@ import games.alejandrocoria.mapfrontiers.client.gui.component.PluginSourceBadge;
 import games.alejandrocoria.mapfrontiers.client.gui.util.SourcePluginUiHelper;
 import games.alejandrocoria.mapfrontiers.client.territory.frontier.FrontierOverlay;
 import games.alejandrocoria.mapfrontiers.common.config.BooleanConfigEntry;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.AbstractWidget;
 
@@ -27,8 +27,8 @@ public class DeleteFrontierConfirmationDialog extends DeleteConfirmationDialog {
             return null;
         }
 
-        SettingsUser playerUser = new SettingsUser(minecraft.player);
-        if (frontier.getPersonal() && !frontier.getOwner().equals(playerUser)) {
+        PlayerId playerId = new PlayerId(minecraft.player.getUUID());
+        if (frontier.getPersonal() && !frontier.getOwner().equals(playerId)) {
             return SHARED_DESC_KEY;
         }
 

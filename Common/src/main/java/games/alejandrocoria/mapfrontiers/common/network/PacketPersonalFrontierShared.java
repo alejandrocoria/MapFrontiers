@@ -4,8 +4,9 @@ import commonnetwork.networking.data.PacketContext;
 import commonnetwork.networking.data.Side;
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.client.network.ClientPacketDelivery;
-import games.alejandrocoria.mapfrontiers.client.util.SettingsUserFormatter;
-import games.alejandrocoria.mapfrontiers.common.settings.SettingsUser;
+import games.alejandrocoria.mapfrontiers.client.util.PlayerNameFormatter;
+import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.common.identity.network.PlayerIdNetworkCodec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -23,12 +24,12 @@ public class PacketPersonalFrontierShared {
     public static final ResourceLocation CHANNEL = new ResourceLocation(MapFrontiers.MODID, "packet_personal_frontier_shared");
 
     private int shareMessageID;
-    private final SettingsUser playerSharing;
-    private final SettingsUser owner;
+    private final PlayerId playerSharing;
+    private final PlayerId owner;
     private String name1;
     private String name2;
 
-    public PacketPersonalFrontierShared(int shareMessageID, SettingsUser playerSharing, SettingsUser owner, String name1,
+    public PacketPersonalFrontierShared(int shareMessageID, PlayerId playerSharing, PlayerId owner, String name1,
             String name2) {
         this.shareMessageID = shareMessageID;
         this.playerSharing = playerSharing;
@@ -38,21 +39,17 @@ public class PacketPersonalFrontierShared {
     }
 
     public PacketPersonalFrontierShared(FriendlyByteBuf buf) {
-        this.playerSharing = new SettingsUser();
-        this.owner = new SettingsUser();
-        if (buf.readableBytes() > 1) {
-            this.shareMessageID = buf.readInt();
-            this.playerSharing.fromBytes(buf);
-            this.owner.fromBytes(buf);
-            this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
-            this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
-        }
+        this.shareMessageID = buf.readInt();
+        this.playerSharing = PlayerIdNetworkCodec.read(buf);
+        this.owner = PlayerIdNetworkCodec.read(buf);
+        this.name1 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
+        this.name2 = buf.readUtf(FrontierData.MAX_NAME_CHARACTERS);
     }
 
     public void encode(FriendlyByteBuf buf) {
         buf.writeInt(shareMessageID);
-        playerSharing.toBytes(buf);
-        owner.toBytes(buf);
+        PlayerIdNetworkCodec.write(buf, playerSharing);
+        PlayerIdNetworkCodec.write(buf, owner);
         buf.writeUtf(name1, FrontierData.MAX_NAME_CHARACTERS);
         buf.writeUtf(name2, FrontierData.MAX_NAME_CHARACTERS);
     }
@@ -88,11 +85,11 @@ public class PacketPersonalFrontierShared {
         button.withStyle(style -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
                 "/mapfrontiersaccept " + message.shareMessageID)));
 
-        MutableComponent text = Component.literal(SettingsUserFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
+        MutableComponent text = Component.literal(PlayerNameFormatter.getDisplayName(message.playerSharing, "User not found") + " ");
         if (message.playerSharing.equals(message.owner)) {
             text.append("want to share a frontier with you: ");
         } else {
-            text.append("want to share a frontier of " + SettingsUserFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
+            text.append("want to share a frontier of " + PlayerNameFormatter.getDisplayName(message.owner, "User not found") + " with you: ");
         }
 
         text.append(button);
