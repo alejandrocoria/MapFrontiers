@@ -10,6 +10,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChang
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreateSpec;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
@@ -36,7 +37,7 @@ class TerritoriesManagerGeometryChangeTest {
                 .build());
         change.setName("Changed", frontier.getName2());
 
-        FrontierChangeApplicationResult result = manager.applyGlobalFrontierChange(frontier.getId(), change);
+        FrontierChangeApplicationResult result = manager.applyGlobalFrontierChange(frontier.getId(), change, WorldGeometry.FLAT);
 
         assertTrue(result.isRejected());
         assertEquals("New", frontier.getName1());
@@ -52,7 +53,7 @@ class TerritoriesManagerGeometryChangeTest {
         long initialModified = frontier.getModified().getTime();
 
         FrontierChangeApplicationResult result = manager.applyGlobalFrontierChange(
-                frontier.getId(), geometryChange(frontier, FrontierMutation.builder().reversePath().build())
+                frontier.getId(), geometryChange(frontier, FrontierMutation.builder().reversePath().build()), WorldGeometry.FLAT
         );
 
         assertTrue(result.isNoChange());
@@ -68,7 +69,7 @@ class TerritoriesManagerGeometryChangeTest {
         FrontierChangeApplicationResult result = manager.applyGlobalFrontierChange(
                 frontier.getId(), geometryChange(frontier, FrontierMutation.builder()
                         .insertPathPointAfterLast(new Point2i(10, 0))
-                        .build())
+                        .build()), WorldGeometry.FLAT
         );
 
         assertTrue(result.isApplied());
