@@ -25,6 +25,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierCreat
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import games.alejandrocoria.mapfrontiers.server.territory.collection.ServerCollectionEvents;
 import games.alejandrocoria.mapfrontiers.server.territory.frontier.ServerFrontierEvents;
 import net.minecraft.resources.ResourceKey;
@@ -454,7 +456,8 @@ public class ServerTerritoryOperationService {
                 }
             }
 
-            FrontierChangeApplicationResult applicationResult = territoriesManager.applyPersonalFrontierChange(currentFrontier.getOwner(), frontierId, change);
+            FrontierChangeApplicationResult applicationResult = territoriesManager.applyPersonalFrontierChange(
+                    currentFrontier.getOwner(), frontierId, change, worldGeometry(currentFrontier, change));
             if (applicationResult.isRejected()) {
                 return rejectedWithFrontierResync(player, currentFrontier, applicationResult.rejectionReason());
             }
@@ -511,7 +514,8 @@ public class ServerTerritoryOperationService {
             }
         }
 
-        FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(frontierId, change);
+        FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(
+                frontierId, change, worldGeometry(currentFrontier, change));
         if (applicationResult.isRejected()) {
             return rejectedWithFrontierResync(player, currentFrontier, applicationResult.rejectionReason());
         }
@@ -579,7 +583,8 @@ public class ServerTerritoryOperationService {
             }
         }
 
-        FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(frontierId, change);
+        FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(
+                frontierId, change, worldGeometry(frontier, change));
         if (applicationResult.isRejected()) {
             return ServerTerritoryOperationResult.rejected(frontier);
         }
@@ -790,6 +795,12 @@ public class ServerTerritoryOperationService {
                 false, player.getId()), server, player));
         frontierEvents.postDeleted(previousGlobalFrontier);
         return result;
+    }
+
+    private WorldGeometry worldGeometry(FrontierData frontier, FrontierChange change) {
+        if (!change.requiresWorldGeometry()) return WorldGeometry.FLAT;
+        Level level = server.getLevel(frontier.getDimension());
+        return level == null ? WorldGeometry.FLAT : Services.PLATFORM.getWorldGeometry(level);
     }
 
     private ServerTerritoryOperationResult createdPersonalFrontier(FrontierData frontier,
