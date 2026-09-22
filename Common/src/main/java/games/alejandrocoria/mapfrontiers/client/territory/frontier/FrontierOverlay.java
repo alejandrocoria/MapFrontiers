@@ -793,7 +793,19 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public boolean toggleChunk(ChunkPos chunk) {
-        boolean added = super.toggleChunk(chunk);
+        boolean added;
+        if (!worldGeometry().hasWrappedAxes()) {
+            added = super.toggleChunk(chunk);
+        } else {
+            List<ChunkPos> existingChunks = findEquivalentChunks(chunk);
+            if (!existingChunks.isEmpty()) {
+                existingChunks.forEach(super::removeChunk);
+                added = false;
+            } else {
+                super.addChunk(getChunkCopyNearFrontier(chunk));
+                added = true;
+            }
+        }
         hashDirty = true;
         invalidateFromGeometry();
         markFrontierActivationDirty();
@@ -802,7 +814,10 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public boolean addChunk(ChunkPos chunk) {
-        if (super.addChunk(chunk)) {
+        boolean added = worldGeometry().hasWrappedAxes()
+                ? findEquivalentChunks(chunk).isEmpty() && super.addChunk(chunk)
+                : super.addChunk(chunk);
+        if (added) {
             hashDirty = true;
             invalidateFromGeometry();
             markFrontierActivationDirty();
@@ -814,7 +829,17 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public boolean removeChunk(ChunkPos chunk) {
-        if (super.removeChunk(chunk)) {
+        boolean removed;
+        if (!worldGeometry().hasWrappedAxes()) {
+            removed = super.removeChunk(chunk);
+        } else {
+            List<ChunkPos> existingChunks = findEquivalentChunks(chunk);
+            removed = !existingChunks.isEmpty();
+            if (removed) {
+                existingChunks.forEach(super::removeChunk);
+            }
+        }
+        if (removed) {
             hashDirty = true;
             invalidateFromGeometry();
             markFrontierActivationDirty();
@@ -822,6 +847,55 @@ public class FrontierOverlay extends FrontierData {
         }
 
         return false;
+    }
+
+    public ChunkPos getChunkCopyNearFrontier(ChunkPos chunk) {
+        WorldGeometry geometry = worldGeometry();
+        if (!geometry.hasWrappedAxes()) {
+            return chunk;
+        }
+
+        BlockPos chunkPos = chunkCenter(chunk);
+        ChunkPos nearestCopy = chunk;
+        double nearestDistance = Double.POSITIVE_INFINITY;
+        synchronized (chunks) {
+            for (ChunkPos existingChunk : chunks) {
+                BlockPos referencePos = chunkCenter(existingChunk);
+                BlockPos nearbyChunk = geometry.nearestCopy(referencePos, chunkPos);
+                double distance = referencePos.distSqr(nearbyChunk);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestCopy = ChunkPos.containing(nearbyChunk);
+                }
+            }
+        }
+        return nearestCopy;
+    }
+
+    public ChunkPos getChunkCopyNear(ChunkPos reference, ChunkPos chunk) {
+        WorldGeometry geometry = worldGeometry();
+        return geometry.hasWrappedAxes()
+                ? ChunkPos.containing(geometry.nearestCopy(chunkCenter(reference), chunkCenter(chunk)))
+                : chunk;
+    }
+
+    private List<ChunkPos> findEquivalentChunks(ChunkPos chunk) {
+        BlockPos queryPos = chunkCenter(chunk);
+        List<ChunkPos> equivalentChunks = new ArrayList<>();
+        synchronized (chunks) {
+            WorldGeometry geometry = worldGeometry();
+            for (ChunkPos existingChunk : chunks) {
+                BlockPos nearbyExisting = geometry.nearestCopy(queryPos, chunkCenter(existingChunk));
+                if (ChunkPos.containing(nearbyExisting).equals(chunk)) {
+                    equivalentChunks.add(existingChunk);
+                }
+            }
+        }
+        return equivalentChunks;
+    }
+
+    private static BlockPos chunkCenter(ChunkPos chunk) {
+        return new BlockPos(chunk.getMinBlockX() + 8, 0, chunk.getMinBlockZ() + 8);
     }
 
     @Override

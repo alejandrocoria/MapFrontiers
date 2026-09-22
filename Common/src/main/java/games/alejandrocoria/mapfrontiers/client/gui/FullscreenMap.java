@@ -631,7 +631,7 @@ public class FullscreenMap {
             } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 frontierHighlighted.selectClosestPoint(position, maxDistanceToClosest);
             } else if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
-                lastEditedChunk = ChunkPos.containing(position);
+                lastEditedChunk = frontierHighlighted.getChunkCopyNearFrontier(ChunkPos.containing(position));
                 if (ScreenHelper.hasShiftDown()) {
                     return false;
                 }else {
@@ -729,8 +729,11 @@ public class FullscreenMap {
             } else {
                 ChunkPos chunkPos = ChunkPos.containing(position);
                 ChunkPos prevChunkPos = ChunkPos.containing(relocatingPrevPos);
-                if (!chunkPos.equals(prevChunkPos)) {
-                    frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x() - prevChunkPos.x(), chunkPos.z() - prevChunkPos.z()));
+                ChunkPos nearbyChunkPos = geometry.hasWrappedAxes()
+                        ? frontierHighlighted.getChunkCopyNear(prevChunkPos, chunkPos)
+                        : chunkPos;
+                if (!nearbyChunkPos.equals(prevChunkPos)) {
+                    frontierHighlighted.moveAllChunks(new ChunkPos(nearbyChunkPos.x() - prevChunkPos.x(), nearbyChunkPos.z() - prevChunkPos.z()));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
@@ -750,7 +753,7 @@ public class FullscreenMap {
             return;
         }
 
-        ChunkPos chunk = ChunkPos.containing(position);
+        ChunkPos chunk = frontierHighlighted.getChunkCopyNear(lastEditedChunk, ChunkPos.containing(position));
         if (chunk.equals(lastEditedChunk)) {
             return;
         }
