@@ -431,10 +431,6 @@ public class TerritoriesManager {
         return deleted;
     }
 
-    public FrontierChangeApplicationResult applyGlobalFrontierChange(UUID frontierId, FrontierChange change) {
-        return applyGlobalFrontierChange(frontierId, change, WorldGeometry.FLAT);
-    }
-
     public FrontierChangeApplicationResult applyGlobalFrontierChange(UUID frontierId, FrontierChange change, WorldGeometry geometry) {
         FrontierData frontier = allFrontiers.get(frontierId);
         if (frontier == null || frontier.getPersonal()) {
@@ -456,10 +452,6 @@ public class TerritoriesManager {
         reindexFrontierAfterMutation(frontier, previousState);
         markDirty();
         return FrontierChangeApplicationResult.applied(frontier, effectiveChange);
-    }
-
-    public FrontierChangeApplicationResult applyPersonalFrontierChange(PlayerId user, UUID frontierId, FrontierChange change) {
-        return applyPersonalFrontierChange(user, frontierId, change, WorldGeometry.FLAT);
     }
 
     public FrontierChangeApplicationResult applyPersonalFrontierChange(PlayerId user, UUID frontierId, FrontierChange change,

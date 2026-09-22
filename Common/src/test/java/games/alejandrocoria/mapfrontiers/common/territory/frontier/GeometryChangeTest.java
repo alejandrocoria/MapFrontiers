@@ -5,6 +5,7 @@ import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
 import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
+import games.alejandrocoria.mapfrontiers.testutil.PeriodicGeometry;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -150,35 +151,26 @@ class GeometryChangeTest {
 
     @Test
     void automaticPathInsertionUsesTheNearbyCopyAcrossTheSeam() {
-        FrontierData frontier = pathFrontier(point(49, 0), point(-49, 0));
+        FrontierData frontier = pathFrontier(point(49, 0), point(51, 0));
 
         FrontierChangeApplicationResult result = frontier.applyChange(
-                geometryChange(new GeometryChange.InsertPathPointAutomatically(point(50, 5))),
+                geometryChange(new GeometryChange.InsertPathPointAutomatically(point(-50, 5))),
                 cylinderXGeometry());
 
         assertTrue(result.isApplied());
-        assertEquals(List.of(point(49, 0), point(50, 5), point(-49, 0)), frontier.getPoints());
-    }
-
-    @Test
-    void shortestSeamMovementKeepsTheEditedPointOutsideCanonicalBounds() {
-        BlockPos original = point(49, 0);
-        BlockPos delta = cylinderXGeometry().shortestDelta(point(49, 0), point(-49, 0));
-
-        assertEquals(new BlockPos(2, 0, 0), delta);
-        assertEquals(point(51, 0), original.offset(delta));
+        assertEquals(List.of(point(49, 0), point(50, 5), point(51, 0)), frontier.getPoints());
     }
 
     @Test
     void automaticVertexInsertionUsesTheNearbyClosingEdgeCopy() {
-        FrontierData frontier = vertexFrontier(point(49, -10), point(-49, -10), point(-49, 10));
+        FrontierData frontier = vertexFrontier(point(49, -10), point(51, -10), point(51, 10));
 
         FrontierChangeApplicationResult result = frontier.applyChange(
-                geometryChange(new GeometryChange.InsertVertexAutomatically(point(50, 0))),
+                geometryChange(new GeometryChange.InsertVertexAutomatically(point(-50, 0))),
                 cylinderXGeometry());
 
         assertTrue(result.isApplied());
-        assertEquals(point(-50, 0), frontier.getVertices().getLast());
+        assertEquals(point(50, 0), frontier.getVertices().getLast());
     }
 
     @Test
@@ -370,6 +362,80 @@ class GeometryChangeTest {
         assertEquals(List.of(point(0, 0)), frontier.getPoints());
     }
 
+    @Test
+    void resolvesAutomaticOperationsProgressivelyAndReplaysWithoutWorldGeometry() {
+        FrontierData initial = pathFrontier(point(480, 0), point(544, 0));
+        FrontierChange request = geometryChange(
+                new GeometryChange.InsertPathPointAutomatically(point(-512, 8)),
+                new GeometryChange.ReversePath(),
+                new GeometryChange.InsertPathPointAutomatically(point(-496, 4)));
+        FrontierChangeApplicationResult staged = initial.stageChange(request, new PeriodicGeometry(1024, 0));
+        assertTrue(staged.isApplied());
+        assertEquals(List.of(point(544, 0), point(528, 4), point(512, 8), point(480, 0)), staged.frontier().getPoints());
+        assertEquals(List.of(point(480, 0), point(544, 0)), initial.getPoints());
+        assertTrue(request.requiresWorldGeometry());
+        assertFalse(staged.effectiveChange().requiresWorldGeometry());
+        assertEquals(List.of(new GeometryChange.InsertPathPointAt(1, point(512, 8)),
+                new GeometryChange.ReversePath(), new GeometryChange.InsertPathPointAt(1, point(528, 4))),
+                staged.effectiveChange().getGeometryChanges());
+
+        FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
+        staged.effectiveChange().toBytes(buffer);
+        FrontierData receiver = new FrontierData(initial);
+        assertTrue(receiver.applyChange(new FrontierChange(buffer), unusedGeometry()).isApplied());
+        assertEquals(staged.frontier().computeSyncHash(), receiver.computeSyncHash());
+    }
+
+    @Test
+    void vertexResolutionRetainsTheChosenQueryCopyAndReplaysExactly() {
+        FrontierData initial = vertexFrontier(point(0, 0), point(768, 0), point(768, 200));
+        FrontierChange request = geometryChange(new GeometryChange.InsertVertexAutomatically(point(600, 0)));
+        FrontierChangeApplicationResult staged = initial.stageChange(request, new PeriodicGeometry(1024, 0));
+        assertEquals(new GeometryChange.InsertVertexAt(1, point(600, 0)), staged.effectiveChange().getGeometryChanges().getFirst());
+        initial.applyChange(staged.effectiveChange(), unusedGeometry());
+        assertEquals(staged.frontier().computeSyncHash(), initial.computeSyncHash());
+    }
+
+    @Test
+    void explicitAndMetadataChangesDoNotConsultWorldGeometry() {
+        FrontierData frontier = pathFrontier(point(0, 0), point(10, 0));
+        FrontierChange metadata = new FrontierChange();
+        metadata.setName("Changed", "");
+        assertFalse(metadata.requiresWorldGeometry());
+        assertTrue(frontier.applyChange(metadata, unusedGeometry()).isApplied());
+        FrontierChange explicit = geometryChange(new GeometryChange.InsertPathPointAt(1, point(2048, 10)));
+        assertFalse(explicit.requiresWorldGeometry());
+        frontier.applyChange(explicit, unusedGeometry());
+        assertEquals(point(2048, 10), frontier.getPoints().get(1));
+        FrontierChange replacement = new FrontierChange();
+        replacement.setShape(List.of(), Set.of(), List.of(point(4096, 10)), FrontierShape.Path);
+        assertFalse(replacement.requiresWorldGeometry());
+        assertTrue(frontier.applyChange(replacement, unusedGeometry()).isApplied());
+    }
+
+    @Test
+    void invalidBatchDoesNotLeakAnEarlierAutomaticResolution() {
+        FrontierData initial = pathFrontier(point(480, 0), point(544, 0));
+        FrontierChange request = geometryChange(new GeometryChange.InsertPathPointAutomatically(point(-512, 8)),
+                new GeometryChange.RemovePathPointAt(99));
+        long hash = initial.computeSyncHash();
+        assertTrue(initial.applyChange(request, new PeriodicGeometry(1024, 0)).isRejected());
+        assertEquals(hash, initial.computeSyncHash());
+        assertTrue(request.requiresWorldGeometry());
+        assertTrue(request.getGeometryChanges().getFirst() instanceof GeometryChange.InsertPathPointAutomatically);
+    }
+
+    private static WorldGeometry unusedGeometry() {
+        return new WorldGeometry() {
+            @Override public BlockPos nearestCopy(BlockPos reference, BlockPos target) {
+                throw new AssertionError("Explicit mutations must not resolve copies");
+            }
+            @Override public BlockPos shortestDelta(BlockPos from, BlockPos to) {
+                throw new AssertionError("Explicit mutations must not resolve movement");
+            }
+        };
+    }
+
     private static FrontierData pathFrontier(BlockPos... points) {
         FrontierData frontier = new FrontierData(new PlayerId(UUID.randomUUID()));
         frontier.setShape(FrontierShape.Path);
@@ -399,24 +465,6 @@ class GeometryChangeTest {
     }
 
     private static WorldGeometry cylinderXGeometry() {
-        return new WorldGeometry() {
-            @Override
-            public BlockPos nearestCopy(BlockPos reference, BlockPos target) {
-                int nearbyX = target.getX();
-                while (nearbyX - reference.getX() > 50) {
-                    nearbyX -= 100;
-                }
-                while (nearbyX - reference.getX() < -50) {
-                    nearbyX += 100;
-                }
-                return new BlockPos(nearbyX, target.getY(), target.getZ());
-            }
-
-            @Override
-            public BlockPos shortestDelta(BlockPos from, BlockPos to) {
-                BlockPos nearest = nearestCopy(from, to);
-                return new BlockPos(nearest.getX() - from.getX(), 0, nearest.getZ() - from.getZ());
-            }
-        };
+        return new PeriodicGeometry(100, 0);
     }
 }

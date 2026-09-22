@@ -83,7 +83,7 @@ public class FullscreenMap {
     private long editingBaseSyncHash;
     private boolean relocating = false;
     private BlockPos relocatingPrevPos;
-    private @Nullable BlockPos editableDragPrevPos;
+    private @Nullable PointDragState editableDrag;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
     private ChunkPos lastEditedChunk;
 
@@ -133,12 +133,12 @@ public class FullscreenMap {
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::updateButtons);
 
         ClientGlobalEvents.subscribeMouseReleaseEvent(this, button -> {
+            editableDrag = null;
             if (button != InputConstants.MOUSE_BUTTON_RIGHT) {
                 return;
             }
 
             relocating = false;
-            editableDragPrevPos = null;
 
             if (!editing || drawingChunk == ChunkDrawing.Nothing || frontierHighlighted.getShape() != FrontierShape.Chunk) {
                 return;
@@ -422,7 +422,7 @@ public class FullscreenMap {
     }
 
     private void buttonAddVertex(BlockPos pos) {
-        frontierHighlighted.selectClosestEdge(pos);
+        pos = frontierHighlighted.selectClosestEdge(pos);
         frontierHighlighted.addVertex(pos);
         shapeDirty = true;
 
@@ -599,7 +599,7 @@ public class FullscreenMap {
         shapeDirty = false;
         editingBaseSyncHash = frontierHighlighted.computeSyncHash();
         relocating = false;
-        editableDragPrevPos = null;
+        editableDrag = null;
         drawingChunk = ChunkDrawing.Nothing;
         frontierHighlighted.beginInteractiveEdit();
         frontierHighlighted.clearSelectedEditablePoint();
@@ -620,7 +620,7 @@ public class FullscreenMap {
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
         if (editing && frontierHighlighted != null) {
-            editableDragPrevPos = position;
+            editableDrag = null;
             if (ScreenHelper.hasControlDown() && button == InputConstants.MOUSE_BUTTON_RIGHT) {
                 relocating = true;
                 relocatingPrevPos = position;
@@ -631,11 +631,24 @@ public class FullscreenMap {
             } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 frontierHighlighted.selectClosestPoint(position, maxDistanceToClosest);
             } else if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
-                lastEditedChunk = frontierHighlighted.getChunkCopyNearFrontier(ChunkPos.containing(position));
+                WorldGeometry geometry = worldGeometry(dimension);
+                lastEditedChunk = ChunkPos.containing(position);
+                ChunkEdit edit = geometry.hasWrappedAxes()
+                        ? ChunkEdit.resolve(geometry, frontierHighlighted.getChunks(), lastEditedChunk, true) : null;
+                if (edit != null) lastEditedChunk = edit.position();
                 if (ScreenHelper.hasShiftDown()) {
                     return false;
                 }else {
-                    if (frontierHighlighted.toggleChunk(lastEditedChunk)) {
+                    boolean added;
+                    if (edit == null) {
+                        added = frontierHighlighted.toggleChunk(lastEditedChunk);
+                    } else if (edit.existingCopies().isEmpty()) {
+                        added = frontierHighlighted.addChunk(lastEditedChunk);
+                    } else {
+                        edit.existingCopies().forEach(frontierHighlighted::removeChunk);
+                        added = false;
+                    }
+                    if (added) {
                         drawingChunk = ChunkDrawing.Adding;
                     } else {
                         drawingChunk = ChunkDrawing.Removing;
@@ -688,21 +701,17 @@ public class FullscreenMap {
             return false;
         }
 
-        if (editableDragPrevPos == null) {
-            editableDragPrevPos = position;
-            return true;
-        }
-        BlockPos delta = worldGeometry(dimension).shortestDelta(editableDragPrevPos, position);
-        editableDragPrevPos = position;
-        if (delta.equals(BlockPos.ZERO)) {
-            return true;
-        }
-        BlockPos selectedPoint = frontierHighlighted.getSelectedEditablePoint();
-        if (selectedPoint == null) {
-            return false;
+        WorldGeometry geometry = worldGeometry(dimension);
+        if (geometry.hasWrappedAxes()) {
+            if (editableDrag == null) {
+                BlockPos selectedPoint = frontierHighlighted.getSelectedEditablePoint();
+                if (selectedPoint == null) return false;
+                editableDrag = new PointDragState(selectedPoint);
+            }
+            position = editableDrag.update(position, geometry);
         }
         float snapDistance = 512.f / uiState.zoom * ClientConfig.SNAP_DISTANCE.get();
-        frontierHighlighted.moveSelectedEditablePoint(selectedPoint.offset(delta), snapDistance);
+        frontierHighlighted.moveSelectedEditablePoint(position, snapDistance);
         shapeDirty = true;
         return true;
     }
@@ -730,7 +739,7 @@ public class FullscreenMap {
                 ChunkPos chunkPos = ChunkPos.containing(position);
                 ChunkPos prevChunkPos = ChunkPos.containing(relocatingPrevPos);
                 ChunkPos nearbyChunkPos = geometry.hasWrappedAxes()
-                        ? frontierHighlighted.getChunkCopyNear(prevChunkPos, chunkPos)
+                        ? geometry.nearestChunkCopy(prevChunkPos, chunkPos)
                         : chunkPos;
                 if (!nearbyChunkPos.equals(prevChunkPos)) {
                     frontierHighlighted.moveAllChunks(new ChunkPos(nearbyChunkPos.x() - prevChunkPos.x(), nearbyChunkPos.z() - prevChunkPos.z()));
@@ -753,14 +762,23 @@ public class FullscreenMap {
             return;
         }
 
-        ChunkPos chunk = frontierHighlighted.getChunkCopyNear(lastEditedChunk, ChunkPos.containing(position));
+        WorldGeometry geometry = worldGeometry(dimension);
+        ChunkPos chunk = ChunkPos.containing(position);
+        if (geometry.hasWrappedAxes()) chunk = geometry.nearestChunkCopy(lastEditedChunk, chunk);
         if (chunk.equals(lastEditedChunk)) {
             return;
         }
 
         lastEditedChunk = chunk;
 
-        if (drawingChunk == ChunkDrawing.Adding) {
+        if (geometry.hasWrappedAxes()) {
+            ChunkEdit edit = ChunkEdit.resolve(geometry, frontierHighlighted.getChunks(), chunk, false);
+            if (drawingChunk == ChunkDrawing.Adding) {
+                if (edit.existingCopies().isEmpty()) frontierHighlighted.addChunk(edit.position());
+            } else {
+                edit.existingCopies().forEach(frontierHighlighted::removeChunk);
+            }
+        } else if (drawingChunk == ChunkDrawing.Adding) {
             frontierHighlighted.addChunk(chunk);
         } else {
             frontierHighlighted.removeChunk(chunk);

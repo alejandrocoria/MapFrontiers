@@ -1,6 +1,7 @@
 package games.alejandrocoria.mapfrontiers.platform.services;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 
 /** Geometry helpers for a level whose horizontal axes may wrap. */
 public interface WorldGeometry {
@@ -20,7 +21,16 @@ public interface WorldGeometry {
 
     BlockPos shortestDelta(BlockPos from, BlockPos to);
 
+    /** Period in blocks, or zero for an axis without wrapping. */
+    default int periodX() { return 0; }
+
+    default int periodZ() { return 0; }
+
+    default ChunkPos foldChunk(ChunkPos chunk) { return chunk; }
+
+    default ChunkPos nearestChunkCopy(ChunkPos reference, ChunkPos target) { return target; }
+
     default boolean hasWrappedAxes() {
-        return false;
+        return periodX() != 0 || periodZ() != 0;
     }
 }

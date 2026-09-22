@@ -184,13 +184,13 @@ public class FrontierData {
         }
 
         FrontierData stagedFrontier = new FrontierData(this);
+        FrontierChange effectiveChange = new FrontierChange(change);
         try {
-            stagedFrontier.applyChangeUnchecked(change, geometry);
+            stagedFrontier.applyChangeUnchecked(effectiveChange, geometry);
         } catch (IllegalArgumentException exception) {
             return FrontierChangeApplicationResult.rejected(exception.getMessage());
         }
 
-        FrontierChange effectiveChange = new FrontierChange(change);
         if (change.hasGeometryChanges() && hasSameGeometry(stagedFrontier)) {
             effectiveChange.clearGeometryChanges();
         }
@@ -240,7 +240,7 @@ public class FrontierData {
         }
 
         if (change.hasGeometryChanges()) {
-            GeometryChangeApplier.apply(this, change.getGeometryChanges(), geometry);
+            change.setGeometryChanges(GeometryChangeApplier.apply(this, change.getGeometryChanges(), geometry));
         }
 
         if (change.hasPathStyleChange()) {

@@ -457,7 +457,7 @@ public class ServerTerritoryOperationService {
             }
 
             FrontierChangeApplicationResult applicationResult = territoriesManager.applyPersonalFrontierChange(
-                    currentFrontier.getOwner(), frontierId, change, worldGeometry(currentFrontier));
+                    currentFrontier.getOwner(), frontierId, change, worldGeometry(currentFrontier, change));
             if (applicationResult.isRejected()) {
                 return rejectedWithFrontierResync(player, currentFrontier, applicationResult.rejectionReason());
             }
@@ -515,7 +515,7 @@ public class ServerTerritoryOperationService {
         }
 
         FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(
-                frontierId, change, worldGeometry(currentFrontier));
+                frontierId, change, worldGeometry(currentFrontier, change));
         if (applicationResult.isRejected()) {
             return rejectedWithFrontierResync(player, currentFrontier, applicationResult.rejectionReason());
         }
@@ -584,7 +584,7 @@ public class ServerTerritoryOperationService {
         }
 
         FrontierChangeApplicationResult applicationResult = territoriesManager.applyGlobalFrontierChange(
-                frontierId, change, worldGeometry(frontier));
+                frontierId, change, worldGeometry(frontier, change));
         if (applicationResult.isRejected()) {
             return ServerTerritoryOperationResult.rejected(frontier);
         }
@@ -797,7 +797,8 @@ public class ServerTerritoryOperationService {
         return result;
     }
 
-    private WorldGeometry worldGeometry(FrontierData frontier) {
+    private WorldGeometry worldGeometry(FrontierData frontier, FrontierChange change) {
+        if (!change.requiresWorldGeometry()) return WorldGeometry.FLAT;
         Level level = server.getLevel(frontier.getDimension());
         return level == null ? WorldGeometry.FLAT : Services.PLATFORM.getWorldGeometry(level);
     }

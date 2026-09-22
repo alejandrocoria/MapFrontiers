@@ -116,17 +116,12 @@ public class FrontiersOverlayManager {
 
     @Nullable
     public FrontierChangeApplicationResult applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change) {
-        return applyFrontierChange(dimension, id, change, WorldGeometry.FLAT);
-    }
-
-    public FrontierChangeApplicationResult applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change,
-                                                               WorldGeometry geometry) {
         FrontierOverlay frontierOverlay = frontiersById.get(id);
         if (frontierOverlay == null || !frontierOverlay.getDimension().equals(dimension)) {
             return null;
         }
 
-        FrontierChangeApplicationResult result = frontierOverlay.applyChange(change, geometry);
+        FrontierChangeApplicationResult result = frontierOverlay.applyChange(change);
         if (!result.isApplied()) {
             return result;
         }
@@ -219,8 +214,8 @@ public class FrontiersOverlayManager {
         return new ArrayList<>(candidates);
     }
 
-    public List<FrontierOverlay> getCandidateFrontiersNearPosition(ResourceKey<Level> dimension, BlockPos pos, double padding) {
-        if (Services.PLATFORM.getClientWorldGeometry(dimension).hasWrappedAxes()) {
+    public List<FrontierOverlay> getCandidateFrontiersNearPosition(ResourceKey<Level> dimension, BlockPos pos, double padding, WorldGeometry geometry) {
+        if (geometry.hasWrappedAxes()) {
             List<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
             return frontiers == null ? List.of() : frontiers;
         }
@@ -233,16 +228,13 @@ public class FrontiersOverlayManager {
 
     public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
                                                         @Nullable Context.MapType fullscreenMapType) {
+        WorldGeometry geometry = Services.PLATFORM.getClientWorldGeometry(dimension);
         List<FrontierOverlay> frontiersInPosition = new ArrayList<>();
-        for (FrontierOverlay frontier : getCandidateFrontiersNearPosition(dimension, pos, maxDistanceToOpen)) {
-            if (!frontier.isInsideBoundingBox(pos, maxDistanceToOpen)) {
-                continue;
-            }
-
+        for (FrontierOverlay frontier : getCandidateFrontiersNearPosition(dimension, pos, maxDistanceToOpen, geometry)) {
             boolean visible = fullscreenMapType == null
                     ? frontier.getVisibility(FrontierVisibility.Frontier)
                     : frontier.isVisibleOnFullscreenMap(fullscreenMapType);
-            if (visible && frontier.pointIsInside(pos, maxDistanceToOpen)) {
+            if (visible && frontier.pointIsInside(pos, maxDistanceToOpen, geometry)) {
                 frontiersInPosition.add(frontier);
             }
         }

@@ -13,6 +13,10 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 public class FabricPlatformHelper implements IPlatformHelper {
+    private static class OptionalMods {
+        static final boolean TOROIDAL_WORLD = FabricLoader.getInstance().isModLoaded("toroidal_world");
+    }
+
     @Override
     public String getPlatformName() {
         return "Fabric";
@@ -48,14 +52,14 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public WorldGeometry getWorldGeometry(Level level) {
-        return FabricLoader.getInstance().isModLoaded("toroidal_world")
+        return OptionalMods.TOROIDAL_WORLD
                 ? FabricToroidalWorldServer.geometryOf(level)
                 : WorldGeometry.FLAT;
     }
 
     @Override
     public WorldGeometry getClientWorldGeometry(ResourceKey<Level> dimension) {
-        return FabricLoader.getInstance().isModLoaded("toroidal_world")
+        return OptionalMods.TOROIDAL_WORLD
                 ? FabricToroidalWorldClient.geometryOf(dimension)
                 : WorldGeometry.FLAT;
     }

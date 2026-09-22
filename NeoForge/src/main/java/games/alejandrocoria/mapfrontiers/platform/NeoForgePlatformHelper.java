@@ -15,6 +15,10 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 public class NeoForgePlatformHelper implements IPlatformHelper {
+    private static class OptionalMods {
+        static final boolean TOROIDAL_WORLD = ModList.get().isLoaded("toroidal_world");
+    }
+
     @Override
     public String getPlatformName() {
         return "NeoForge";
@@ -50,14 +54,14 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
 
     @Override
     public WorldGeometry getWorldGeometry(Level level) {
-        return ModList.get().isLoaded("toroidal_world")
+        return OptionalMods.TOROIDAL_WORLD
                 ? NeoForgeToroidalWorldServer.geometryOf(level)
                 : WorldGeometry.FLAT;
     }
 
     @Override
     public WorldGeometry getClientWorldGeometry(ResourceKey<Level> dimension) {
-        return ModList.get().isLoaded("toroidal_world")
+        return OptionalMods.TOROIDAL_WORLD
                 ? NeoForgeToroidalWorldClient.geometryOf(dimension)
                 : WorldGeometry.FLAT;
     }
