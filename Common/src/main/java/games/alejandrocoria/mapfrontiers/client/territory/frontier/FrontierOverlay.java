@@ -564,18 +564,20 @@ public class FrontierOverlay extends FrontierData {
             return false;
         }
 
-        return pos.getX() >= topLeft.getX() - padding
-                && pos.getX() <= bottomRight.getX() + padding
-                && pos.getZ() >= topLeft.getZ() - padding
-                && pos.getZ() <= bottomRight.getZ() + padding;
+        BlockPos queryPos = nearestCopyOfPosition(pos);
+        return queryPos.getX() >= topLeft.getX() - padding
+                && queryPos.getX() <= bottomRight.getX() + padding
+                && queryPos.getZ() >= topLeft.getZ() - padding
+                && queryPos.getZ() <= bottomRight.getZ() + padding;
     }
 
     public boolean pointIsInside(BlockPos pos, double maxDistanceToOpen) {
+        BlockPos queryPos = nearestCopyOfPosition(pos);
         if (frontierShape == FrontierShape.Vertex) {
             if (vertices.size() > 2) {
-                return polygonArea != null && polygonArea.contains(pos.getX() + 0.5, pos.getZ() + 0.5);
+                return polygonArea != null && polygonArea.contains(queryPos.getX() + 0.5, queryPos.getZ() + 0.5);
             } else if (maxDistanceToOpen > 0.0) {
-                return distanceToPolylineSq(pos, vertices, true) <= maxDistanceToOpen * maxDistanceToOpen;
+                return distanceToPolylineSq(queryPos, vertices, true) <= maxDistanceToOpen * maxDistanceToOpen;
             }
         } else if (frontierShape == FrontierShape.Path) {
             if (points.isEmpty()) {
@@ -587,9 +589,10 @@ public class FrontierOverlay extends FrontierData {
                 maxDistanceSq = 0.0;
             }
 
-            return distanceToPolylineSq(pos, points, false) <= maxDistanceSq;
-        } else if (pos.getX() >= topLeft.getX() && pos.getX() <= bottomRight.getX() && pos.getZ() >= topLeft.getZ() && pos.getZ() <= bottomRight.getZ()) {
-            return chunks.contains(ChunkPos.containing(pos));
+            return distanceToPolylineSq(queryPos, points, false) <= maxDistanceSq;
+        } else if (queryPos.getX() >= topLeft.getX() && queryPos.getX() <= bottomRight.getX()
+                && queryPos.getZ() >= topLeft.getZ() && queryPos.getZ() <= bottomRight.getZ()) {
+            return chunks.contains(ChunkPos.containing(queryPos));
         }
 
         return false;
@@ -1506,6 +1509,18 @@ public class FrontierOverlay extends FrontierData {
 
     private WorldGeometry worldGeometry() {
         return Services.PLATFORM.getClientWorldGeometry(dimension);
+    }
+
+    private BlockPos nearestCopyOfPosition(BlockPos pos) {
+        if (topLeft == null || bottomRight == null) {
+            return pos;
+        }
+
+        BlockPos reference = BlockPos.containing(
+                ((double) topLeft.getX() + bottomRight.getX()) * 0.5,
+                pos.getY(),
+                ((double) topLeft.getZ() + bottomRight.getZ()) * 0.5);
+        return worldGeometry().nearestCopy(reference, pos);
     }
 
     public void recalculateOverlays() {
@@ -2904,7 +2919,7 @@ public class FrontierOverlay extends FrontierData {
         return entry == null ? 1.0 : entry.segmentSpacingMultiplier();
     }
 
-    private static double distanceToPolylineSq(BlockPos pos, List<BlockPos> polyline, boolean closed) {
+    private double distanceToPolylineSq(BlockPos pos, List<BlockPos> polyline, boolean closed) {
         synchronized (polyline) {
             if (polyline.isEmpty()) {
                 return Double.POSITIVE_INFINITY;
@@ -2912,16 +2927,20 @@ public class FrontierOverlay extends FrontierData {
 
             Vec3 point = Vec3.atLowerCornerOf(pos);
             int y = pos.getY();
+            WorldGeometry geometry = worldGeometry();
 
             if (polyline.size() == 1) {
-                return point.distanceToSqr(Vec3.atLowerCornerOf(polyline.getFirst().atY(y)));
+                BlockPos nearbyPoint = geometry.nearestCopy(pos, polyline.getFirst().atY(y));
+                return point.distanceToSqr(Vec3.atLowerCornerOf(nearbyPoint));
             }
 
             double distance = Double.POSITIVE_INFINITY;
             int edgeCount = closed ? polyline.size() : polyline.size() - 1;
             for (int i = 0; i < edgeCount; ++i) {
-                Vec3 edge1 = Vec3.atLowerCornerOf(polyline.get(i).atY(y));
-                Vec3 edge2 = Vec3.atLowerCornerOf(polyline.get((i + 1) % polyline.size()).atY(y));
+                BlockPos edgeStart = geometry.nearestCopy(pos, polyline.get(i).atY(y));
+                BlockPos edgeEnd = geometry.nearestCopy(edgeStart, polyline.get((i + 1) % polyline.size()).atY(y));
+                Vec3 edge1 = Vec3.atLowerCornerOf(edgeStart);
+                Vec3 edge2 = Vec3.atLowerCornerOf(edgeEnd);
                 distance = Math.min(distance, closestPointToEdge(point, edge1, edge2).distanceToSqr(point));
             }
 

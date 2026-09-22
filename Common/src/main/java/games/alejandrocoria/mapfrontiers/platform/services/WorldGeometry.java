@@ -19,4 +19,8 @@ public interface WorldGeometry {
     BlockPos nearestCopy(BlockPos reference, BlockPos target);
 
     BlockPos shortestDelta(BlockPos from, BlockPos to);
+
+    default boolean hasWrappedAxes() {
+        return false;
+    }
 }

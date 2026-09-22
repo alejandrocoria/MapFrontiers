@@ -879,10 +879,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
-        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
-                pos.getX() - activationRadius, pos.getX() + activationRadius,
-                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersNearPosition(dimension, pos, maxPathActivationDistance)) {
             boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
             if (qualifiesForHud(frontier, pos, alreadyActive)) {
                 target.add(frontier);
@@ -898,10 +895,7 @@ public class MapFrontiersClient {
             return;
         }
 
-        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
-        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
-                pos.getX() - activationRadius, pos.getX() + activationRadius,
-                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersNearPosition(dimension, pos, maxPathActivationDistance)) {
             boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
             if (qualifiesForAnnouncement(frontier, pos, alreadyActive)) {
                 target.add(frontier);

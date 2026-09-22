@@ -23,6 +23,11 @@ final class FabricToroidalWorldServer {
             Vec3 delta = shape.shortestDelta(Vec3.atLowerCornerOf(from), Vec3.atLowerCornerOf(to));
             return BlockPos.containing(delta.x, 0.0, delta.z);
         }
+
+        @Override
+        public boolean hasWrappedAxes() {
+            return true;
+        }
     }
 
     private FabricToroidalWorldServer() {
