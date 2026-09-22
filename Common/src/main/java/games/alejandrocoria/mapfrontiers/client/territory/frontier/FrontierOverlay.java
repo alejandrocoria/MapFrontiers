@@ -35,6 +35,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserA
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityMask;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import it.unimi.dsi.fastutil.Pair;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.MarkerOverlay;
@@ -187,7 +189,11 @@ public class FrontierOverlay extends FrontierData {
 
     @Override
     public FrontierChangeApplicationResult applyChange(FrontierChange change) {
-        FrontierChangeApplicationResult result = stageChange(change);
+        return applyChange(change, WorldGeometry.FLAT);
+    }
+
+    public FrontierChangeApplicationResult applyChange(FrontierChange change, WorldGeometry geometry) {
+        FrontierChangeApplicationResult result = stageChange(change, geometry);
         if (!result.isApplied()) {
             return result;
         }
@@ -603,7 +609,8 @@ public class FrontierOverlay extends FrontierData {
                 for (int i = 0; i < vertices.size(); ++i) {
                     BlockPos vertex = vertices.get(i);
                     int y = vertex.getY();
-                    double dist = vertex.distSqr(pos.atY(y));
+                    BlockPos nearbyVertex = worldGeometry().nearestCopy(pos.atY(y), vertex);
+                    double dist = nearbyVertex.distSqr(pos.atY(y));
                     if (dist <= distance) {
                         distance = dist;
                         closest = i;
@@ -633,9 +640,11 @@ public class FrontierOverlay extends FrontierData {
                 for (int i = 0; i < vertices.size(); ++i) {
                     Vec3 point = Vec3.atLowerCornerOf(pos);
                     int y1 = pos.getY();
-                    Vec3 edge1 = Vec3.atLowerCornerOf(vertices.get(i).atY(y1));
+                    BlockPos edgeStart = worldGeometry().nearestCopy(pos.atY(y1), vertices.get(i).atY(y1));
+                    Vec3 edge1 = Vec3.atLowerCornerOf(edgeStart);
                     int y = pos.getY();
-                    Vec3 edge2 = Vec3.atLowerCornerOf(vertices.get((i + 1) % vertices.size()).atY(y));
+                    BlockPos edgeEnd = worldGeometry().nearestCopy(pos.atY(y), vertices.get((i + 1) % vertices.size()).atY(y));
+                    Vec3 edge2 = Vec3.atLowerCornerOf(edgeEnd);
                     double dist;
                     double dot;
 
@@ -696,7 +705,8 @@ public class FrontierOverlay extends FrontierData {
                 for (int i = 0; i < points.size(); ++i) {
                     BlockPos point = points.get(i);
                     int y = point.getY();
-                    double dist = point.distSqr(pos.atY(y));
+                    BlockPos nearbyPoint = worldGeometry().nearestCopy(pos.atY(y), point);
+                    double dist = nearbyPoint.distSqr(pos.atY(y));
                     if (dist <= distance) {
                         distance = dist;
                         closest = i;
@@ -747,6 +757,10 @@ public class FrontierOverlay extends FrontierData {
     }
 
     public void addVertex(BlockPos pos, int index, int snapDistance) {
+        if (!vertices.isEmpty()) {
+            int referenceIndex = Math.min(Math.max(index - 1, 0), vertices.size() - 1);
+            pos = worldGeometry().nearestCopy(vertices.get(referenceIndex), pos);
+        }
         if (snapDistance != 0) {
             pos = snapVertex(pos, snapDistance);
         }
@@ -1129,10 +1143,11 @@ public class FrontierOverlay extends FrontierData {
         if (frontierShape == FrontierShape.Path) {
             synchronized (points) {
                 for (BlockPos point : points) {
-                    double distance = point.distSqr(vertex);
+                    BlockPos nearbyPoint = worldGeometry().nearestCopy(vertex, point);
+                    double distance = nearbyPoint.distSqr(vertex);
                     if (distance <= closestDistance) {
                         closestDistance = distance;
-                        closest = point;
+                        closest = nearbyPoint;
                     }
                 }
             }
@@ -1140,20 +1155,22 @@ public class FrontierOverlay extends FrontierData {
             ensureGeometryCache();
             for (PolygonRenderGeometry geometry : polygonRenderGeometries) {
                 for (BlockPos v : geometry.polygon().getPoints()) {
-                    double distance = v.distSqr(vertex);
+                    BlockPos nearbyVertex = worldGeometry().nearestCopy(vertex, v);
+                    double distance = nearbyVertex.distSqr(vertex);
                     if (distance <= closestDistance) {
                         closestDistance = distance;
-                        closest = v;
+                        closest = nearbyVertex;
                     }
                 }
 
                 if (geometry.holes() != null) {
                     for (MapPolygon hole : geometry.holes()) {
                         for (BlockPos v : hole.getPoints()) {
-                            double distance = v.distSqr(vertex);
+                            BlockPos nearbyVertex = worldGeometry().nearestCopy(vertex, v);
+                            double distance = nearbyVertex.distSqr(vertex);
                             if (distance <= closestDistance) {
                                 closestDistance = distance;
-                                closest = v;
+                                closest = nearbyVertex;
                             }
                         }
                     }
@@ -1295,6 +1312,9 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
+        if (!points.isEmpty()) {
+            pos = worldGeometry().nearestCopy(points.getFirst(), pos);
+        }
         pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
         super.addPoint(pos, 0);
         selectedPointIndex = 0;
@@ -1309,6 +1329,9 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
+        if (!points.isEmpty()) {
+            pos = worldGeometry().nearestCopy(points.getLast(), pos);
+        }
         pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
         int index = points.size();
         super.addPoint(pos, index);
@@ -1324,12 +1347,17 @@ public class FrontierOverlay extends FrontierData {
             return;
         }
 
-        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
         int insertIndex = getSmartInsertIndex(pos);
         if (insertIndex < 0) {
             addPathPointAfterEnd(pos);
             return;
         }
+
+        if (!points.isEmpty()) {
+            int referenceIndex = insertIndex == 0 ? 0 : Math.min(insertIndex - 1, points.size() - 1);
+            pos = worldGeometry().nearestCopy(points.get(referenceIndex), pos);
+        }
+        pos = snapVertex(pos, ClientConfig.SNAP_DISTANCE.get());
 
         super.addPoint(pos, insertIndex);
         selectedPointIndex = insertIndex;
@@ -1372,8 +1400,8 @@ public class FrontierOverlay extends FrontierData {
 
         synchronized (points) {
             for (int i = 0; i < points.size() - 1; ++i) {
-                Vec3 edge1 = Vec3.atLowerCornerOf(points.get(i).atY(y));
-                Vec3 edge2 = Vec3.atLowerCornerOf(points.get(i + 1).atY(y));
+                Vec3 edge1 = Vec3.atLowerCornerOf(worldGeometry().nearestCopy(pos.atY(y), points.get(i).atY(y)));
+                Vec3 edge2 = Vec3.atLowerCornerOf(worldGeometry().nearestCopy(pos.atY(y), points.get(i + 1).atY(y)));
                 Vec3 closestPoint = closestPointToEdge(point, edge1, edge2);
                 if (closestPoint.equals(edge1) || closestPoint.equals(edge2)) {
                     continue;
@@ -1386,8 +1414,8 @@ public class FrontierOverlay extends FrontierData {
                 }
             }
 
-            double startDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getFirst().atY(y)));
-            double endDistance = point.distanceToSqr(Vec3.atLowerCornerOf(points.getLast().atY(y)));
+            double startDistance = point.distanceToSqr(Vec3.atLowerCornerOf(worldGeometry().nearestCopy(pos.atY(y), points.getFirst().atY(y))));
+            double endDistance = point.distanceToSqr(Vec3.atLowerCornerOf(worldGeometry().nearestCopy(pos.atY(y), points.getLast().atY(y))));
             if (bestSegmentInsertIndex != -1 && bestSegmentDistance < Math.min(startDistance, endDistance)) {
                 return bestSegmentInsertIndex;
             }
@@ -1474,6 +1502,10 @@ public class FrontierOverlay extends FrontierData {
         }
 
         return closest;
+    }
+
+    private WorldGeometry worldGeometry() {
+        return Services.PLATFORM.getClientWorldGeometry(dimension);
     }
 
     public void recalculateOverlays() {

@@ -2,8 +2,11 @@ package games.alejandrocoria.mapfrontiers.platform;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.platform.services.IPlatformHelper;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -41,5 +44,19 @@ public class FabricPlatformHelper implements IPlatformHelper {
     @Override
     public boolean isDevelopmentEnvironment() {
         return FabricLoader.getInstance().isDevelopmentEnvironment();
+    }
+
+    @Override
+    public WorldGeometry getWorldGeometry(Level level) {
+        return FabricLoader.getInstance().isModLoaded("toroidal_world")
+                ? FabricToroidalWorldServer.geometryOf(level)
+                : WorldGeometry.FLAT;
+    }
+
+    @Override
+    public WorldGeometry getClientWorldGeometry(ResourceKey<Level> dimension) {
+        return FabricLoader.getInstance().isModLoaded("toroidal_world")
+                ? FabricToroidalWorldClient.geometryOf(dimension)
+                : WorldGeometry.FLAT;
     }
 }

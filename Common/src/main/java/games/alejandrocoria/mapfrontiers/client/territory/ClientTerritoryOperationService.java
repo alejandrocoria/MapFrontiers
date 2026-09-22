@@ -53,6 +53,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierUserAccess;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibilityData;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
@@ -234,7 +236,7 @@ public class ClientTerritoryOperationService {
 
         if (usesAuthoritativeMutationFlow(frontier)) {
             long baseSyncHash = frontier.computeSyncHash();
-            FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+            FrontierChangeApplicationResult stagedResult = frontier.stageChange(change, worldGeometry(frontier.getDimension()));
             if (!stagedResult.isApplied()) {
                 return stagedResult;
             }
@@ -246,7 +248,8 @@ public class ClientTerritoryOperationService {
             return FrontierChangeApplicationResult.rejected("Local frontier is not owned by the current player");
         }
 
-        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+        WorldGeometry geometry = worldGeometry(frontier.getDimension());
+        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change, geometry);
         if (!stagedResult.isApplied()) {
             return stagedResult;
         }
@@ -254,7 +257,7 @@ public class ClientTerritoryOperationService {
         FrontierChange effectiveChange = stagedResult.effectiveChange();
         effectiveChange.setModifiedTime(new Date().getTime());
         ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(frontier);
-        FrontierChangeApplicationResult appliedResult = frontier.applyChange(effectiveChange);
+        FrontierChangeApplicationResult appliedResult = frontier.applyChange(effectiveChange, geometry);
         if (!appliedResult.isApplied()) {
             return appliedResult;
         }
@@ -280,7 +283,7 @@ public class ClientTerritoryOperationService {
             return FrontierChangeApplicationResult.rejected("Invalid collection assignment");
         }
 
-        FrontierChangeApplicationResult currentStateResult = frontier.stageChange(change);
+        FrontierChangeApplicationResult currentStateResult = frontier.stageChange(change, worldGeometry(frontier.getDimension()));
         if (currentStateResult.isRejected()) {
             return currentStateResult;
         }
@@ -495,7 +498,7 @@ public class ClientTerritoryOperationService {
                 return FrontierActionResult.rejected();
             }
             long baseSyncHash = frontier.computeSyncHash();
-            FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+            FrontierChangeApplicationResult stagedResult = frontier.stageChange(change, worldGeometry(frontier.getDimension()));
             if (stagedResult.isRejected()) {
                 return FrontierActionResult.rejected();
             }
@@ -769,7 +772,8 @@ public class ClientTerritoryOperationService {
             return;
         }
 
-        FrontierChangeApplicationResult stagedResult = existingFrontier.stageChange(change);
+        WorldGeometry geometry = worldGeometry(dimension);
+        FrontierChangeApplicationResult stagedResult = existingFrontier.stageChange(change, geometry);
         if (stagedResult.isRejected()) {
             requestFrontierResync(frontierId, stagedResult.rejectionReason());
             return;
@@ -790,7 +794,8 @@ public class ClientTerritoryOperationService {
         }
 
         ClientCollectionRuntime.FrontierIndexState previousState = collectionRuntime.snapshotFrontier(existingFrontier);
-        FrontierChangeApplicationResult appliedResult = manager.applyFrontierChange(dimension, frontierId, stagedResult.effectiveChange());
+        FrontierChangeApplicationResult appliedResult = manager.applyFrontierChange(
+                dimension, frontierId, stagedResult.effectiveChange(), geometry);
         if (appliedResult == null || !appliedResult.isApplied()) {
             requestFrontierResync(frontierId, appliedResult == null ? "frontier disappeared before commit" : appliedResult.rejectionReason());
             return;
@@ -1115,6 +1120,10 @@ public class ClientTerritoryOperationService {
 
     private FrontiersOverlayManager getManager(boolean personal) {
         return personal ? personalManager : globalManager;
+    }
+
+    private static WorldGeometry worldGeometry(ResourceKey<Level> dimension) {
+        return Services.PLATFORM.getClientWorldGeometry(dimension);
     }
 
     private CollectionOverlayManager getCollectionOverlayManager() {

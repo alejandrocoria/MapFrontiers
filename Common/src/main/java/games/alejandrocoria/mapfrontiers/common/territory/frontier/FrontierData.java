@@ -15,6 +15,7 @@ import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
 import games.alejandrocoria.mapfrontiers.common.util.SourcePluginIdHelper;
 import games.alejandrocoria.mapfrontiers.common.util.StringHelper;
 import games.alejandrocoria.mapfrontiers.common.util.UUIDHelper;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -174,13 +175,17 @@ public class FrontierData {
     }
 
     public FrontierChangeApplicationResult stageChange(FrontierChange change) {
+        return stageChange(change, WorldGeometry.FLAT);
+    }
+
+    public FrontierChangeApplicationResult stageChange(FrontierChange change, WorldGeometry geometry) {
         if (change.hasShapeChange() && change.hasGeometryChanges()) {
             return FrontierChangeApplicationResult.rejected("Shape replacement and incremental geometry changes cannot coexist");
         }
 
         FrontierData stagedFrontier = new FrontierData(this);
         try {
-            stagedFrontier.applyChangeUnchecked(change);
+            stagedFrontier.applyChangeUnchecked(change, geometry);
         } catch (IllegalArgumentException exception) {
             return FrontierChangeApplicationResult.rejected(exception.getMessage());
         }
@@ -196,7 +201,11 @@ public class FrontierData {
     }
 
     public FrontierChangeApplicationResult applyChange(FrontierChange change) {
-        FrontierChangeApplicationResult result = stageChange(change);
+        return applyChange(change, WorldGeometry.FLAT);
+    }
+
+    public FrontierChangeApplicationResult applyChange(FrontierChange change, WorldGeometry geometry) {
+        FrontierChangeApplicationResult result = stageChange(change, geometry);
         if (!result.isApplied()) {
             return result;
         }
@@ -205,7 +214,7 @@ public class FrontierData {
         return FrontierChangeApplicationResult.applied(this, result.effectiveChange());
     }
 
-    private void applyChangeUnchecked(FrontierChange change) {
+    private void applyChangeUnchecked(FrontierChange change, WorldGeometry geometry) {
         if (change.hasVisibilityChange()) {
             visibilityData = change.getVisibility().getVisibilityData();
         }
@@ -231,7 +240,7 @@ public class FrontierData {
         }
 
         if (change.hasGeometryChanges()) {
-            GeometryChangeApplier.apply(this, change.getGeometryChanges());
+            GeometryChangeApplier.apply(this, change.getGeometryChanges(), geometry);
         }
 
         if (change.hasPathStyleChange()) {

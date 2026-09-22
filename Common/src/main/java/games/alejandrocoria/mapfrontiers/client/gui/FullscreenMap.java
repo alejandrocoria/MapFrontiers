@@ -24,6 +24,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
 import journeymap.api.v2.client.fullscreen.ModPopupMenu;
@@ -81,6 +83,7 @@ public class FullscreenMap {
     private long editingBaseSyncHash;
     private boolean relocating = false;
     private BlockPos relocatingPrevPos;
+    private @Nullable BlockPos editableDragPrevPos;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
     private ChunkPos lastEditedChunk;
 
@@ -135,6 +138,7 @@ public class FullscreenMap {
             }
 
             relocating = false;
+            editableDragPrevPos = null;
 
             if (!editing || drawingChunk == ChunkDrawing.Nothing || frontierHighlighted.getShape() != FrontierShape.Chunk) {
                 return;
@@ -595,6 +599,7 @@ public class FullscreenMap {
         shapeDirty = false;
         editingBaseSyncHash = frontierHighlighted.computeSyncHash();
         relocating = false;
+        editableDragPrevPos = null;
         drawingChunk = ChunkDrawing.Nothing;
         frontierHighlighted.beginInteractiveEdit();
         frontierHighlighted.clearSelectedEditablePoint();
@@ -615,6 +620,7 @@ public class FullscreenMap {
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
         if (editing && frontierHighlighted != null) {
+            editableDragPrevPos = position;
             if (ScreenHelper.hasControlDown() && button == InputConstants.MOUSE_BUTTON_RIGHT) {
                 relocating = true;
                 relocatingPrevPos = position;
@@ -682,8 +688,21 @@ public class FullscreenMap {
             return false;
         }
 
+        if (editableDragPrevPos == null) {
+            editableDragPrevPos = position;
+            return true;
+        }
+        BlockPos delta = worldGeometry(dimension).shortestDelta(editableDragPrevPos, position);
+        editableDragPrevPos = position;
+        if (delta.equals(BlockPos.ZERO)) {
+            return true;
+        }
+        BlockPos selectedPoint = frontierHighlighted.getSelectedEditablePoint();
+        if (selectedPoint == null) {
+            return false;
+        }
         float snapDistance = 512.f / uiState.zoom * ClientConfig.SNAP_DISTANCE.get();
-        frontierHighlighted.moveSelectedEditablePoint(position, snapDistance);
+        frontierHighlighted.moveSelectedEditablePoint(selectedPoint.offset(delta), snapDistance);
         shapeDirty = true;
         return true;
     }
@@ -694,15 +713,16 @@ public class FullscreenMap {
         }
 
         if (relocating) {
+            WorldGeometry geometry = worldGeometry(dimension);
             if (frontierHighlighted.getShape() == FrontierShape.Vertex) {
                 if (!position.equals(relocatingPrevPos)) {
-                    frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
+                    frontierHighlighted.moveAllVertices(geometry.shortestDelta(relocatingPrevPos, position));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
             } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 if (!position.equals(relocatingPrevPos)) {
-                    frontierHighlighted.moveAllPathPoints(position.subtract(relocatingPrevPos));
+                    frontierHighlighted.moveAllPathPoints(geometry.shortestDelta(relocatingPrevPos, position));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
@@ -743,6 +763,10 @@ public class FullscreenMap {
             frontierHighlighted.removeChunk(chunk);
         }
         shapeDirty = true;
+    }
+
+    private static WorldGeometry worldGeometry(ResourceKey<Level> dimension) {
+        return Services.PLATFORM.getClientWorldGeometry(dimension);
     }
 
     private void openCollectionInfo(CollectionData collection) {

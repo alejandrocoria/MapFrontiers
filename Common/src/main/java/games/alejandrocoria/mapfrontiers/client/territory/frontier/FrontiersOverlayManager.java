@@ -11,6 +11,7 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.common.Context;
 import net.minecraft.core.BlockPos;
@@ -114,12 +115,17 @@ public class FrontiersOverlayManager {
 
     @Nullable
     public FrontierChangeApplicationResult applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change) {
+        return applyFrontierChange(dimension, id, change, WorldGeometry.FLAT);
+    }
+
+    public FrontierChangeApplicationResult applyFrontierChange(ResourceKey<Level> dimension, UUID id, FrontierChange change,
+                                                               WorldGeometry geometry) {
         FrontierOverlay frontierOverlay = frontiersById.get(id);
         if (frontierOverlay == null || !frontierOverlay.getDimension().equals(dimension)) {
             return null;
         }
 
-        FrontierChangeApplicationResult result = frontierOverlay.applyChange(change);
+        FrontierChangeApplicationResult result = frontierOverlay.applyChange(change, geometry);
         if (!result.isApplied()) {
             return result;
         }

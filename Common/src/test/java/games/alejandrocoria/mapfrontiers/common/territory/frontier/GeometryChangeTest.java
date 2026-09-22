@@ -4,6 +4,7 @@ import games.alejandrocoria.mapfrontiers.api.model.ChunkCoord;
 import games.alejandrocoria.mapfrontiers.api.model.FrontierMutation;
 import games.alejandrocoria.mapfrontiers.api.model.Point2i;
 import games.alejandrocoria.mapfrontiers.common.identity.PlayerId;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import io.netty.buffer.Unpooled;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -145,6 +146,39 @@ class GeometryChangeTest {
 
         assertTrue(result.isApplied());
         assertEquals(point(0, 5), frontier.getVertices().getLast());
+    }
+
+    @Test
+    void automaticPathInsertionUsesTheNearbyCopyAcrossTheSeam() {
+        FrontierData frontier = pathFrontier(point(49, 0), point(-49, 0));
+
+        FrontierChangeApplicationResult result = frontier.applyChange(
+                geometryChange(new GeometryChange.InsertPathPointAutomatically(point(50, 5))),
+                cylinderXGeometry());
+
+        assertTrue(result.isApplied());
+        assertEquals(List.of(point(49, 0), point(50, 5), point(-49, 0)), frontier.getPoints());
+    }
+
+    @Test
+    void shortestSeamMovementKeepsTheEditedPointOutsideCanonicalBounds() {
+        BlockPos original = point(49, 0);
+        BlockPos delta = cylinderXGeometry().shortestDelta(point(49, 0), point(-49, 0));
+
+        assertEquals(new BlockPos(2, 0, 0), delta);
+        assertEquals(point(51, 0), original.offset(delta));
+    }
+
+    @Test
+    void automaticVertexInsertionUsesTheNearbyClosingEdgeCopy() {
+        FrontierData frontier = vertexFrontier(point(49, -10), point(-49, -10), point(-49, 10));
+
+        FrontierChangeApplicationResult result = frontier.applyChange(
+                geometryChange(new GeometryChange.InsertVertexAutomatically(point(50, 0))),
+                cylinderXGeometry());
+
+        assertTrue(result.isApplied());
+        assertEquals(point(-50, 0), frontier.getVertices().getLast());
     }
 
     @Test
@@ -362,5 +396,27 @@ class GeometryChangeTest {
 
     private static BlockPos point(int x, int z) {
         return new BlockPos(x, 70, z);
+    }
+
+    private static WorldGeometry cylinderXGeometry() {
+        return new WorldGeometry() {
+            @Override
+            public BlockPos nearestCopy(BlockPos reference, BlockPos target) {
+                int nearbyX = target.getX();
+                while (nearbyX - reference.getX() > 50) {
+                    nearbyX -= 100;
+                }
+                while (nearbyX - reference.getX() < -50) {
+                    nearbyX += 100;
+                }
+                return new BlockPos(nearbyX, target.getY(), target.getZ());
+            }
+
+            @Override
+            public BlockPos shortestDelta(BlockPos from, BlockPos to) {
+                BlockPos nearest = nearestCopy(from, to);
+                return new BlockPos(nearest.getX() - from.getX(), 0, nearest.getZ() - from.getZ());
+            }
+        };
     }
 }
