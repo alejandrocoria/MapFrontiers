@@ -19,6 +19,7 @@ import games.alejandrocoria.mapfrontiers.common.util.InvalidNbtFormatException;
 import games.alejandrocoria.mapfrontiers.common.util.NbtCompat;
 import games.alejandrocoria.mapfrontiers.common.util.NbtFileHelper;
 import games.alejandrocoria.mapfrontiers.common.util.NbtReadHelper;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtAccounter;
@@ -431,13 +432,13 @@ public class TerritoriesManager {
         return deleted;
     }
 
-    public FrontierChangeApplicationResult applyGlobalFrontierChange(UUID frontierId, FrontierChange change) {
+    public FrontierChangeApplicationResult applyGlobalFrontierChange(UUID frontierId, FrontierChange change, WorldGeometry geometry) {
         FrontierData frontier = allFrontiers.get(frontierId);
         if (frontier == null || frontier.getPersonal()) {
             return FrontierChangeApplicationResult.rejected("Global frontier not found");
         }
 
-        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change, geometry);
         if (!stagedResult.isApplied()) {
             return stagedResult;
         }
@@ -454,7 +455,8 @@ public class TerritoriesManager {
         return FrontierChangeApplicationResult.applied(frontier, effectiveChange);
     }
 
-    public FrontierChangeApplicationResult applyPersonalFrontierChange(PlayerId user, UUID frontierId, FrontierChange change) {
+    public FrontierChangeApplicationResult applyPersonalFrontierChange(PlayerId user, UUID frontierId, FrontierChange change,
+                                                                        WorldGeometry geometry) {
         Map<ResourceKey<Level>, ArrayList<FrontierData>> dimensionsPersonalFrontiers = usersDimensionsPersonalFrontiers.get(user);
         if (dimensionsPersonalFrontiers == null) {
             return FrontierChangeApplicationResult.rejected("Personal frontier owner not found");
@@ -470,7 +472,7 @@ public class TerritoriesManager {
             return FrontierChangeApplicationResult.rejected("Personal frontier not found in owner dimension");
         }
 
-        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change);
+        FrontierChangeApplicationResult stagedResult = frontier.stageChange(change, geometry);
         if (!stagedResult.isApplied()) {
             return stagedResult;
         }

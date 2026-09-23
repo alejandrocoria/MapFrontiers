@@ -9,6 +9,30 @@ plugins {
     id "com.modrinth.minotaur" version "2.9.0"
 }
 
+// Fully qualified Gradle types prevent IntelliJ Optimize Imports from removing imports it misidentifies as unused.
+abstract class ExtractToroidalWorldNeoForge implements org.gradle.api.artifacts.transform.TransformAction<org.gradle.api.artifacts.transform.TransformParameters.None> {
+    @org.gradle.api.artifacts.transform.InputArtifact
+    abstract org.gradle.api.provider.Provider<org.gradle.api.file.FileSystemLocation> getInputArtifact()
+
+    @Override
+    void transform(org.gradle.api.artifacts.transform.TransformOutputs outputs) {
+        def bundle = new java.util.zip.ZipFile(inputArtifact.get().asFile)
+        try {
+            def entry = bundle.entries().find { it.name.startsWith('META-INF/jarjar/toroidal_world-neoforge-') && it.name.endsWith('.jar') }
+            if (entry == null) throw new GradleException('Toroidal World bundle does not contain a NeoForge JAR')
+
+            def output = outputs.file(entry.name.tokenize('/').last())
+            bundle.getInputStream(entry).withCloseable { input ->
+                output.withOutputStream { outputStream -> outputStream << input }
+            }
+        } finally {
+            bundle.close()
+        }
+    }
+}
+
+def artifactType = org.gradle.api.attributes.Attribute.of('artifactType', String)
+
 base.archivesName = "${project.mod_name}-${project.minecraft_version}-neoforge"
 
 configurations {
@@ -17,6 +41,24 @@ configurations {
         canBeResolved = true
         transitive = false
     }
+    toroidalWorldBundle {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+    toroidalWorldApi {
+        canBeConsumed = false
+        canBeResolved = true
+        extendsFrom toroidalWorldBundle
+        attributes {
+            attribute(artifactType, 'toroidal-world-neoforge-api')
+        }
+    }
+}
+
+dependencies.registerTransform(ExtractToroidalWorldNeoForge) {
+    from.attribute(artifactType, 'jar')
+    to.attribute(artifactType, 'toroidal-world-neoforge-api')
 }
 
 neoForge {
@@ -65,6 +107,13 @@ neoForge {
         }
 
         implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}"
+        toroidalWorldBundle("curse.maven:toroidal-world-1642009:${project.toroidal_world_neoforge_file_id}") {
+            transitive = false
+        }
+        compileOnly(files(configurations.toroidalWorldApi))
+        runtimeOnly("curse.maven:toroidal-world-1642009:${project.toroidal_world_neoforge_file_id}") {
+            transitive = false
+        }
         compileOnly "com.electronwill.night-config:core:${project.nightconfig_version}"
         compileOnly "com.electronwill.night-config:toml:${project.nightconfig_version}"
         api("info.journeymap:journeymap-api-neoforge:${project.journeymap_api_version}") {

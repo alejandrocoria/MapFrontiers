@@ -390,6 +390,15 @@ public class FrontierChange {
         return shape != null;
     }
 
+    /** Only automatic insertion interprets coordinates using world geometry. */
+    public boolean requiresWorldGeometry() {
+        for (GeometryChange change : geometryChanges) {
+            if (change instanceof GeometryChange.InsertPathPointAutomatically
+                    || change instanceof GeometryChange.InsertVertexAutomatically) return true;
+        }
+        return false;
+    }
+
     public boolean hasGeometryChanges() {
         return !geometryChanges.isEmpty();
     }

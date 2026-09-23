@@ -2,6 +2,9 @@ package games.alejandrocoria.mapfrontiers.platform;
 
 import games.alejandrocoria.mapfrontiers.MapFrontiers;
 import games.alejandrocoria.mapfrontiers.platform.services.IPlatformHelper;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLEnvironment;
@@ -12,6 +15,10 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 public class NeoForgePlatformHelper implements IPlatformHelper {
+    private static class OptionalMods {
+        static final boolean TOROIDAL_WORLD = ModList.get().isLoaded("toroidal_world");
+    }
+
     @Override
     public String getPlatformName() {
         return "NeoForge";
@@ -43,5 +50,19 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
     @Override
     public boolean isDevelopmentEnvironment() {
         return !FMLEnvironment.production;
+    }
+
+    @Override
+    public WorldGeometry getWorldGeometry(Level level) {
+        return OptionalMods.TOROIDAL_WORLD
+                ? NeoForgeToroidalWorldServer.geometryOf(level)
+                : WorldGeometry.FLAT;
+    }
+
+    @Override
+    public WorldGeometry getClientWorldGeometry(ResourceKey<Level> dimension) {
+        return OptionalMods.TOROIDAL_WORLD
+                ? NeoForgeToroidalWorldClient.geometryOf(dimension)
+                : WorldGeometry.FLAT;
     }
 }
