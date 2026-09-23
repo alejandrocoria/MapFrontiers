@@ -1,17 +1,40 @@
 package games.alejandrocoria.mapfrontiers.common.territory.frontier;
 
+import games.alejandrocoria.mapfrontiers.common.territory.frontier.GeometryQueries.Insertion;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import net.minecraft.core.BlockPos;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static games.alejandrocoria.mapfrontiers.common.territory.frontier.GeometryQueries.distanceToSegmentSquared;
+import static games.alejandrocoria.mapfrontiers.common.territory.frontier.GeometryQueries.nearestSegmentCopy;
+
 @ParametersAreNonnullByDefault
 final class GeometryChangeApplier {
-    static void apply(FrontierData frontier, List<GeometryChange> changes) {
-        for (GeometryChange change : changes) {
-            apply(frontier, change);
+    static List<GeometryChange> apply(FrontierData frontier, List<GeometryChange> changes, WorldGeometry geometry) {
+        List<GeometryChange> resolved = null;
+        for (int i = 0; i < changes.size(); ++i) {
+            GeometryChange change = changes.get(i);
+            GeometryChange explicit = change;
+            if (change instanceof GeometryChange.InsertPathPointAutomatically value) {
+                requireShape(frontier, FrontierShape.Path, change);
+                Insertion insertion = automaticPathInsertion(frontier.getPoints(), normalize(value.point()), geometry);
+                explicit = new GeometryChange.InsertPathPointAt(insertion.index(), insertion.position());
+            } else if (change instanceof GeometryChange.InsertVertexAutomatically value) {
+                requireShape(frontier, FrontierShape.Vertex, change);
+                Insertion insertion = automaticVertexInsertion(frontier.getVertices(), normalize(value.vertex()), geometry);
+                explicit = new GeometryChange.InsertVertexAt(insertion.index(), insertion.position());
+            }
+            apply(frontier, explicit);
+            if (explicit != change) {
+                if (resolved == null) resolved = new ArrayList<>(changes);
+                resolved.set(i, explicit);
+            }
         }
+        return resolved == null ? changes : resolved;
     }
 
     private static void apply(FrontierData frontier, GeometryChange change) {
@@ -25,10 +48,8 @@ final class GeometryChangeApplier {
         } else if (change instanceof GeometryChange.InsertPathPointAfterLast value) {
                 requireShape(frontier, FrontierShape.Path, change);
                 frontier.addPoint(normalize(value.point()));
-        } else if (change instanceof GeometryChange.InsertPathPointAutomatically value) {
-                requireShape(frontier, FrontierShape.Path, change);
-                BlockPos point = normalize(value.point());
-                frontier.addPoint(point, getAutomaticPathInsertIndex(frontier.getPoints(), point));
+        } else if (change instanceof GeometryChange.InsertPathPointAutomatically) {
+                throw new IllegalArgumentException("Unresolved automatic path insertion");
         } else if (change instanceof GeometryChange.SetPathPointAt value) {
                 requireShape(frontier, FrontierShape.Path, change);
                 requireExistingIndex(value.index(), frontier.getPointCount(), change);
@@ -47,10 +68,8 @@ final class GeometryChangeApplier {
                 requireShape(frontier, FrontierShape.Vertex, change);
                 requireInsertIndex(value.index(), frontier.getVertexCount(), change);
                 frontier.addVertex(normalize(value.vertex()), value.index());
-        } else if (change instanceof GeometryChange.InsertVertexAutomatically value) {
-                requireShape(frontier, FrontierShape.Vertex, change);
-                BlockPos vertex = normalize(value.vertex());
-                frontier.addVertex(vertex, getAutomaticVertexInsertIndex(frontier.getVertices(), vertex));
+        } else if (change instanceof GeometryChange.InsertVertexAutomatically) {
+                throw new IllegalArgumentException("Unresolved automatic vertex insertion");
         } else if (change instanceof GeometryChange.SetVertexAt value) {
                 requireShape(frontier, FrontierShape.Vertex, change);
                 requireExistingIndex(value.index(), frontier.getVertexCount(), change);
@@ -70,70 +89,49 @@ final class GeometryChangeApplier {
         }
     }
 
-    static int getAutomaticPathInsertIndex(List<BlockPos> points, BlockPos point) {
-        if (points.isEmpty()) {
-            return 0;
-        }
-        if (points.size() == 1) {
-            return 1;
-        }
-
-        double bestSegmentDistance = Double.POSITIVE_INFINITY;
-        int bestSegmentInsertIndex = -1;
-        for (int i = 0; i < points.size() - 1; ++i) {
-            double distance = distanceToSegmentSquared(point, points.get(i), points.get(i + 1));
-            if (distance < bestSegmentDistance) {
-                bestSegmentDistance = distance;
-                bestSegmentInsertIndex = i + 1;
-            }
-        }
-
-        double startDistance = distanceSquared(point, points.get(0));
-        double endDistance = distanceSquared(point, points.get(points.size() - 1));
-        if (bestSegmentDistance < Math.min(startDistance, endDistance)) {
-            return bestSegmentInsertIndex;
-        }
-        return startDistance < endDistance ? 0 : points.size();
-    }
-
-    static int getAutomaticVertexInsertIndex(List<BlockPos> vertices, BlockPos vertex) {
-        if (vertices.isEmpty()) {
-            return 0;
-        }
-        if (vertices.size() == 1) {
-            return 1;
-        }
+    private static Insertion automaticPathInsertion(List<BlockPos> points, BlockPos point, WorldGeometry geometry) {
+        if (points.isEmpty()) return new Insertion(0, point);
+        BlockPos endCopy = geometry.nearestCopy(points.get(points.size() - 1), point);
+        if (points.size() == 1) return new Insertion(1, endCopy);
 
         double bestDistance = Double.POSITIVE_INFINITY;
-        int bestInsertIndex = 1;
-        for (int i = 0; i < vertices.size(); ++i) {
-            BlockPos edgeStart = vertices.get(i);
-            BlockPos edgeEnd = vertices.get((i + 1) % vertices.size());
-            double distance = distanceToSegmentSquared(vertex, edgeStart, edgeEnd);
+        int bestIndex = -1;
+        BlockPos bestCopy = point;
+        for (int i = 0; i < points.size() - 1; ++i) {
+            BlockPos start = points.get(i);
+            BlockPos end = points.get(i + 1);
+            BlockPos copy = nearestSegmentCopy(geometry, point, start, end);
+            double distance = distanceToSegmentSquared(copy, start, end);
             if (distance < bestDistance) {
                 bestDistance = distance;
-                bestInsertIndex = i + 1;
+                bestIndex = i + 1;
+                bestCopy = copy;
             }
         }
-        return bestInsertIndex;
+        BlockPos startCopy = geometry.nearestCopy(points.get(0), point);
+        double startDistance = distanceSquared(startCopy, points.get(0));
+        double endDistance = distanceSquared(endCopy, points.get(points.size() - 1));
+        if (bestDistance < Math.min(startDistance, endDistance)) return new Insertion(bestIndex, bestCopy);
+        return startDistance < endDistance ? new Insertion(0, startCopy) : new Insertion(points.size(), endCopy);
     }
 
-    private static double distanceToSegmentSquared(BlockPos point, BlockPos edgeStart, BlockPos edgeEnd) {
-        double edgeX = (double) edgeEnd.getX() - edgeStart.getX();
-        double edgeZ = (double) edgeEnd.getZ() - edgeStart.getZ();
-        double edgeLengthSquared = edgeX * edgeX + edgeZ * edgeZ;
-        if (edgeLengthSquared == 0.0) {
-            return distanceSquared(point, edgeStart);
+    private static Insertion automaticVertexInsertion(List<BlockPos> vertices, BlockPos vertex, WorldGeometry geometry) {
+        if (vertices.isEmpty()) return new Insertion(0, vertex);
+        double bestDistance = Double.POSITIVE_INFINITY;
+        int bestIndex = -1;
+        BlockPos bestCopy = vertex;
+        for (int i = 0; i < vertices.size(); ++i) {
+            BlockPos start = vertices.get(i);
+            BlockPos end = vertices.get((i + 1) % vertices.size());
+            BlockPos copy = nearestSegmentCopy(geometry, vertex, start, end);
+            double distance = distanceToSegmentSquared(copy, start, end);
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestIndex = i + 1;
+                bestCopy = copy;
+            }
         }
-
-        double pointX = (double) point.getX() - edgeStart.getX();
-        double pointZ = (double) point.getZ() - edgeStart.getZ();
-        double projection = Math.max(0.0, Math.min(1.0, (pointX * edgeX + pointZ * edgeZ) / edgeLengthSquared));
-        double closestX = edgeStart.getX() + projection * edgeX;
-        double closestZ = edgeStart.getZ() + projection * edgeZ;
-        double deltaX = point.getX() - closestX;
-        double deltaZ = point.getZ() - closestZ;
-        return deltaX * deltaX + deltaZ * deltaZ;
+        return new Insertion(bestIndex, bestCopy);
     }
 
     private static double distanceSquared(BlockPos left, BlockPos right) {

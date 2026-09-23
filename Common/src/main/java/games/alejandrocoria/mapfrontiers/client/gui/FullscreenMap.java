@@ -23,6 +23,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.collection.CollectionV
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.fullscreen.IThemeButton;
 import journeymap.api.v2.client.fullscreen.ModPopupMenu;
@@ -80,6 +82,7 @@ public class FullscreenMap {
     private long editingBaseSyncHash;
     private boolean relocating = false;
     private BlockPos relocatingPrevPos;
+    private @Nullable PointDragState editableDrag;
     private ChunkDrawing drawingChunk = ChunkDrawing.Nothing;
     private ChunkPos lastEditedChunk;
 
@@ -129,6 +132,7 @@ public class FullscreenMap {
         ClientGlobalEvents.subscribeUpdatedConfigEvent(this, this::updateButtons);
 
         ClientGlobalEvents.subscribeMouseReleaseEvent(this, button -> {
+            editableDrag = null;
             if (button != 1) {
                 return;
             }
@@ -417,7 +421,7 @@ public class FullscreenMap {
     }
 
     private void buttonAddVertex(BlockPos pos) {
-        frontierHighlighted.selectClosestEdge(pos);
+        pos = frontierHighlighted.selectClosestEdge(pos);
         frontierHighlighted.addVertex(pos);
         shapeDirty = true;
 
@@ -594,6 +598,7 @@ public class FullscreenMap {
         shapeDirty = false;
         editingBaseSyncHash = frontierHighlighted.computeSyncHash();
         relocating = false;
+        editableDrag = null;
         drawingChunk = ChunkDrawing.Nothing;
         frontierHighlighted.beginInteractiveEdit();
         frontierHighlighted.clearSelectedEditablePoint();
@@ -614,6 +619,7 @@ public class FullscreenMap {
         double maxDistanceToClosest = Math.max(2.0, 8192.0 / uiState.zoom);
 
         if (editing && frontierHighlighted != null) {
+            editableDrag = null;
             if (ScreenHelper.hasControlDown() && button == 1) {
                 relocating = true;
                 relocatingPrevPos = position;
@@ -624,11 +630,24 @@ public class FullscreenMap {
             } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 frontierHighlighted.selectClosestPoint(position, maxDistanceToClosest);
             } else if (button == 1) {
+                WorldGeometry geometry = worldGeometry(dimension);
                 lastEditedChunk = new ChunkPos(position);
+                ChunkEdit edit = geometry.hasWrappedAxes()
+                        ? ChunkEdit.resolve(geometry, frontierHighlighted.getChunks(), lastEditedChunk, true) : null;
+                if (edit != null) lastEditedChunk = edit.position();
                 if (ScreenHelper.hasShiftDown()) {
                     return false;
                 }else {
-                    if (frontierHighlighted.toggleChunk(lastEditedChunk)) {
+                    boolean added;
+                    if (edit == null) {
+                        added = frontierHighlighted.toggleChunk(lastEditedChunk);
+                    } else if (edit.existingCopies().isEmpty()) {
+                        added = frontierHighlighted.addChunk(lastEditedChunk);
+                    } else {
+                        edit.existingCopies().forEach(frontierHighlighted::removeChunk);
+                        added = false;
+                    }
+                    if (added) {
                         drawingChunk = ChunkDrawing.Adding;
                     } else {
                         drawingChunk = ChunkDrawing.Removing;
@@ -681,6 +700,15 @@ public class FullscreenMap {
             return false;
         }
 
+        WorldGeometry geometry = worldGeometry(dimension);
+        if (geometry.hasWrappedAxes()) {
+            if (editableDrag == null) {
+                BlockPos selectedPoint = frontierHighlighted.getSelectedEditablePoint();
+                if (selectedPoint == null) return false;
+                editableDrag = new PointDragState(selectedPoint);
+            }
+            position = editableDrag.update(position, geometry);
+        }
         float snapDistance = 512.f / uiState.zoom * ClientConfig.SNAP_DISTANCE.get();
         frontierHighlighted.moveSelectedEditablePoint(position, snapDistance);
         shapeDirty = true;
@@ -693,23 +721,27 @@ public class FullscreenMap {
         }
 
         if (relocating) {
+            WorldGeometry geometry = worldGeometry(dimension);
             if (frontierHighlighted.getShape() == FrontierShape.Vertex) {
                 if (!position.equals(relocatingPrevPos)) {
-                    frontierHighlighted.moveAllVertices(position.subtract(relocatingPrevPos));
+                    frontierHighlighted.moveAllVertices(geometry.shortestDelta(relocatingPrevPos, position));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
             } else if (frontierHighlighted.getShape() == FrontierShape.Path) {
                 if (!position.equals(relocatingPrevPos)) {
-                    frontierHighlighted.moveAllPathPoints(position.subtract(relocatingPrevPos));
+                    frontierHighlighted.moveAllPathPoints(geometry.shortestDelta(relocatingPrevPos, position));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
             } else {
                 ChunkPos chunkPos = new ChunkPos(position);
                 ChunkPos prevChunkPos = new ChunkPos(relocatingPrevPos);
-                if (!chunkPos.equals(prevChunkPos)) {
-                    frontierHighlighted.moveAllChunks(new ChunkPos(chunkPos.x - prevChunkPos.x, chunkPos.z - prevChunkPos.z));
+                ChunkPos nearbyChunkPos = geometry.hasWrappedAxes()
+                        ? geometry.nearestChunkCopy(prevChunkPos, chunkPos)
+                        : chunkPos;
+                if (!nearbyChunkPos.equals(prevChunkPos)) {
+                    frontierHighlighted.moveAllChunks(new ChunkPos(nearbyChunkPos.x - prevChunkPos.x, nearbyChunkPos.z - prevChunkPos.z));
                     relocatingPrevPos = position;
                     shapeDirty = true;
                 }
@@ -729,19 +761,32 @@ public class FullscreenMap {
             return;
         }
 
+        WorldGeometry geometry = worldGeometry(dimension);
         ChunkPos chunk = new ChunkPos(position);
+        if (geometry.hasWrappedAxes()) chunk = geometry.nearestChunkCopy(lastEditedChunk, chunk);
         if (chunk.equals(lastEditedChunk)) {
             return;
         }
 
         lastEditedChunk = chunk;
 
-        if (drawingChunk == ChunkDrawing.Adding) {
+        if (geometry.hasWrappedAxes()) {
+            ChunkEdit edit = ChunkEdit.resolve(geometry, frontierHighlighted.getChunks(), chunk, false);
+            if (drawingChunk == ChunkDrawing.Adding) {
+                if (edit.existingCopies().isEmpty()) frontierHighlighted.addChunk(edit.position());
+            } else {
+                edit.existingCopies().forEach(frontierHighlighted::removeChunk);
+            }
+        } else if (drawingChunk == ChunkDrawing.Adding) {
             frontierHighlighted.addChunk(chunk);
         } else {
             frontierHighlighted.removeChunk(chunk);
         }
         shapeDirty = true;
+    }
+
+    private static WorldGeometry worldGeometry(ResourceKey<Level> dimension) {
+        return Services.PLATFORM.getClientWorldGeometry(dimension);
     }
 
     private void openCollectionInfo(CollectionData collection) {

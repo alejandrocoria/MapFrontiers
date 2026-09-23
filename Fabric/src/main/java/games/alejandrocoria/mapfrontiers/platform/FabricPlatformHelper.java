@@ -10,6 +10,10 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 public class FabricPlatformHelper implements IPlatformHelper {
+    private static class OptionalMods {
+        static final boolean TOROIDAL_WORLD = FabricLoader.getInstance().isModLoaded("toroidal_world");
+    }
+
     @Override
     public String getPlatformName() {
         return "Fabric";
