@@ -57,6 +57,9 @@ neoForge {
         }
 
         implementation "mysticdrew:common-networking-neoforge:${project.common_networking_version}-${project.minecraft_version}"
+        compileOnly("curse.maven:toroidal-world-1642009:${project.toroidal_world_neoforge_file_id}") {
+            transitive = false
+        }
         implementation "com.electronwill.night-config:core:${project.nightconfig_version}"
         implementation "com.electronwill.night-config:toml:${project.nightconfig_version}"
         jarJar "com.electronwill.night-config:core:${project.nightconfig_version}"

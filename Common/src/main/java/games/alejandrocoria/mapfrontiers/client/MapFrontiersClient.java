@@ -35,6 +35,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
 import games.alejandrocoria.mapfrontiers.common.util.ColorHelper;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import net.minecraft.ChatFormatting;
@@ -879,12 +881,10 @@ public class MapFrontiersClient {
             return;
         }
 
-        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
-        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
-                pos.getX() - activationRadius, pos.getX() + activationRadius,
-                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
+        WorldGeometry geometry = Services.PLATFORM.getClientWorldGeometry(dimension);
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersNearPosition(dimension, pos, maxPathActivationDistance, geometry)) {
             boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
-            if (qualifiesForHud(frontier, pos, alreadyActive)) {
+            if (qualifiesForHud(frontier, pos, alreadyActive, geometry)) {
                 target.add(frontier);
             }
         }
@@ -898,27 +898,25 @@ public class MapFrontiersClient {
             return;
         }
 
-        int activationRadius = (int) Math.ceil(Math.max(0.0, maxPathActivationDistance));
-        for (FrontierOverlay frontier : manager.getCandidateFrontiersInBounds(dimension,
-                pos.getX() - activationRadius, pos.getX() + activationRadius,
-                pos.getZ() - activationRadius, pos.getZ() + activationRadius)) {
+        WorldGeometry geometry = Services.PLATFORM.getClientWorldGeometry(dimension);
+        for (FrontierOverlay frontier : manager.getCandidateFrontiersNearPosition(dimension, pos, maxPathActivationDistance, geometry)) {
             boolean alreadyActive = currentlyActiveFrontierIds.contains(frontier.getId());
-            if (qualifiesForAnnouncement(frontier, pos, alreadyActive)) {
+            if (qualifiesForAnnouncement(frontier, pos, alreadyActive, geometry)) {
                 target.add(frontier);
             }
         }
     }
 
-    private static boolean qualifiesForHud(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive) {
+    private static boolean qualifiesForHud(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive, WorldGeometry geometry) {
         if (!ClientConfig.resolveVisibilityValue(ClientConfig.FRONTIER_VISIBILITY.get(),
                 frontier.getVisibility(FrontierVisibility.Frontier))) {
             return false;
         }
 
-        return qualifiesForActivation(frontier, pos, alreadyActive);
+        return qualifiesForActivation(frontier, pos, alreadyActive, geometry);
     }
 
-    private static boolean qualifiesForAnnouncement(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive) {
+    private static boolean qualifiesForAnnouncement(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive, WorldGeometry geometry) {
         boolean announceInChat = frontier.getVisibility(FrontierVisibility.AnnounceInChat);
         boolean announceInTitle = frontier.getVisibility(FrontierVisibility.AnnounceInTitle);
         if (!ClientConfig.resolveVisibilityValue(ClientConfig.ANNOUNCE_IN_CHAT.get(), announceInChat)
@@ -926,33 +924,25 @@ public class MapFrontiersClient {
             return false;
         }
 
-        return qualifiesForActivation(frontier, pos, alreadyActive);
+        return qualifiesForActivation(frontier, pos, alreadyActive, geometry);
     }
 
-    private static boolean qualifiesForActivation(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive) {
-
+    private static boolean qualifiesForActivation(FrontierOverlay frontier, BlockPos pos, boolean alreadyActive, WorldGeometry geometry) {
         if (frontier.getShape() == FrontierShape.Path) {
             if (frontier.getPointCount() == 0) {
                 return false;
             }
 
             double activationDistance = ClientConfig.getPathActivationDistance(alreadyActive);
-            if (!frontier.isInsideBoundingBox(pos, activationDistance)) {
-                return false;
-            }
 
-            return frontier.pointIsInside(pos, activationDistance);
-        }
-
-        if (!frontier.isInsideBoundingBox(pos, 0.0)) {
-            return false;
+            return frontier.pointIsInside(pos, activationDistance, geometry);
         }
 
         if (frontier.getShape() == FrontierShape.Vertex && frontier.getVertexCount() < 3) {
             return false;
         }
 
-        return frontier.pointIsInside(pos, 0.0);
+        return frontier.pointIsInside(pos, 0.0, geometry);
     }
 
     private static double getMaxPathActivationDistance() {

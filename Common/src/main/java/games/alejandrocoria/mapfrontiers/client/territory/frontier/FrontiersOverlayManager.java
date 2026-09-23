@@ -11,6 +11,8 @@ import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierData;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierShape;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierSharingChange;
 import games.alejandrocoria.mapfrontiers.common.territory.frontier.FrontierVisibility;
+import games.alejandrocoria.mapfrontiers.platform.Services;
+import games.alejandrocoria.mapfrontiers.platform.services.WorldGeometry;
 import journeymap.api.v2.client.IClientAPI;
 import journeymap.api.v2.client.display.Context;
 import net.minecraft.core.BlockPos;
@@ -212,21 +214,27 @@ public class FrontiersOverlayManager {
         return new ArrayList<>(candidates);
     }
 
+    public List<FrontierOverlay> getCandidateFrontiersNearPosition(ResourceKey<Level> dimension, BlockPos pos, double padding, WorldGeometry geometry) {
+        if (geometry.hasWrappedAxes()) {
+            List<FrontierOverlay> frontiers = dimensionsFrontiers.get(dimension);
+            return frontiers == null ? List.of() : frontiers;
+        }
+
+        int radius = (int) Math.ceil(Math.max(0.0, padding));
+        return getCandidateFrontiersInBounds(dimension,
+                pos.getX() - radius, pos.getX() + radius,
+                pos.getZ() - radius, pos.getZ() + radius);
+    }
+
     public List<FrontierOverlay> getFrontiersInPosition(ResourceKey<Level> dimension, BlockPos pos, double maxDistanceToOpen,
                                                         @Nullable Context.MapType fullscreenMapType) {
+        WorldGeometry geometry = Services.PLATFORM.getClientWorldGeometry(dimension);
         List<FrontierOverlay> frontiersInPosition = new ArrayList<>();
-        int radius = (int) Math.ceil(Math.max(0.0, maxDistanceToOpen));
-        for (FrontierOverlay frontier : getCandidateFrontiersInBounds(dimension,
-                pos.getX() - radius, pos.getX() + radius,
-                pos.getZ() - radius, pos.getZ() + radius)) {
-            if (!frontier.isInsideBoundingBox(pos, maxDistanceToOpen)) {
-                continue;
-            }
-
+        for (FrontierOverlay frontier : getCandidateFrontiersNearPosition(dimension, pos, maxDistanceToOpen, geometry)) {
             boolean visible = fullscreenMapType == null
                     ? frontier.getVisibility(FrontierVisibility.Frontier)
                     : frontier.isVisibleOnFullscreenMap(fullscreenMapType);
-            if (visible && frontier.pointIsInside(pos, maxDistanceToOpen)) {
+            if (visible && frontier.pointIsInside(pos, maxDistanceToOpen, geometry)) {
                 frontiersInPosition.add(frontier);
             }
         }
