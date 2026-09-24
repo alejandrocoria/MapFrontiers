@@ -18,6 +18,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.gui.overlay.ForgeLayeredDraw;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingEvent;
@@ -47,7 +48,8 @@ public class MapFrontiersClientForge extends MapFrontiersClient {
     }
 
     public static void onAddGuiOverlayLayers(AddGuiOverlayLayersEvent event) {
-        event.getLayeredDraw().add(ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud"), ClientGlobalEvents::postHudRenderEvent);
+        ResourceLocation hudLayer = ResourceLocation.fromNamespaceAndPath(MapFrontiers.MODID, "hud");
+        event.getLayeredDraw().addBelow(ForgeLayeredDraw.PRE_SLEEP_STACK, hudLayer, ForgeLayeredDraw.POTION_EFFECTS, ClientGlobalEvents::postHudRenderEvent);
     }
 
     public static void onClientConnectedToServer(ClientPlayerNetworkEvent.LoggingIn event) {
